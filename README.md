@@ -1,30 +1,62 @@
-# GenEngine.Web
+<div align="center">
 
-Interface Web de GenEngine : une expérience narrative premium pour découvrir, jouer et créer des récits interactifs.
+# GenEngine Web
 
-> **État :** client connecté au catalogue, à Identity et au parcours Play complet, avec une démo visuelle isolée. Aucun moteur narratif n'est exécuté dans le navigateur.
+**Client Next.js accessible pour découvrir, jouer et créer des récits interactifs GenEngine.**
+
+[![CI](https://github.com/JordanLacroix/GenEngine.Web/actions/workflows/ci.yml/badge.svg)](https://github.com/JordanLacroix/GenEngine.Web/actions/workflows/ci.yml)
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](#docker)
+[![Status](https://img.shields.io/badge/statut-client%20connecté-2EA44F)](#état-du-projet)
+[![License](https://img.shields.io/badge/licence-non%20définie-lightgrey)](#licence)
+
+[Vision](#vision) · [Démarrage rapide](#démarrage-rapide) · [Docker](#docker) · [Architecture](#architecture) · [Roadmap](#roadmap) · [Documentation](#documentation) · [Contribuer](#contribuer)
+
+</div>
+
+---
+
+## Vision
+
+GenEngine Web fournit une expérience narrative moderne, accessible et adaptable. Le serveur reste l’autorité sur les scénarios, les sessions et les transitions ; le client présente les états reçus et transmet les intentions de l’utilisateur.
+
+Le dépôt conserve deux parcours explicitement séparés :
+
+- un mode connecté couvrant Identity, le catalogue Authoring et le parcours Play complet ;
+- une démonstration hors ligne stable, destinée à la revue produit et aux tests d’interface.
+
+## État du projet
+
+| Capacité | État |
+|---|---|
+| Accueil et bibliothèque éditoriale | ✅ Disponible |
+| Démonstration hors ligne | ✅ Disponible |
+| Authentification avec cookie `HttpOnly` | ✅ Connectée |
+| Catalogue public Authoring | ✅ Connecté |
+| Choix, quiz et texte libre confirmé | ✅ Connectés à Play |
+| Pause, reprise et arbre explicable | ✅ Connectés à Play |
+| Atelier d’import et publication | ✅ Connecté à Authoring |
+| Image de production et Compose | ✅ Disponibles |
+| Configuration, organisations, assistant et économie | 📋 En attente des contrats backend |
 
 ## Parcours disponibles
 
 | Route | Intention |
-| --- | --- |
+|---|---|
 | `/` | Découverte éditoriale et sélection de récits |
 | `/library` | Bibliothèque et reprise de lecture |
 | `/play/demo` | Player interactif de démonstration hors ligne |
-| `/play/[versionId]` | Session moteur : narration, choix, quiz, texte libre, pause et arbre explicable |
-| `/studio` | Atelier Authoring : import, révision, validation, analyse, prévisualisation et publication |
+| `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
+| `/studio` | Import, validation, analyse, prévisualisation et publication |
 
-## Stack
+## Démarrage rapide
 
-- Next.js App Router, React et TypeScript strict
-- Tailwind CSS v4 et design tokens CSS
-- Vitest pour les tests unitaires
-- ESLint avec les règles Next.js Core Web Vitals
-- GitHub Actions pour lint, types, tests et build
+### Prérequis
 
-## Démarrage
+- Node.js 22 ou version ultérieure ;
+- pnpm 10.28 ou version ultérieure.
 
-Prérequis : Node.js 22+ et pnpm 10.28+.
+### Lancer en développement
 
 ```bash
 pnpm install --frozen-lockfile
@@ -32,33 +64,63 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000).
+Ouvrez [http://localhost:3000](http://localhost:3000).
 
 ## Docker
 
-Construire et lancer le client Web en mode production :
+Construire et lancer le client en mode production :
 
 ```bash
 docker compose up --build --detach --wait
 ```
 
-Le conteneur est disponible sur [http://localhost:3001](http://localhost:3001). Ce port évite le conflit avec Grafana, exposé sur `localhost:3000` par la surcouche d'observabilité du backend. Le client s'exécute avec l'utilisateur non-root fourni par l'image officielle Node, un système de fichiers en lecture seule, des volumes temporaires bornés et un healthcheck HTTP.
+Le conteneur est disponible sur [http://localhost:3001](http://localhost:3001). Ce port évite le conflit avec Grafana, exposé sur `localhost:3000` par la surcouche d’observabilité du backend.
 
-Par défaut, les trois API sont recherchées sur l'hôte Docker :
+Le conteneur utilise un utilisateur non-root, un système de fichiers en lecture seule, des espaces temporaires bornés et un healthcheck HTTP. Par défaut, les trois API sont recherchées sur l’hôte Docker :
 
-```text
-http://host.docker.internal:5201  # Authoring
-http://host.docker.internal:5202  # Play
-http://host.docker.internal:5203  # Identity
-```
+| Service | URL depuis le conteneur |
+|---|---|
+| Authoring | `http://host.docker.internal:5201` |
+| Play | `http://host.docker.internal:5202` |
+| Identity | `http://host.docker.internal:5203` |
 
-Ces adresses peuvent être remplacées au lancement avec `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`, `GENENGINE_IDENTITY_URL` et `GENENGINE_WEB_PORT`. Pour arrêter le client sans supprimer d'autre environnement GenEngine :
+Les variables `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`, `GENENGINE_IDENTITY_URL` et `GENENGINE_WEB_PORT` permettent de remplacer ces valeurs au lancement.
 
 ```bash
 docker compose down
 ```
 
-## Validation
+## Connexion au backend
+
+Les routes serveur Next.js forment une façade vers les trois services. Configurez les URLs internes dans `.env.local` :
+
+```dotenv
+GENENGINE_AUTHORING_URL=http://localhost:5201
+GENENGINE_PLAY_URL=http://localhost:5202
+GENENGINE_IDENTITY_URL=http://localhost:5203
+```
+
+Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l’identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration.
+
+Le player consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session. Il ne réimplémente aucune règle Narrative.
+
+## Architecture
+
+```text
+src/
+├── app/                  # Routes, handlers serveur et composition
+├── entities/             # Types et représentations côté client
+├── features/             # Capacités utilisateur verticales
+└── shared/
+    ├── api/              # Frontière HTTP et contrats
+    ├── lib/              # Utilitaires sans dépendance UI
+    ├── mocks/            # Fixtures de démonstration isolées
+    └── ui/               # Composants transverses
+```
+
+Une feature ne dépend pas directement d’une autre. La composition vit dans `app`, les échanges réseau dans `shared/api` et les fixtures dans `shared/mocks`. Voir [`specs/architecture.md`](specs/architecture.md).
+
+## Qualité
 
 ```bash
 pnpm lint
@@ -69,62 +131,35 @@ docker compose config --quiet
 docker build --tag genengine-web:local .
 ```
 
-## Architecture
+La CI exécute ces contrôles à chaque pull request et sur `main`.
 
-```text
-src/
-├── app/                  # Routes, layouts et composition
-├── entities/             # Types et représentations métier côté client
-├── features/             # Capacités utilisateur verticales
-└── shared/
-    ├── api/              # Frontière HTTP, futur client OpenAPI généré
-    ├── lib/              # Utilitaires sans dépendance UI
-    ├── mocks/            # Fixtures de démonstration explicitement isolées
-    └── ui/               # Composants transverses du langage visuel
-```
+## Roadmap
 
-Les règles narratives, la validation des histoires et le calcul des transitions appartiennent au backend GenEngine. Le Web affiche les états reçus et envoie les intentions de l'utilisateur. Le changement de scène du player actuel est uniquement une interaction de fixture destinée à valider l'interface.
+Le client a livré sa fondation visuelle, la connexion au parcours narratif actuel et son conteneur de production. Les prochaines tranches suivront les contrats publiés du backend, sans anticiper les règles de configuration, d’autorisation ou d’organisation. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
-## Connexion au backend
+## Documentation
 
-Les routes serveur Next.js jouent le rôle de façade vers les trois services. Configurez les URL internes dans `.env.local` :
+- [Index des spécifications](specs/README.md)
+- [Passage de relais](specs/handoff.md)
+- [Invariants](specs/invariants.md)
+- [Architecture](specs/architecture.md)
+- [Roadmap](specs/roadmap.md)
+- [Guide de contribution](CONTRIBUTING.md)
+- [Politique de sécurité](SECURITY.md)
 
-```dotenv
-GENENGINE_AUTHORING_URL=http://localhost:5201
-GENENGINE_PLAY_URL=http://localhost:5202
-GENENGINE_IDENTITY_URL=http://localhost:5203
-```
+## Sécurité
 
-Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l'identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration. Les points d'entrée techniques sont sous `src/shared/api`.
+Ne publiez aucune vulnérabilité exploitable dans une issue. Consultez [`SECURITY.md`](SECURITY.md) pour le canal de signalement privé et le périmètre pris en charge.
 
-Le player connecté consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session avec explication des conditions. Il ne réimplémente aucune règle Narrative.
+## Contribuer
 
-À la stabilisation définitive des contrats :
-
-1. générer le client TypeScript depuis l'OpenAPI du backend ;
-2. implémenter un adaptateur de données par environnement ;
-3. conserver les fixtures pour Storybook, les tests et le développement hors ligne ;
-4. ne jamais recopier les règles de `GenEngine.Narrative` dans ce dépôt.
-
-## Direction visuelle
-
-- midnight/ink pour la profondeur ;
-- ember/amber pour les décisions et appels à l'action ;
-- verdigris pour les états positifs et l'exploration ;
-- ivory pour la lecture longue ;
-- serif éditoriale pour la narration, sans-serif système pour l'interface ;
-- mouvement discret, avec respect de `prefers-reduced-motion`.
-
-Le langage visuel peut être décliné sur iOS via des tokens et principes partagés. Les deux clients conservent leurs composants natifs et leurs propres dépôts.
-
-## Sécurité et configuration
-
-- Ne jamais committer `.env.local` ni de secrets.
-- Seules les variables préfixées `NEXT_PUBLIC_` sont exposées au navigateur.
-- Les URL des services restent des variables serveur, y compris dans le conteneur.
-- Le dépôt est public : toute donnée de démonstration doit être fictive.
+Les contributions suivent des branches courtes, des commits conventionnels, une PR focalisée et les contrôles CI requis. Consultez [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Dépôts associés
 
 - [GenEngine backend](https://github.com/JordanLacroix/GenEngine)
 - [GenEngine iOS](https://github.com/JordanLacroix/GenEngine.IOS)
+
+## Licence
+
+Aucune licence n’est actuellement définie. Le dépôt est public, mais cela n’accorde pas automatiquement un droit de réutilisation, modification ou redistribution.
