@@ -34,6 +34,30 @@ pnpm dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000).
 
+## Docker
+
+Construire et lancer le client Web en mode production :
+
+```bash
+docker compose up --build --detach --wait
+```
+
+Le conteneur est disponible sur [http://localhost:3001](http://localhost:3001). Ce port évite le conflit avec Grafana, exposé sur `localhost:3000` par la surcouche d'observabilité du backend. Le client s'exécute avec l'utilisateur non-root fourni par l'image officielle Node, un système de fichiers en lecture seule, des volumes temporaires bornés et un healthcheck HTTP.
+
+Par défaut, les trois API sont recherchées sur l'hôte Docker :
+
+```text
+http://host.docker.internal:5201  # Authoring
+http://host.docker.internal:5202  # Play
+http://host.docker.internal:5203  # Identity
+```
+
+Ces adresses peuvent être remplacées au lancement avec `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`, `GENENGINE_IDENTITY_URL` et `GENENGINE_WEB_PORT`. Pour arrêter le client sans supprimer d'autre environnement GenEngine :
+
+```bash
+docker compose down
+```
+
 ## Validation
 
 ```bash
@@ -41,6 +65,8 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+docker compose config --quiet
+docker build --tag genengine-web:local .
 ```
 
 ## Architecture
@@ -95,6 +121,7 @@ Le langage visuel peut être décliné sur iOS via des tokens et principes parta
 
 - Ne jamais committer `.env.local` ni de secrets.
 - Seules les variables préfixées `NEXT_PUBLIC_` sont exposées au navigateur.
+- Les URL des services restent des variables serveur, y compris dans le conteneur.
 - Le dépôt est public : toute donnée de démonstration doit être fictive.
 
 ## Dépôts associés
