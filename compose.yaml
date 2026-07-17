@@ -1,0 +1,22 @@
+services:
+  web:
+    image: genengine-web:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${GENENGINE_WEB_PORT:-3001}:3000"
+    environment:
+      GENENGINE_AUTHORING_URL: "${GENENGINE_AUTHORING_URL:-http://host.docker.internal:5201}"
+      GENENGINE_PLAY_URL: "${GENENGINE_PLAY_URL:-http://host.docker.internal:5202}"
+      GENENGINE_IDENTITY_URL: "${GENENGINE_IDENTITY_URL:-http://host.docker.internal:5203}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    read_only: true
+    tmpfs:
+      - /app/.next/cache:size=64m,uid=1000,gid=1000,mode=0750
+      - /tmp:size=16m,uid=1000,gid=1000,mode=1777
+    security_opt:
+      - no-new-privileges:true

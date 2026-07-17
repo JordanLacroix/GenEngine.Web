@@ -47,3 +47,9 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Validate Compose
+        run: docker compose config --quiet
+
+      - name: Build container image
+        run: docker build --tag genengine-web:ci .
