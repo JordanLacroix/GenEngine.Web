@@ -11,6 +11,7 @@ export interface StorySummary {
   progress?: number;
   mood: StoryMood;
   accent: string;
+  scenarioVersionId?: string;
 }
 
 export interface DemoChoice {

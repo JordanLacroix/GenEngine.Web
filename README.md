@@ -2,7 +2,7 @@
 
 Interface Web de GenEngine : une expérience narrative premium pour découvrir, jouer et créer des récits interactifs.
 
-> **État :** fondation produit indépendante, alimentée par des fixtures isolées. Aucun moteur narratif n'est exécuté dans le navigateur.
+> **État :** fondation produit connectée au catalogue public du moteur, avec repli explicite sur des fixtures isolées. Aucun moteur narratif n'est exécuté dans le navigateur.
 
 ## Parcours disponibles
 
@@ -60,7 +60,13 @@ Les règles narratives, la validation des histoires et le calcul des transitions
 
 ## Connexion au backend
 
-Le point d'entrée technique est `src/shared/api/genengine-client.ts`. Lorsque les contrats seront stabilisés :
+La bibliothèque interroge le catalogue Authoring via une route serveur Next.js. Configurez l'URL interne dans `.env.local` :
+
+```dotenv
+GENENGINE_AUTHORING_URL=http://localhost:5201
+```
+
+La variable reste côté serveur et n'est pas exposée au navigateur. Si Authoring est indisponible, l'interface signale le mode démonstration et conserve une histoire fictive. Le point d'entrée technique est `src/shared/api/genengine-client.ts`. À la stabilisation des contrats :
 
 1. générer le client TypeScript depuis l'OpenAPI du backend ;
 2. implémenter un adaptateur de données par environnement ;
