@@ -12,6 +12,7 @@ export function LibraryContent() {
   const [catalog, setCatalog] = useState<StorySummary[]>([]);
   const [catalogState, setCatalogState] = useState<CatalogState>("loading");
   const [query, setQuery] = useState("");
+  const [startedIds, setStartedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -22,6 +23,7 @@ export function LibraryContent() {
       })
       .then((stories) => {
         setCatalog(stories);
+        setStartedIds(new Set(stories.filter((story) => window.localStorage.getItem(`genengine.session.${story.id}`)).map((story) => story.id)));
         setCatalogState("connected");
       })
       .catch((error: unknown) => {
@@ -40,12 +42,13 @@ export function LibraryContent() {
     if (!normalized) return published;
     return published.filter((story) => `${story.title} ${story.synopsis}`.toLocaleLowerCase("fr").includes(normalized));
   }, [published, query]);
+  const continued = useMemo(() => published.filter((story) => startedIds.has(story.id)), [published, startedIds]);
 
   return (
     <div className="page-shell inner-page">
       <header className="page-intro"><div><p className="eyebrow eyebrow--accent"><Bookmark size={15} aria-hidden="true" /> Votre collection</p><h1>Bibliothèque</h1><p>Retrouvez les mondes commencés et les dernières histoires publiées par le moteur.</p></div><label className="search-field"><span className="sr-only">Rechercher une histoire</span><Search size={18} aria-hidden="true" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un monde…" /></label></header>
       <div className="library-tabs" role="status" aria-live="polite"><button className="is-active" type="button">Catalogue <span>{published.length}</span></button><span className="catalog-source">{catalogState === "loading" ? "Connexion au moteur…" : catalogState === "connected" ? "Catalogue moteur" : "Mode démonstration"}</span></div>
-      <section className="section-block" aria-labelledby="continue-title"><div className="section-heading"><div><p className="eyebrow">Reprendre le fil</p><h2 id="continue-title">Vos histoires en cours</h2></div></div><div className="story-grid story-grid--library">{featuredStories.filter((story) => story.progress !== undefined).map((story) => <StoryCard key={story.id} story={story} />)}</div></section>
+      <section className="section-block" aria-labelledby="continue-title"><div className="section-heading"><div><p className="eyebrow">Reprendre le fil</p><h2 id="continue-title">Vos histoires en cours</h2></div></div>{continued.length > 0 ? <div className="story-grid story-grid--library">{continued.map((story) => <StoryCard key={story.id} story={story} />)}</div> : <p className="empty-state">Les sessions commencées sur cet appareil apparaîtront ici.</p>}</section>
       <section className="section-block" aria-labelledby="saved-title"><div className="section-heading"><div><p className="eyebrow">Fraîchement publié</p><h2 id="saved-title">À découvrir</h2></div></div>{filtered.length === 0 ? <p className="empty-state">Aucune histoire ne correspond à votre recherche.</p> : <div className="story-grid story-grid--library">{filtered.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section>
     </div>
   );
