@@ -2,7 +2,7 @@
 
 Interface Web de GenEngine : une expérience narrative premium pour découvrir, jouer et créer des récits interactifs.
 
-> **État :** fondation produit connectée au catalogue public du moteur, avec repli explicite sur des fixtures isolées. Aucun moteur narratif n'est exécuté dans le navigateur.
+> **État :** client connecté au catalogue, à Identity et au parcours Play complet, avec une démo visuelle isolée. Aucun moteur narratif n'est exécuté dans le navigateur.
 
 ## Parcours disponibles
 
@@ -10,8 +10,9 @@ Interface Web de GenEngine : une expérience narrative premium pour découvrir, 
 | --- | --- |
 | `/` | Découverte éditoriale et sélection de récits |
 | `/library` | Bibliothèque et reprise de lecture |
-| `/play/demo` | Player interactif de démonstration |
-| `/studio` | Aperçu de l'espace auteur et de l'état de publication |
+| `/play/demo` | Player interactif de démonstration hors ligne |
+| `/play/[versionId]` | Session moteur : narration, choix, quiz, texte libre, pause et arbre explicable |
+| `/studio` | Atelier Authoring : import, révision, validation, analyse, prévisualisation et publication |
 
 ## Stack
 
@@ -60,13 +61,19 @@ Les règles narratives, la validation des histoires et le calcul des transitions
 
 ## Connexion au backend
 
-La bibliothèque interroge le catalogue Authoring via une route serveur Next.js. Configurez l'URL interne dans `.env.local` :
+Les routes serveur Next.js jouent le rôle de façade vers les trois services. Configurez les URL internes dans `.env.local` :
 
 ```dotenv
 GENENGINE_AUTHORING_URL=http://localhost:5201
+GENENGINE_PLAY_URL=http://localhost:5202
+GENENGINE_IDENTITY_URL=http://localhost:5203
 ```
 
-La variable reste côté serveur et n'est pas exposée au navigateur. Si Authoring est indisponible, l'interface signale le mode démonstration et conserve une histoire fictive. Le point d'entrée technique est `src/shared/api/genengine-client.ts`. À la stabilisation des contrats :
+Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l'identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration. Les points d'entrée techniques sont sous `src/shared/api`.
+
+Le player connecté consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session avec explication des conditions. Il ne réimplémente aucune règle Narrative.
+
+À la stabilisation définitive des contrats :
 
 1. générer le client TypeScript depuis l'OpenAPI du backend ;
 2. implémenter un adaptateur de données par environnement ;
