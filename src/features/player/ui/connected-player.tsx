@@ -75,7 +75,7 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
       });
       if (!response.ok) throw await responseError(response);
       await loadSession(state.session.id);
-      if (kind === "confirm" && value === false) setText("");
+      if (kind === "confirm") setText("");
     });
   }
 
