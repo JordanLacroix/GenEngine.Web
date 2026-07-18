@@ -54,6 +54,8 @@ Introduction rejouable depuis la connexion, démo sous l’authentification, cr�
 
 **Statut : implémenté sur `codex/immersive-onboarding-ux`.** Les contrats serveur restent autoritatifs ; le client ne déduit aucune transition narrative.
 
+La passe corrective `codex/fix-player-experience-polish` remplace le retour textuel par une fermeture compacte, fiabilise l’édition du compagnon, francise les valeurs techniques, déduplique les projections du journal et ancre les portes aux lieux dessinés malgré `background-size: cover`.
+
 ## Jalon 4.2 — opérations produit et Studio low-code
 
 Console utilisateurs avec recherche, activation et suppression logique ; suppression des rôles custom ; parcours et catégories avec rattachement des scénarios ; assets du familier ; progression par catégorie ; bibliothèque de brouillons recherchable et Studio visuel éditable ; démonstration narrative portée à environ quinze minutes. Administration et outils techniques sont regroupés.

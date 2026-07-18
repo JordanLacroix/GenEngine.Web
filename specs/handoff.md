@@ -17,6 +17,7 @@ Dernière mise à jour : 18 juillet 2026.
 - Le prologue est illustré, matérialise les interactions configurées, remet une clé et ouvre une carte à portes.
 - Les packs visuels de familier sont importables localement avec licence et attribution, sans notion de propriété.
 - La démo s’arrête sur un bilan du chemin et des gains au lieu de boucler.
+- La passe de stabilisation de l’univers joueur localise les valeurs moteur, déduplique journal et maîtrises, rend la sauvegarde du compagnon accessible et projette les portes sur les repères réels de l’illustration quel que soit le ratio d’écran.
 
 ## Démarrage rapide de reprise
 
@@ -49,6 +50,8 @@ Validation de la tranche immersive : typecheck, lint sans warning, 3 tests Vites
 Validation de la tranche Organization : typecheck, lint, tests Vitest et build Next.js production réussis le 18 juillet 2026.
 
 Validation du seuil narratif : revue visuelle navigateur du compte, de l’intro, des interactions et du bilan ; lint, typecheck, 6 tests Vitest, build Next.js, Compose, image Docker durcie et sondes HTTP des illustrations réussis le 18 juillet 2026.
+
+Validation de la stabilisation joueur : revue visuelle navigateur de la carte, du configurateur et du journal ; localisation, déduplication et projection de carte couvertes par tests unitaires le 18 juillet 2026.
 
 ## Décisions à préserver
 
