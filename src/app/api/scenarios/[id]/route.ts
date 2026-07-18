@@ -33,3 +33,12 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json(await genEngineRequest<ScenarioVersionContract>("authoring", `${base}/publish`, { method: "POST", body: JSON.stringify({ expectedRevision: body.expectedRevision }) }));
   } catch (error) { return apiError(error); }
 }
+
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const expectedRevision = new URL(request.url).searchParams.get("expectedRevision");
+    await genEngineRequest<void>("authoring", `/scenarios/${encodeURIComponent(id)}?expectedRevision=${encodeURIComponent(expectedRevision ?? "0")}`, { method: "DELETE" });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) { return apiError(error); }
+}

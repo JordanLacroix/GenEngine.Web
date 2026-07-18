@@ -36,6 +36,10 @@ docker compose down
 
 La première tranche configurable est raccordée : permissions, rôles custom et affectation scoped, hiérarchie école/classes ou entreprise/équipes, Entra ID, Azure AI Foundry, familier, économie/magasin et Studio contextualisé. Les copies du jeu viennent maintenant du dictionnaire publié et sont modifiables dans l’onglet Libellés. La prochaine tranche gérera memberships et encadrants, puis les vrais parcours et affectations. Les contrats backend restent autoritatifs.
 
+Sur `feat/product-operations-ui`, l'Administration est réorganisée par domaines et intègre une console utilisateurs recherchable, le cycle de vie des rôles custom, parcours/catégories/rattachements et la configuration visuelle du familier. Le Studio est devenu un éditeur low-code avec bibliothèque, graphe sélectionnable, inspecteur de scènes/choix, validation, prévisualisation, publication et archivage. La bibliothèque affiche la progression par catégorie et la démo comporte treize scènes pour une cible d'environ quinze minutes.
+
+Validation de la tranche : typecheck, lint sans warning, 3 tests Vitest et build Next.js production réussis.
+
 ## Décisions à préserver
 
 - Backend autoritatif et aucune règle Narrative dans le client.

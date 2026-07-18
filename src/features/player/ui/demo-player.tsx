@@ -10,7 +10,7 @@ export function DemoPlayer() {
   const [history, setHistory] = useState<string[]>([]);
   const [sound, setSound] = useState(false);
   const scene = useMemo(() => demoStory.scenes.find((candidate) => candidate.id === sceneId) ?? demoStory.scenes[0]!, [sceneId]);
-  const progress = Math.min(100, ((history.length + 1) / 3) * 100);
+  const progress = scene.chapter.startsWith("Épilogue") ? 100 : Math.min(92, ((history.length + 1) / 7) * 100);
 
   function choose(nextSceneId: string) {
     setHistory((current) => [...current, scene.id]);

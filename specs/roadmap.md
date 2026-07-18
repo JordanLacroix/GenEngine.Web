@@ -41,3 +41,9 @@ Dictionnaire extensible de copies publié par le moteur, éditeur de libellés d
 Memberships et encadrants dans les unités école/classes ou entreprise/équipes, affectations scoped guidées, workflows éditoriaux collaboratifs et configuration économique avancée.
 
 **Statut : planifié.**
+
+## Jalon 4.2 — opérations produit et Studio low-code
+
+Console utilisateurs avec recherche, activation et suppression logique ; suppression des rôles custom ; parcours et catégories avec rattachement des scénarios ; assets du familier ; progression par catégorie ; bibliothèque de brouillons recherchable et Studio visuel éditable ; démonstration narrative portée à environ quinze minutes. Administration et outils techniques sont regroupés.
+
+**Statut : terminé sur `feat/product-operations-ui`, en attente de revue.**
