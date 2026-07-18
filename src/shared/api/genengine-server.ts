@@ -3,11 +3,13 @@ import { cookies } from "next/headers";
 
 export const accessCookieName = "genengine_access";
 
-type Service = "identity" | "authoring" | "play";
+type Service = "identity" | "authoring" | "play" | "configuration" | "playerExperience";
 
 function serviceUrl(service: Service) {
   if (service === "identity") return process.env.GENENGINE_IDENTITY_URL ?? "http://localhost:5203";
   if (service === "play") return process.env.GENENGINE_PLAY_URL ?? "http://localhost:5202";
+  if (service === "configuration") return process.env.GENENGINE_CONFIGURATION_URL ?? "http://localhost:5204";
+  if (service === "playerExperience") return process.env.GENENGINE_PLAYER_EXPERIENCE_URL ?? "http://localhost:5205";
   return process.env.GENENGINE_AUTHORING_URL ?? "http://localhost:5201";
 }
 
@@ -30,6 +32,7 @@ export async function genEngineRequest<T>(
     const problem = await response.json().catch(() => undefined) as { title?: string; detail?: string } | undefined;
     throw new GenEngineServerError(response.status, problem);
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 

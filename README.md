@@ -37,7 +37,10 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Pause, reprise et arbre explicable | ✅ Connectés à Play |
 | Atelier d’import et publication | ✅ Connecté à Authoring |
 | Image de production et Compose | ✅ Disponibles |
-| Configuration, organisations, assistant et économie | 📋 En attente des contrats backend |
+| Navigation pilotée par permissions effectives | ✅ Connectée à Identity |
+| Administration jeu, RBAC, Foundry, Entra et économie | ✅ Connectée et séparée du Studio |
+| Génération de scénarios contextualisée | ✅ Offline et Azure AI Foundry |
+| Familier, portefeuille et magasin | ✅ Connectés à PlayerExperience |
 
 ## Parcours disponibles
 
@@ -48,6 +51,8 @@ Le dépôt conserve deux parcours explicitement séparés :
 | `/play/demo` | Player interactif de démonstration hors ligne |
 | `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
 | `/studio` | Import, validation, analyse, prévisualisation et publication |
+| `/experience` | Familier personnel, portefeuille, historique et magasin |
+| `/administration` | Configuration plateforme et RBAC, distincts du Studio |
 
 ## Démarrage rapide
 
@@ -83,6 +88,8 @@ Le conteneur utilise un utilisateur non-root, un système de fichiers en lecture
 | Authoring | `http://host.docker.internal:5201` |
 | Play | `http://host.docker.internal:5202` |
 | Identity | `http://host.docker.internal:5203` |
+| Configuration | `http://host.docker.internal:5204` |
+| PlayerExperience | `http://host.docker.internal:5205` |
 
 Les variables `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`, `GENENGINE_IDENTITY_URL` et `GENENGINE_WEB_PORT` permettent de remplacer ces valeurs au lancement.
 
@@ -98,6 +105,9 @@ Les routes serveur Next.js forment une façade vers les trois services. Configur
 GENENGINE_AUTHORING_URL=http://localhost:5201
 GENENGINE_PLAY_URL=http://localhost:5202
 GENENGINE_IDENTITY_URL=http://localhost:5203
+GENENGINE_CONFIGURATION_URL=http://localhost:5204
+GENENGINE_PLAYER_EXPERIENCE_URL=http://localhost:5205
+ENTRA_CLIENT_SECRET=
 ```
 
 Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l’identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration.
@@ -135,7 +145,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client a livré sa fondation visuelle, la connexion au parcours narratif actuel et son conteneur de production. Les prochaines tranches suivront les contrats publiés du backend, sans anticiper les règles de configuration, d’autorisation ou d’organisation. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable : navigation RBAC, jeu global, structures hiérarchiques école/classes ou entreprise/équipes, Studio contextualisé, familier, économie, magasin, Entra ID et Administration séparée. La prochaine tranche reliera les membres et encadrants à ces unités. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 

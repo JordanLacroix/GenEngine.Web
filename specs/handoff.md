@@ -34,7 +34,7 @@ docker compose down
 
 ## Prochaine unité de travail
 
-La prochaine tranche fonctionnelle dépend des contrats publiés du jalon 4 du backend. Avant toute implémentation, confirmer le besoin produit, le contrat HTTP, les permissions, la configuration et le comportement hors ligne. Ne pas créer de modèle local anticipé pour Configuration, Organization, Assistant ou Economy.
+La première tranche configurable est raccordée : permissions, rôles custom et affectation scoped, hiérarchie école/classes ou entreprise/équipes, Entra ID, Azure AI Foundry, familier, économie/magasin et Studio contextualisé. La prochaine tranche gérera memberships et encadrants dans ces unités, puis les workflows éditoriaux avancés. Les contrats backend restent autoritatifs.
 
 ## Décisions à préserver
 

@@ -12,6 +12,9 @@ services:
       GENENGINE_AUTHORING_URL: "${GENENGINE_AUTHORING_URL:-http://host.docker.internal:5201}"
       GENENGINE_PLAY_URL: "${GENENGINE_PLAY_URL:-http://host.docker.internal:5202}"
       GENENGINE_IDENTITY_URL: "${GENENGINE_IDENTITY_URL:-http://host.docker.internal:5203}"
+      GENENGINE_CONFIGURATION_URL: "${GENENGINE_CONFIGURATION_URL:-http://host.docker.internal:5204}"
+      GENENGINE_PLAYER_EXPERIENCE_URL: "${GENENGINE_PLAYER_EXPERIENCE_URL:-http://host.docker.internal:5205}"
+      ENTRA_CLIENT_SECRET: "${ENTRA_CLIENT_SECRET:-}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     read_only: true

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navigation } from "@/shared/ui/navigation";
 import "./globals.css";
+import "./platform.css";
 
 export const metadata: Metadata = {
   title: { default: "GenEngine — Des mondes qui se souviennent", template: "%s · GenEngine" },
