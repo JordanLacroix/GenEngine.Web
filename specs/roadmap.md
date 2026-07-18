@@ -38,9 +38,9 @@ Dictionnaire extensible de copies publié par le moteur, éditeur de libellés d
 
 ## Jalon 5 — structures et exploitation avancées
 
-Memberships et encadrants dans les unités école/classes ou entreprise/équipes, affectations scoped guidées, workflows éditoriaux collaboratifs et configuration économique avancée.
+Memberships et encadrants dans les unités école/classes ou entreprise/équipes, et affectations scoped guidées sont livrés. Restent les périodes métier, opérations en masse, reporting collectif, workflows éditoriaux collaboratifs et configuration économique avancée.
 
-**Statut : planifié.**
+**Statut : en cours.**
 
 ## Jalon 4.3 — expérience joueur immersive
 

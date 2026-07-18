@@ -2,10 +2,12 @@
 import { Bot, Building2, Check, Coins, KeyRound, Languages, LibraryBig, LoaderCircle, Plus, Save, Search, ShieldCheck, Sparkles, Trash2, UploadCloud, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { AdminConfigurationContract, AdminUserContract, ExperienceDocumentContract, PagedUsersContract, PermissionContract, ProblemDetailsContract, RoleContract } from "@/shared/api/contracts";
+import { OrganizationOperations } from "./organization-operations";
 
-type Tab = "game" | "player" | "catalog" | "language" | "users" | "access" | "ai" | "auth" | "economy";
+type Tab = "game" | "organization" | "player" | "catalog" | "language" | "users" | "access" | "ai" | "auth" | "economy";
 const tabs: Array<{ id: Tab; label: string; group: string; icon: typeof Sparkles }> = [
   { id: "game", label: "Jeu & organisation", group: "Expérience", icon: Sparkles },
+  { id: "organization", label: "Structures & affectations", group: "Exploitation", icon: Building2 },
   { id: "player", label: "Accueil, aide & tutoriel", group: "Expérience", icon: Sparkles },
   { id: "catalog", label: "Parcours & catégories", group: "Expérience", icon: LibraryBig },
   { id: "language", label: "Libellés", group: "Expérience", icon: Languages },
@@ -174,6 +176,7 @@ export function AdministrationConsole() {
         <div className="role-builder"><h3><Plus /> Ajouter un libellé</h3><div className="admin-grid"><Field label="Clé namespacée"><input value={newLabelKey} onChange={(event) => setNewLabelKey(event.target.value)} placeholder="ex. home.featured.title" /></Field><Field label="Texte"><input value={newLabelValue} onChange={(event) => setNewLabelValue(event.target.value)} /></Field></div><button className="button button--primary" disabled={!newLabelKey.trim() || !newLabelValue.trim() || Boolean(document.language.labels[newLabelKey.trim()])} onClick={() => { updateLanguageLabel(newLabelKey.trim(), newLabelValue.trim(), update); setNewLabelKey(""); setNewLabelValue(""); }}><Plus /> Ajouter</button></div>
         {familiar && <div className="role-builder"><h3>Nom et personnalité du familier par défaut</h3><div className="admin-grid"><Field label="Nom affiché"><input value={familiar.name} onChange={(event) => updateFamiliar("name", event.target.value, update)} /></Field><Field label="Description"><input value={familiar.description} onChange={(event) => updateFamiliar("description", event.target.value, update)} /></Field></div></div>}
       </AdminSection>}
+      {tab === "organization" && <AdminSection icon={Building2} eyebrow="Échelle école, entreprise ou formation" title="Structures, membres et affectations"><OrganizationOperations users={users} experience={document} /></AdminSection>}
       {tab === "access" && <AdminSection icon={ShieldCheck} eyebrow="RBAC explicable" title="Rôles et permissions">
         <div className="role-list">{roles.map((role) => <article key={role.id}><div><strong>{role.name}</strong>{role.isSystem && <span>Système</span>}<p>{role.description}</p></div><small>{role.permissions.length} permissions</small>{!role.isSystem && <button className="icon-danger" aria-label={`Supprimer ${role.name}`} onClick={() => deleteRole(role)}><Trash2 /></button>}<div className="permission-pills">{role.permissions.map((permission) => <span key={permission}>{permission}</span>)}</div></article>)}</div>
         <div className="role-builder"><h3><Plus /> Nouveau rôle personnalisé</h3><div className="admin-grid"><Field label="Nom"><input value={roleName} onChange={(event) => setRoleName(event.target.value)} /></Field><Field label="Description"><input value={roleDescription} onChange={(event) => setRoleDescription(event.target.value)} /></Field></div><div className="permission-picker">{permissions.map((permission) => <label key={permission.code}><input type="checkbox" checked={rolePermissions.includes(permission.code)} onChange={() => setRolePermissions((value) => value.includes(permission.code) ? value.filter((code) => code !== permission.code) : [...value, permission.code])} /><span><strong>{permission.code}</strong><small>{permission.description}</small></span></label>)}</div><button className="button button--primary" disabled={busy || !roleName || rolePermissions.length === 0} onClick={createRole}><Plus /> Créer le rôle</button></div>
