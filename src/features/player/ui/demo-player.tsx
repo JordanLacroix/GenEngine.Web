@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Bookmark, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Bookmark, DoorOpen, Gift, MousePointer2, RotateCcw, Route, Sparkles, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { demoStory } from "@/shared/mocks/stories";
@@ -9,12 +9,14 @@ export function DemoPlayer() {
   const [sceneId, setSceneId] = useState(demoStory.openingSceneId);
   const [history, setHistory] = useState<string[]>([]);
   const [sound, setSound] = useState(false);
+  const [interactionDone, setInteractionDone] = useState(false);
   const scene = useMemo(() => demoStory.scenes.find((candidate) => candidate.id === sceneId) ?? demoStory.scenes[0]!, [sceneId]);
   const progress = scene.chapter.startsWith("Épilogue") ? 100 : Math.min(92, ((history.length + 1) / 7) * 100);
 
   function choose(nextSceneId: string) {
     setHistory((current) => [...current, scene.id]);
     setSceneId(nextSceneId);
+    setInteractionDone(false);
   }
 
   function goBack() {
@@ -22,9 +24,12 @@ export function DemoPlayer() {
     if (!previous) return;
     setSceneId(previous);
     setHistory((current) => current.slice(0, -1));
+    setInteractionDone(true);
   }
 
-  function restart() { setHistory([]); setSceneId(demoStory.openingSceneId); }
+  function restart() { setHistory([]); setSceneId(demoStory.openingSceneId); setInteractionDone(false); }
+
+  const completed = scene.choices.length === 0;
 
   return (
     <div className="player-shell">
@@ -40,12 +45,19 @@ export function DemoPlayer() {
         <h1>{scene.title}</h1>
         <div className="scene-copy">{scene.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
         <p className="scene-atmosphere">{scene.atmosphere}</p>
-        <div className="choices" aria-label="Que faites-vous ?">
+        {scene.interaction && !completed && <div className={`screen-interaction screen-interaction--${scene.interaction.kind} ${interactionDone ? "is-complete" : ""}`}><span><MousePointer2 aria-hidden="true" /></span><div><small>Interaction du scénario</small><strong>{scene.interaction.label}</strong><p>{scene.interaction.hint}</p></div><button className="button button--quiet" type="button" onClick={() => setInteractionDone(true)}>{interactionDone ? "Signal reçu" : "Interagir"}</button></div>}
+        {!completed && <div className="choices" aria-label="Que faites-vous ?">
           <p>Que faites-vous ?</p>
-          {scene.choices.map((choice, index) => <button type="button" key={choice.id} onClick={() => choose(choice.nextSceneId)}><span className="choice-index">{String(index + 1).padStart(2, "0")}</span><span><small>{choice.tone}</small>{choice.label}</span><span className="choice-arrow" aria-hidden="true">→</span></button>)}
-        </div>
+          {scene.choices.map((choice, index) => <button type="button" key={choice.id} disabled={Boolean(scene.interaction && !interactionDone)} onClick={() => choose(choice.nextSceneId)}><span className="choice-index">{String(index + 1).padStart(2, "0")}</span><span><small>{choice.tone}</small>{choice.label}</span><span className="choice-arrow" aria-hidden="true">→</span></button>)}
+        </div>}
+        {completed && <DemoSummary history={[...history, scene.id]} ending={scene.id} onRestart={restart} />}
       </main>
       <footer className="player-footer"><button type="button" className="text-button" onClick={goBack} disabled={history.length === 0}><ArrowLeft size={14} aria-hidden="true" /> Choix précédent</button><span>Progression enregistrée localement · Démo visuelle</span><button type="button" className="text-button" onClick={restart}><RotateCcw size={14} aria-hidden="true" /> Recommencer</button></footer>
     </div>
   );
+}
+
+function DemoSummary({ history, ending, onRestart }: { history: string[]; ending: string; onRestart(): void }) {
+  const path = history.map((id) => demoStory.scenes.find((scene) => scene.id === id)).filter(Boolean);
+  return <section className="demo-summary" aria-label="Bilan de la démo"><div className="summary-heading"><Sparkles aria-hidden="true" /><div><p className="eyebrow">Chemin accompli</p><h2>{ending === "dawn" ? "Vous avez rendu la mémoire à la cité." : "Vous êtes devenu gardien du récit."}</h2></div></div><div className="summary-grid"><article><Route aria-hidden="true" /><strong>{path.length} étapes traversées</strong><ol>{path.map((step) => <li key={step!.id}>{step!.title}</li>)}</ol></article><article><Gift aria-hidden="true" /><strong>Souvenirs gagnés</strong><ul><li>Le sceau du Dernier Phare</li><li>Une page pour votre journal</li><li>La confiance de Lueur</li></ul></article></div><div className="summary-actions"><Link className="button button--primary" href="/account"><DoorOpen aria-hidden="true" /> Créer mon aventure</Link><button className="button button--quiet" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Explorer un autre chemin</button></div></section>;
 }

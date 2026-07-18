@@ -28,6 +28,7 @@ export interface DemoScene {
   body: string[];
   atmosphere: string;
   choices: DemoChoice[];
+  interaction?: { kind: "signal" | "object" | "gesture"; label: string; hint: string };
 }
 
 export interface DemoStory extends StorySummary {

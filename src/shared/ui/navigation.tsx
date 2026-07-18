@@ -36,7 +36,7 @@ export function Navigation() {
     ...(permissions.has("scenario.author") ? [{ href: "/studio", label: gameCopy(document, "nav.studio", "Studio"), icon: Feather }] : []),
     ...(permissions.has("config.read") ? [{ href: "/administration", label: gameCopy(document, "nav.administration", "Administration"), icon: Settings2 }] : []),
   ];
-  const initials = context?.access.userName.split(/[\s._-]/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "·";
+  const initials = context?.access.userName.split(/[\s._-]/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") ?? "";
   const gameName = document?.game.name ?? "GenEngine";
 
   return (
@@ -55,7 +55,9 @@ export function Navigation() {
           return <Link key={href} href={href as Route} className={active ? "nav-link is-active" : "nav-link"} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)}><Icon size={16} aria-hidden="true" />{label}</Link>;
         })}
       </nav>
-      <Link className="profile-button" href={(context ? "/experience" : "/account") as Route} aria-label={context ? `Ouvrir le profil de ${context.access.userName}` : "Se connecter"}>{initials}</Link>
+      {context
+        ? <Link className="profile-button" href={"/experience" as Route} aria-label={`Ouvrir le profil de ${context.access.userName}`}>{initials}</Link>
+        : <Link className="login-link" href={"/account" as Route}>Se connecter</Link>}
     </header>
   );
 }

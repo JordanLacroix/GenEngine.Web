@@ -44,6 +44,10 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Introduction, connexion/déconnexion et mode démo | ✅ Flux explicite et configurable |
 | Bootstrap, tutoriel persistant, carte et aide | ✅ Pilotés par le moteur |
 | Journal et maîtrise cross-session | ✅ Alimentés par Play et PlayerExperience |
+| Intro rejouable, prologue illustré et clé universelle | ✅ Pilotés par la configuration |
+| Carte illustrée à portes et interactions d’écran | ✅ Matérialisées par le client |
+| Packs visuels de familier importables | ✅ Assets locaux, sans propriété |
+| Bilan de fin avec chemin et gains | ✅ Démo et sessions connectées |
 
 ## Parcours disponibles
 
@@ -87,6 +91,8 @@ Le conteneur est disponible sur [http://localhost:3001](http://localhost:3001). 
 
 Le conteneur utilise un utilisateur non-root, un système de fichiers en lecture seule, des espaces temporaires bornés et un healthcheck HTTP. Par défaut, les API sont recherchées sur l’hôte Docker :
 
+Les illustrations placées dans `public/` sont copiées dans l’image de production et servies par le runtime standalone.
+
 | Service | URL depuis le conteneur |
 |---|---|
 | Authoring | `http://host.docker.internal:5201` |
@@ -120,6 +126,12 @@ Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpO
 
 Le player consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session. Il ne réimplémente aucune règle Narrative.
 
+### Packs visuels de familier
+
+L’espace Compagnon accepte un manifeste JSON de schéma `1`. Il déclare un portrait HTTPS ou un asset local sous `/illustrations/`, ainsi qu’une licence et une attribution. Le pack ne modifie que la présentation locale : il ne crée ni propriété, ni achat, ni progression. La sélection du familier reste enregistrée par PlayerExperience.
+
+Un exemple est disponible dans [`public/familiar-packs/aster.json`](public/familiar-packs/aster.json).
+
 ## Architecture
 
 ```text
@@ -151,7 +163,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte, recherche, journal, maîtrise, familier illustré et aide. L’Administration sépare désormais la configuration éditoriale des opérations : unités, participants, encadrants et affectations de scénarios/catégories/parcours. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte plein écran, HUD superposée, portes positionnées dans le monde, recherche, journal, maîtrise, familier illustré et aide. Hors des écrans de connexion, l’expérience joueur n’utilise pas la navigation de la plateforme : les fonctions deviennent des overlays du jeu. L’Administration sépare désormais la configuration éditoriale des opérations : unités, participants, encadrants et affectations de scénarios/catégories/parcours. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 
