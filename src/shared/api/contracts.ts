@@ -108,6 +108,7 @@ export interface ExperienceDocumentContract {
     units: Array<{ id: string; parentId?: string; type: string; name: string; code: string; description: string; order: number; enabled: boolean }>;
   };
   game: { name: string; description: string; globalStory: string; locale: string; timeZone: string };
+  language: { labels: Record<string, string> };
   authentication: { mode: "LocalOnly" | "EntraOnly" | "Cumulative"; localEnabled: boolean; entraEnabled: boolean; entraTenantId?: string; entraClientId?: string };
   aiProviders: Array<{ id: string; name: string; type: "Offline" | "AzureAiFoundry"; enabled: boolean; endpoint: string; deployment: string; authentication: string; secretReference?: string; capabilities: string[] }>;
   categories: Array<{ id: string; name: string; description: string; accent: string; order: number; isVisible: boolean }>;
