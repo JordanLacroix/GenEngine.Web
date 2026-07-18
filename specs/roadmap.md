@@ -30,6 +30,12 @@ Exposer Configuration, RBAC custom et scoped, Entra ID, le familier, l’économ
 
 **Statut : terminé.**
 
+## Jalon 4.1 — vocabulaire du jeu
+
+Dictionnaire extensible de copies publié par le moteur, éditeur de libellés dans l’Administration et consommation dans la navigation, l’accueil, la bibliothèque, le Studio et l’espace joueur.
+
+**Statut : terminé.**
+
 ## Jalon 5 — structures et exploitation avancées
 
 Memberships et encadrants dans les unités école/classes ou entreprise/équipes, affectations scoped guidées, workflows éditoriaux collaboratifs et configuration économique avancée.

@@ -145,7 +145,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable : navigation RBAC, jeu global, structures hiérarchiques école/classes ou entreprise/équipes, Studio contextualisé, familier, économie, magasin, Entra ID et Administration séparée. La prochaine tranche reliera les membres et encadrants à ces unités. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable : navigation RBAC, jeu global, vocabulaire/copies éditables, structures hiérarchiques école/classes ou entreprise/équipes, Studio contextualisé, familier, économie, magasin, Entra ID et Administration séparée. La prochaine tranche reliera les membres et encadrants à ces unités. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 

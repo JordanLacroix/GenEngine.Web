@@ -1,12 +1,13 @@
 "use client";
 
-import { Bot, Building2, Check, Coins, KeyRound, LoaderCircle, Plus, Save, ShieldCheck, Sparkles, UploadCloud } from "lucide-react";
+import { Bot, Building2, Check, Coins, KeyRound, Languages, LoaderCircle, Plus, Save, ShieldCheck, Sparkles, Trash2, UploadCloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { AdminConfigurationContract, ExperienceDocumentContract, PermissionContract, ProblemDetailsContract, RoleContract } from "@/shared/api/contracts";
 
-type Tab = "game" | "access" | "ai" | "auth" | "economy";
+type Tab = "game" | "language" | "access" | "ai" | "auth" | "economy";
 const tabs: Array<{ id: Tab; label: string; icon: typeof Sparkles }> = [
   { id: "game", label: "Jeu & structure", icon: Sparkles },
+  { id: "language", label: "Libellés & vocabulaire", icon: Languages },
   { id: "access", label: "Accès & rôles", icon: ShieldCheck },
   { id: "ai", label: "IA & familier", icon: Bot },
   { id: "auth", label: "Authentification", icon: KeyRound },
@@ -24,6 +25,8 @@ export function AdministrationConsole() {
   const [assignmentUserId, setAssignmentUserId] = useState("");
   const [assignmentRoleId, setAssignmentRoleId] = useState("");
   const [assignmentScope, setAssignmentScope] = useState("");
+  const [newLabelKey, setNewLabelKey] = useState("");
+  const [newLabelValue, setNewLabelValue] = useState("");
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string>();
 
@@ -118,6 +121,15 @@ export function AdministrationConsole() {
         </article>)}</div>
         <button className="button button--quiet" onClick={() => update((value) => ({ ...value, document: { ...value.document, organization: { ...value.document.organization, units: [...value.document.organization.units, { id: crypto.randomUUID(), type: defaultUnitType(value.document.organizationType), name: "Nouvelle unité", code: "", description: "", order: value.document.organization.units.length + 1, enabled: true }] } } }))}><Plus /> Ajouter une unité</button>
       </AdminSection>}
+      {tab === "language" && <AdminSection icon={Languages} eyebrow="Aucun texte imposé" title="Libellés et vocabulaire du jeu">
+        <p className="scene-copy">Chaque texte est identifié par une clé stable et publié avec le jeu. Les clients utilisent ces valeurs avec un fallback sûr.</p>
+        <div className="config-cards">{Object.entries(document.language.labels).sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => <article key={key}>
+          <div className="provider-heading"><code>{key}</code><button className="button button--quiet" aria-label={`Supprimer ${key}`} onClick={() => updateLanguageLabel(key, undefined, update)}><Trash2 /></button></div>
+          <textarea value={value} aria-label={`Valeur de ${key}`} onChange={(event) => updateLanguageLabel(key, event.target.value, update)} />
+        </article>)}</div>
+        <div className="role-builder"><h3><Plus /> Ajouter un libellé</h3><div className="admin-grid"><Field label="Clé namespacée"><input value={newLabelKey} onChange={(event) => setNewLabelKey(event.target.value)} placeholder="ex. home.featured.title" /></Field><Field label="Texte"><input value={newLabelValue} onChange={(event) => setNewLabelValue(event.target.value)} /></Field></div><button className="button button--primary" disabled={!newLabelKey.trim() || !newLabelValue.trim() || Boolean(document.language.labels[newLabelKey.trim()])} onClick={() => { updateLanguageLabel(newLabelKey.trim(), newLabelValue.trim(), update); setNewLabelKey(""); setNewLabelValue(""); }}><Plus /> Ajouter</button></div>
+        {familiar && <div className="role-builder"><h3>Nom et personnalité du familier par défaut</h3><div className="admin-grid"><Field label="Nom affiché"><input value={familiar.name} onChange={(event) => updateFamiliar("name", event.target.value, update)} /></Field><Field label="Description"><input value={familiar.description} onChange={(event) => updateFamiliar("description", event.target.value, update)} /></Field></div></div>}
+      </AdminSection>}
       {tab === "access" && <AdminSection icon={ShieldCheck} eyebrow="RBAC explicable" title="Rôles et permissions">
         <div className="role-list">{roles.map((role) => <article key={role.id}><div><strong>{role.name}</strong>{role.isSystem && <span>Système</span>}<p>{role.description}</p></div><small>{role.permissions.length} permissions</small><div className="permission-pills">{role.permissions.map((permission) => <span key={permission}>{permission}</span>)}</div></article>)}</div>
         <div className="role-builder"><h3><Plus /> Nouveau rôle personnalisé</h3><div className="admin-grid"><Field label="Nom"><input value={roleName} onChange={(event) => setRoleName(event.target.value)} /></Field><Field label="Description"><input value={roleDescription} onChange={(event) => setRoleDescription(event.target.value)} /></Field></div><div className="permission-picker">{permissions.map((permission) => <label key={permission.code}><input type="checkbox" checked={rolePermissions.includes(permission.code)} onChange={() => setRolePermissions((value) => value.includes(permission.code) ? value.filter((code) => code !== permission.code) : [...value, permission.code])} /><span><strong>{permission.code}</strong><small>{permission.description}</small></span></label>)}</div><button className="button button--primary" disabled={busy || !roleName || rolePermissions.length === 0} onClick={createRole}><Plus /> Créer le rôle</button></div>
@@ -145,7 +157,8 @@ function AdminSection({ icon: Icon, eyebrow, title, children }: { icon: typeof S
 }
 function Field({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) { return <label className={wide ? "field-wide" : ""}><span>{label}</span>{children}</label>; }
 function updateProvider(id: string, key: "endpoint" | "deployment" | "secretReference", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, aiProviders: current.document.aiProviders.map((provider) => provider.id === id ? { ...provider, [key]: value } : provider) } })); }
-function updateFamiliar(key: "writingStyle" | "helpLevel", value: string | number, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, familiars: current.document.familiars.map((familiar, index) => index === 0 ? { ...familiar, [key]: value } : familiar) } })); }
+function updateFamiliar(key: "name" | "description" | "writingStyle" | "helpLevel", value: string | number, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, familiars: current.document.familiars.map((familiar, index) => index === 0 ? { ...familiar, [key]: value } : familiar) } })); }
+function updateLanguageLabel(key: string, value: string | undefined, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => { const labels = { ...current.document.language.labels }; if (value === undefined) delete labels[key]; else labels[key] = value; return { ...current, document: { ...current.document, language: { labels } } }; }); }
 function updateAuth(key: "entraTenantId" | "entraClientId", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, authentication: { ...current.document.authentication, [key]: value } } })); }
 function updateEconomy(key: "currencyName" | "currencyCode", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, economy: { ...current.document.economy, [key]: value } } })); }
 function updateOrganization(key: "name" | "description", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, organization: { ...current.document.organization, [key]: value } } })); }
