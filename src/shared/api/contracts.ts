@@ -17,6 +17,7 @@ export type InteractionKind =
 
 export interface SessionContract {
   id: string;
+  scenarioId: string;
   scenarioVersionId: string;
   snapshotHash: string;
   status: SessionStatus;
@@ -122,16 +123,32 @@ export interface ExperienceDocumentContract {
     offers: Array<{ id: string; name: string; description: string; price: number; rewardType: string; rewardReference: string; enabled: boolean }>;
   };
   modules: Array<{ id: string; name: string; description: string; enabled: boolean; requiredPermissions: string[] }>;
+  intro: { enabled: boolean; displayPolicy: "EveryLaunch" | "OncePerVersion" | "FirstInstall"; allowSkip: boolean; minimumDisplaySeconds: number; scenes: Array<{ id: string; eyebrow: string; title: string; body: string; imageUrl?: string; order: number }> };
+  playerShell: { navigation: Array<{ destination: string; labelKey: string; icon: string; order: number; enabled: boolean; requiredModule?: string }> };
+  demo: { enabled: boolean; scenarioSlug: string; targetMinutes: number; familiarId?: string; callToActionLabelKey: string };
+  help: { enabled: boolean; articles: Array<{ id: string; slug: string; title: string; summary: string; body: string; contexts: string[]; tags: string[]; order: number; published: boolean }>; glossary: Array<{ term: string; definition: string }> };
+  onboarding: { id: string; version: number; enabled: boolean; allowSkip: boolean; requiredAfterUpgrade: boolean; steps: Array<{ id: string; title: string; body: string; target: string; action: string; order: number; required: boolean }> };
+  assistantPolicy: { enabled: boolean; requireFirstRunConfiguration: boolean; proactive: boolean; warnOnKnownPath: boolean; defaultFrequency: number; offlineCapabilities: string[] };
+  journal: { enabled: boolean; allowExport: boolean; retentionDays: number; showStoryTimeline: boolean };
 }
 
 export interface PublishedExperienceContract { version: number; publishedAt: string; document: ExperienceDocumentContract }
 export interface AdminConfigurationContract { id: string; revision: number; publishedVersion: number; updatedAt: string; publishedAt?: string; document: ExperienceDocumentContract }
 export interface PlayerExperienceContract {
   id: string; frontId: string; revision: number; balance: number; currencyCode: string; currencyName: string; currencyIcon: string;
-  familiar?: { familiarId: string; form: string; tone: string; writingStyle: string; accent: string; helpLevel: number };
+  familiar?: { familiarId: string; form: string; tone: string; writingStyle: string; accent: string; helpLevel: number; customName?: string; interventionFrequency: number; proactive: boolean };
+  familiarDefinition?: ExperienceDocumentContract["familiars"][number];
+  onboarding: OnboardingStateContract;
+  masteries: ScenarioMasteryContract[];
   ownedOfferIds: string[];
   recentEntries: Array<{ id: string; amount: number; reason: string; balanceAfter: number; createdAt: string }>;
+  recentJournal: JournalEntryContract[];
 }
+export interface OnboardingStateContract { tutorialId: string; version: number; status: "NotStarted" | "InProgress" | "Completed" | "Skipped"; completedStepIds: string[]; completedAt?: string; skippedAt?: string; revision: number }
+export interface ScenarioMasteryContract { scenarioId: string; scenarioVersionId: string; choiceIds: string[]; nodeIds: string[]; endingIds: string[]; discoveredObjectives: number; totalObjectives: number; masteryPercent: number; updatedAt: string }
+export interface JournalEntryContract { id: string; type: string; title: string; summary: string; journeyId?: string; categoryId?: string; scenarioId?: string; scenarioVersionId?: string; sessionId?: string; referenceId?: string; occurredAt: string }
+export interface PlayerBootstrapContract { nextAction: "ConfigureFamiliar" | "ResumeOnboarding" | "OpenMap"; experience: PlayerExperienceContract; tutorial: ExperienceDocumentContract["onboarding"]; assistant: ExperienceDocumentContract["assistantPolicy"] }
+export interface JournalContract { items: JournalEntryContract[]; total: number; totalsByType: Record<string, number> }
 export interface UserContextContract { access: UserAccessContract; experience: PublishedExperienceContract; player: PlayerExperienceContract }
 export interface RoleContract { id: string; name: string; description: string; isSystem: boolean; permissions: string[] }
 export interface PermissionContract { code: string; description: string }

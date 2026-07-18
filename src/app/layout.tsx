@@ -17,7 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="ambient ambient-two" aria-hidden="true" />
         <Navigation />
         <main id="main-content">{children}</main>
-        <footer className="site-footer"><span>GenEngine</span><p>Des histoires qui se souviennent de vous.</p><span>Prototype produit · 2026</span></footer>
+        <footer className="site-footer"><span>GenEngine</span><p>Des histoires qui se souviennent de vous.</p><span>Plateforme narrative · 2026</span></footer>
       </body>
     </html>
   );

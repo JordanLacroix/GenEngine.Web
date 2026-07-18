@@ -11,6 +11,8 @@ Dernière mise à jour : 18 juillet 2026.
 - Les routes serveur forment une façade vers les trois API.
 - Une image Next.js standalone et un workflow Compose durci sont disponibles.
 - La CI exécute lint, typecheck, tests, build, validation Compose et build Docker.
+- Le shell joueur consomme `GET /me/experience/bootstrap` et ne déduit plus localement l'ordre familier → tutoriel → carte.
+- L'introduction publique, la page compte, la carte, le journal, le familier illustré, le magasin et l'aide sont disponibles.
 
 ## Démarrage rapide de reprise
 
@@ -38,7 +40,7 @@ La première tranche configurable est raccordée : permissions, rôles custom et
 
 Sur `feat/product-operations-ui`, l'Administration est réorganisée par domaines et intègre une console utilisateurs recherchable, le cycle de vie des rôles custom, parcours/catégories/rattachements et la configuration visuelle du familier. Le Studio est devenu un éditeur low-code avec bibliothèque, graphe sélectionnable, inspecteur de scènes/choix, validation, prévisualisation, publication et archivage. La bibliothèque affiche la progression par catégorie et la démo comporte treize scènes pour une cible d'environ quinze minutes.
 
-Validation de la tranche : typecheck, lint sans warning, 3 tests Vitest et build Next.js production réussis.
+Validation de la tranche immersive : typecheck, lint sans warning, 3 tests Vitest et build Next.js production réussis le 18 juillet 2026.
 
 ## Décisions à préserver
 
