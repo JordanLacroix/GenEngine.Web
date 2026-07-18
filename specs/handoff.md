@@ -34,7 +34,7 @@ docker compose down
 
 ## Prochaine unité de travail
 
-La première tranche configurable est raccordée : permissions, rôles custom et affectation scoped, Configuration, Entra ID, Azure AI Foundry, familier, économie/magasin et Studio contextualisé. La prochaine tranche est la hiérarchie d’organisation école/classes ou entreprise/équipes, puis les workflows éditoriaux avancés. Les contrats backend restent autoritatifs.
+La première tranche configurable est raccordée : permissions, rôles custom et affectation scoped, hiérarchie école/classes ou entreprise/équipes, Entra ID, Azure AI Foundry, familier, économie/magasin et Studio contextualisé. La prochaine tranche gérera memberships et encadrants dans ces unités, puis les workflows éditoriaux avancés. Les contrats backend restent autoritatifs.
 
 ## Décisions à préserver
 

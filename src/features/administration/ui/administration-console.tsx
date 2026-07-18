@@ -2,7 +2,7 @@
 
 import { Bot, Building2, Check, Coins, KeyRound, LoaderCircle, Plus, Save, ShieldCheck, Sparkles, UploadCloud } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { AdminConfigurationContract, PermissionContract, ProblemDetailsContract, RoleContract } from "@/shared/api/contracts";
+import type { AdminConfigurationContract, ExperienceDocumentContract, PermissionContract, ProblemDetailsContract, RoleContract } from "@/shared/api/contracts";
 
 type Tab = "game" | "access" | "ai" | "auth" | "economy";
 const tabs: Array<{ id: Tab; label: string; icon: typeof Sparkles }> = [
@@ -102,10 +102,21 @@ export function AdministrationConsole() {
         <div className="admin-grid">
           <Field label="Nom du jeu"><input value={document.game.name} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, game: { ...value.document.game, name: event.target.value } } }))} /></Field>
           <Field label="Type d’organisation"><select value={document.organizationType} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, organizationType: event.target.value as typeof document.organizationType } }))}><option>School</option><option>Company</option><option>TrainingProvider</option><option>Community</option><option>Custom</option></select></Field>
+          <Field label="Nom de l’organisation"><input value={document.organization.name} onChange={(event) => updateOrganization("name", event.target.value, update)} /></Field>
+          <Field label="Description de l’organisation"><input value={document.organization.description} onChange={(event) => updateOrganization("description", event.target.value, update)} /></Field>
           <Field label="Description" wide><textarea value={document.game.description} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, game: { ...value.document.game, description: event.target.value } } }))} /></Field>
           <Field label="Histoire globale" wide><textarea className="large" value={document.game.globalStory} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, game: { ...value.document.game, globalStory: event.target.value } } }))} /></Field>
         </div>
         <div className="config-cards">{document.categories.map((category, index) => <article key={category.id}><span className="category-gem" data-accent={category.accent} /><input value={category.name} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, categories: value.document.categories.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) } }))} /><textarea value={category.description} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, categories: value.document.categories.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item) } }))} /></article>)}</div>
+        <h3>Structure de l’organisation</h3>
+        <p className="scene-copy">Composez librement établissements, campus, classes et groupes, ou entreprises, départements et équipes. Le parent construit la hiérarchie.</p>
+        <div className="config-cards">{[...document.organization.units].sort((left, right) => left.order - right.order).map((unit) => <article key={unit.id}>
+          <div className="admin-grid"><Field label="Type"><input value={unit.type} onChange={(event) => updateOrganizationUnit(unit.id, "type", event.target.value, update)} /></Field><Field label="Code"><input value={unit.code} onChange={(event) => updateOrganizationUnit(unit.id, "code", event.target.value, update)} /></Field></div>
+          <input value={unit.name} aria-label="Nom de l’unité" onChange={(event) => updateOrganizationUnit(unit.id, "name", event.target.value, update)} />
+          <textarea value={unit.description} aria-label="Description de l’unité" onChange={(event) => updateOrganizationUnit(unit.id, "description", event.target.value, update)} />
+          <Field label="Parent"><select value={unit.parentId ?? ""} onChange={(event) => updateOrganizationUnit(unit.id, "parentId", event.target.value || undefined, update)}><option value="">Racine</option>{document.organization.units.filter((candidate) => candidate.id !== unit.id).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></Field>
+        </article>)}</div>
+        <button className="button button--quiet" onClick={() => update((value) => ({ ...value, document: { ...value.document, organization: { ...value.document.organization, units: [...value.document.organization.units, { id: crypto.randomUUID(), type: defaultUnitType(value.document.organizationType), name: "Nouvelle unité", code: "", description: "", order: value.document.organization.units.length + 1, enabled: true }] } } }))}><Plus /> Ajouter une unité</button>
       </AdminSection>}
       {tab === "access" && <AdminSection icon={ShieldCheck} eyebrow="RBAC explicable" title="Rôles et permissions">
         <div className="role-list">{roles.map((role) => <article key={role.id}><div><strong>{role.name}</strong>{role.isSystem && <span>Système</span>}<p>{role.description}</p></div><small>{role.permissions.length} permissions</small><div className="permission-pills">{role.permissions.map((permission) => <span key={permission}>{permission}</span>)}</div></article>)}</div>
@@ -137,5 +148,8 @@ function updateProvider(id: string, key: "endpoint" | "deployment" | "secretRefe
 function updateFamiliar(key: "writingStyle" | "helpLevel", value: string | number, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, familiars: current.document.familiars.map((familiar, index) => index === 0 ? { ...familiar, [key]: value } : familiar) } })); }
 function updateAuth(key: "entraTenantId" | "entraClientId", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, authentication: { ...current.document.authentication, [key]: value } } })); }
 function updateEconomy(key: "currencyName" | "currencyCode", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, economy: { ...current.document.economy, [key]: value } } })); }
+function updateOrganization(key: "name" | "description", value: string, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, organization: { ...current.document.organization, [key]: value } } })); }
+function updateOrganizationUnit(id: string, key: "type" | "name" | "code" | "description" | "parentId", value: string | undefined, update: (fn: (current: AdminConfigurationContract) => AdminConfigurationContract) => void) { update((current) => ({ ...current, document: { ...current.document, organization: { ...current.document.organization, units: current.document.organization.units.map((unit) => unit.id === id ? { ...unit, [key]: value } : unit) } } })); }
+function defaultUnitType(type: ExperienceDocumentContract["organizationType"]) { if (type === "School") return "Class"; if (type === "Company") return "Team"; if (type === "TrainingProvider") return "Cohort"; return "Group"; }
 async function read<T>(response: Response): Promise<T> { if (!response.ok) { const problem = await response.json().catch(() => undefined) as ProblemDetailsContract | undefined; throw new Error(problem?.detail ?? "Accès refusé ou service indisponible."); } return response.json() as Promise<T>; }
 function asMessage(error: unknown) { return error instanceof Error ? error.message : "Une erreur inattendue est survenue."; }

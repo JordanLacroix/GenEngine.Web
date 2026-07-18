@@ -32,6 +32,6 @@ Exposer Configuration, RBAC custom et scoped, Entra ID, le familier, l’économ
 
 ## Jalon 5 — structures et exploitation avancées
 
-Écoles/classes/groupes ou entreprises/départements/équipes, affectations scoped guidées, workflows éditoriaux collaboratifs et configuration économique avancée.
+Memberships et encadrants dans les unités école/classes ou entreprise/équipes, affectations scoped guidées, workflows éditoriaux collaboratifs et configuration économique avancée.
 
 **Statut : planifié.**
