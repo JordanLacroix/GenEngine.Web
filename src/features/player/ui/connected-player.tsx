@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpen, GitBranch, LogIn, Pause, Play, RotateCcw, Send } from "lucide-react";
+import { ArrowLeft, BookOpen, GitBranch, LogIn, MousePointer2, Pause, Play, RotateCcw, Route, Send, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CurrentStepContract, NarrativeTreeContract, ProblemDetailsContract, SessionContract, SessionStateContract } from "@/shared/api/contracts";
@@ -120,12 +120,22 @@ function AuthenticationPanel(props: { userName: string; password: string; seed: 
 
 function SessionScene({ state, text, busy, onText, onCommand }: { state: SessionStateContract; text: string; busy: boolean; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {
   const step = state.currentStep;
-  return <main className="scene" key={`${step.nodeId}-${step.interactionId ?? "legacy"}-${state.session.revision}`}><div className="scene-ornament" aria-hidden="true"><span /><i /></div><p className="eyebrow">Tour {step.turn + 1} · {kindLabel(step.kind)}</p><h1>{step.kind === "Completed" ? "Épilogue" : step.nodeId}</h1><div className="scene-copy"><p>{step.text}</p></div><Interaction step={step} busy={busy} text={text} onText={onText} onCommand={onCommand} /></main>;
+  return <main className="scene" key={`${step.nodeId}-${step.interactionId ?? "legacy"}-${state.session.revision}`}><div className="scene-ornament" aria-hidden="true"><span /><i /></div><p className="eyebrow">Tour {step.turn + 1} · {kindLabel(step.kind)}</p><h1>{step.kind === "Completed" ? "Épilogue" : step.nodeId}</h1><div className="scene-copy"><p>{step.text}</p></div>{step.kind !== "Completed" && <EngineInteractionMaterial step={step} />}<Interaction step={step} busy={busy} text={text} onText={onText} onCommand={onCommand} />{step.kind === "Completed" && <EngineSummary state={state} />}</main>;
+}
+
+function EngineInteractionMaterial({ step }: { step: CurrentStepContract }) {
+  const labels = step.kind === "Quiz" ? ["Indice visible", "Réponse à matérialiser"] : step.kind === "FreeText" ? ["Expression libre", "Le moteur interprète votre intention"] : step.kind === "CharacteristicGate" ? ["Passage conditionnel", "Vos choix précédents ouvrent ce dialogue"] : ["Interaction narrative", "Cette action fait avancer le scénario"];
+  return <aside className="screen-interaction screen-interaction--engine"><span><MousePointer2 aria-hidden="true" /></span><div><small>{labels[0]}</small><strong>{labels[1]}</strong><p>Interaction {step.interactionId ?? step.nodeId} fournie par le scénario publié.</p></div></aside>;
+}
+
+function EngineSummary({ state }: { state: SessionStateContract }) {
+  const visited = state.tree.nodes.filter((node) => node.state === "Visited" || node.state === "Current");
+  return <section className="engine-summary"><div><Trophy aria-hidden="true" /><p className="eyebrow">Bilan enregistré</p><h2>Votre chemin rejoint le journal.</h2></div><p><Route aria-hidden="true" /> {visited.length} étapes parcourues · {state.session.turn + 1} tours joués</p><div>{visited.map((node) => <span key={node.id}>{node.id}</span>)}</div><Link className="button button--primary" href="/experience">Voir ma carte et mes gains</Link></section>;
 }
 
 function Interaction({ step, busy, text, onText, onCommand }: { step: CurrentStepContract; busy: boolean; text: string; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {
   if (step.status === "Paused") return <div className="interaction-panel"><p>Cette histoire est en pause.</p><button className="button button--primary" type="button" onClick={() => onCommand("resume")}>Reprendre</button></div>;
-  if (step.status === "Completed" || step.status === "Abandoned") return <div className="interaction-panel"><p>Ce chemin est arrivé à son terme.</p></div>;
+  if (step.status === "Completed" || step.status === "Abandoned") return null;
   if (step.kind === "Narration") return <button className="button button--primary scene-action" type="button" disabled={busy} onClick={() => onCommand("continue")}>Continuer <Send size={16} aria-hidden="true" /></button>;
   if (step.kind === "FreeText" && step.status === "AwaitingExternalInput") return <div className="free-text"><label htmlFor="player-text">Votre réponse</label><textarea id="player-text" rows={5} value={text} onChange={(event) => onText(event.target.value)} /><button className="button button--primary" type="button" disabled={busy || !text.trim()} onClick={() => onCommand("text", text)}>Analyser ma réponse</button></div>;
   if (step.kind === "FreeText" && step.status === "AwaitingValidation" && step.pendingTextAnalysis) return <div className="analysis-card"><p className="eyebrow">{step.pendingTextAnalysis.isAccepted ? "Réponse reconnue" : "Réponse partielle"}</p><strong>{step.pendingTextAnalysis.explanation}</strong>{step.pendingTextAnalysis.matchedTerms.length > 0 && <small>Termes reconnus : {step.pendingTextAnalysis.matchedTerms.join(", ")}</small>}<div><button className="button button--quiet" type="button" disabled={busy} onClick={() => onCommand("confirm", false)}>Modifier</button><button className="button button--primary" type="button" disabled={busy} onClick={() => onCommand("confirm", true)}>Confirmer</button></div></div>;

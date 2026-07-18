@@ -13,6 +13,10 @@ Dernière mise à jour : 18 juillet 2026.
 - La CI exécute lint, typecheck, tests, build, validation Compose et build Docker.
 - Le shell joueur consomme `GET /me/experience/bootstrap` et ne déduit plus localement l'ordre familier → tutoriel → carte.
 - L'introduction publique, la page compte, la carte, le journal, le familier illustré, le magasin et l'aide sont disponibles.
+- Le seuil narratif est rejouable depuis la connexion, qui propose la démo sous le formulaire sans afficher de profil avant authentification.
+- Le prologue est illustré, matérialise les interactions configurées, remet une clé et ouvre une carte à portes.
+- Les packs visuels de familier sont importables localement avec licence et attribution, sans notion de propriété.
+- La démo s’arrête sur un bilan du chemin et des gains au lieu de boucler.
 
 ## Démarrage rapide de reprise
 
@@ -43,6 +47,8 @@ Sur `feat/product-operations-ui`, l'Administration est réorganisée par domaine
 Validation de la tranche immersive : typecheck, lint sans warning, 3 tests Vitest et build Next.js production réussis le 18 juillet 2026.
 
 Validation de la tranche Organization : typecheck, lint, tests Vitest et build Next.js production réussis le 18 juillet 2026.
+
+Validation du seuil narratif : revue visuelle navigateur du compte, de l’intro, des interactions et du bilan ; lint, typecheck, 6 tests Vitest, build Next.js, Compose, image Docker durcie et sondes HTTP des illustrations réussis le 18 juillet 2026.
 
 ## Décisions à préserver
 

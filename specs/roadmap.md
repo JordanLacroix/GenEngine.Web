@@ -48,6 +48,12 @@ Introduction publique versionnée, page compte explicite, bootstrap moteur, tuto
 
 **Statut : implémenté sur `feat/immersive-player-experience`.** Typecheck, lint, tests et build production sont validés.
 
+## Jalon 4.4 — seuil narratif et monde illustré
+
+Introduction rejouable depuis la connexion, démo sous l’authentification, création finalisable du familier, packs visuels sans propriété, tutoriel présenté comme un scénario, interactions d’écran, clé universelle, carte à portes et bilan de fin sans boucle automatique.
+
+**Statut : implémenté sur `codex/immersive-onboarding-ux`.** Les contrats serveur restent autoritatifs ; le client ne déduit aucune transition narrative.
+
 ## Jalon 4.2 — opérations produit et Studio low-code
 
 Console utilisateurs avec recherche, activation et suppression logique ; suppression des rôles custom ; parcours et catégories avec rattachement des scénarios ; assets du familier ; progression par catégorie ; bibliothèque de brouillons recherchable et Studio visuel éditable ; démonstration narrative portée à environ quinze minutes. Administration et outils techniques sont regroupés.
