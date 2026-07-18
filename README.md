@@ -85,7 +85,7 @@ docker compose up --build --detach --wait
 
 Le conteneur est disponible sur [http://localhost:3001](http://localhost:3001). Ce port évite le conflit avec Grafana, exposé sur `localhost:3000` par la surcouche d’observabilité du backend.
 
-Le conteneur utilise un utilisateur non-root, un système de fichiers en lecture seule, des espaces temporaires bornés et un healthcheck HTTP. Par défaut, les trois API sont recherchées sur l’hôte Docker :
+Le conteneur utilise un utilisateur non-root, un système de fichiers en lecture seule, des espaces temporaires bornés et un healthcheck HTTP. Par défaut, les API sont recherchées sur l’hôte Docker :
 
 | Service | URL depuis le conteneur |
 |---|---|
@@ -94,6 +94,7 @@ Le conteneur utilise un utilisateur non-root, un système de fichiers en lecture
 | Identity | `http://host.docker.internal:5203` |
 | Configuration | `http://host.docker.internal:5204` |
 | PlayerExperience | `http://host.docker.internal:5205` |
+| Organization | `http://host.docker.internal:5206` |
 
 Les variables `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`, `GENENGINE_IDENTITY_URL` et `GENENGINE_WEB_PORT` permettent de remplacer ces valeurs au lancement.
 
@@ -103,7 +104,7 @@ docker compose down
 
 ## Connexion au backend
 
-Les routes serveur Next.js forment une façade vers les trois services. Configurez les URLs internes dans `.env.local` :
+Les routes serveur Next.js forment une façade vers les services. Configurez les URLs internes dans `.env.local` :
 
 ```dotenv
 GENENGINE_AUTHORING_URL=http://localhost:5201
@@ -111,6 +112,7 @@ GENENGINE_PLAY_URL=http://localhost:5202
 GENENGINE_IDENTITY_URL=http://localhost:5203
 GENENGINE_CONFIGURATION_URL=http://localhost:5204
 GENENGINE_PLAYER_EXPERIENCE_URL=http://localhost:5205
+GENENGINE_ORGANIZATION_URL=http://localhost:5206
 ENTRA_CLIENT_SECRET=
 ```
 
@@ -149,7 +151,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable. La tranche immersive ajoute l'introduction avant connexion, un compte explicite, le bootstrap autoritatif, l'onboarding persistant, la carte, la recherche, le journal, la maîtrise, le familier illustré et le centre d'aide. La prochaine tranche complétera l'édition low-code de ces objets dans l'Administration et les affectations d'organisation. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte, recherche, journal, maîtrise, familier illustré et aide. L’Administration sépare désormais la configuration éditoriale des opérations : unités, participants, encadrants et affectations de scénarios/catégories/parcours. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 

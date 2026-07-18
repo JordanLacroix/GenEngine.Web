@@ -14,6 +14,7 @@ services:
       GENENGINE_IDENTITY_URL: "${GENENGINE_IDENTITY_URL:-http://host.docker.internal:5203}"
       GENENGINE_CONFIGURATION_URL: "${GENENGINE_CONFIGURATION_URL:-http://host.docker.internal:5204}"
       GENENGINE_PLAYER_EXPERIENCE_URL: "${GENENGINE_PLAYER_EXPERIENCE_URL:-http://host.docker.internal:5205}"
+      GENENGINE_ORGANIZATION_URL: "${GENENGINE_ORGANIZATION_URL:-http://host.docker.internal:5206}"
       ENTRA_CLIENT_SECRET: "${ENTRA_CLIENT_SECRET:-}"
     extra_hosts:
       - "host.docker.internal:host-gateway"

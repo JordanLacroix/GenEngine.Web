@@ -19,6 +19,7 @@ export interface SessionContract {
   id: string;
   scenarioId: string;
   scenarioVersionId: string;
+  frontId: string;
   snapshotHash: string;
   status: SessionStatus;
   revision: number;
@@ -155,3 +156,15 @@ export interface PermissionContract { code: string; description: string }
 export interface RoleAssignmentContract { roleId: string; roleName: string; scope: string; expiresAt?: string; assignedAt: string }
 export interface AdminUserContract { id: string; userName: string; createdAt: string; isActive: boolean; deletedAt?: string; externalProvider?: string; roleAssignments: RoleAssignmentContract[] }
 export interface PagedUsersContract { items: AdminUserContract[]; page: number; pageSize: number; total: number }
+export type MembershipKindContract = "Participant" | "Supervisor";
+export type AssignedContentTypeContract = "Journey" | "Category" | "Scenario";
+export interface OrganizationFrontContract { id: string; frontId: string; name: string; type: string; isActive: boolean; revision: number; updatedAt: string }
+export interface OrganizationUnitContract { id: string; frontId: string; parentId?: string; name: string; type: string; code: string; isActive: boolean; revision: number; updatedAt: string }
+export interface MembershipContract { id: string; frontId: string; unitId: string; userId: string; kind: MembershipKindContract; startsAt: string; endsAt?: string; isActive: boolean; revision: number; updatedAt: string }
+export interface ContentAssignmentContract { id: string; frontId: string; unitId: string; contentType: AssignedContentTypeContract; contentId: string; name: string; required: boolean; availableFrom?: string; dueAt?: string; isActive: boolean; revision: number; updatedAt: string }
+export interface OrganizationOperationsContract {
+  front: OrganizationFrontContract;
+  units: OrganizationUnitContract[];
+  memberships: { items: MembershipContract[]; page: number; pageSize: number; total: number };
+  assignments: { items: ContentAssignmentContract[]; page: number; pageSize: number; total: number };
+}
