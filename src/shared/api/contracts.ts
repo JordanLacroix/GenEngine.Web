@@ -80,7 +80,8 @@ export interface InputResultContract {
 
 export interface ProblemDetailsContract { title?: string; detail?: string; status?: number }
 
-export interface ScenarioContract { id: string; title: string; revision: number; draftJson: string; frontId: string; categoryId?: string; creationBrief: string }
+export interface ScenarioContract { id: string; title: string; revision: number; draftJson: string; frontId: string; categoryId?: string; creationBrief: string; isArchived: boolean; updatedAt: string }
+export interface PagedScenariosContract { items: ScenarioContract[]; page: number; pageSize: number; total: number }
 export interface ValidationIssueContract { code: string; path: string; message: string; isError: boolean }
 export interface ValidationReportContract { issues: ValidationIssueContract[]; isValid: boolean }
 export interface StructureReportContract {
@@ -111,8 +112,10 @@ export interface ExperienceDocumentContract {
   language: { labels: Record<string, string> };
   authentication: { mode: "LocalOnly" | "EntraOnly" | "Cumulative"; localEnabled: boolean; entraEnabled: boolean; entraTenantId?: string; entraClientId?: string };
   aiProviders: Array<{ id: string; name: string; type: "Offline" | "AzureAiFoundry"; enabled: boolean; endpoint: string; deployment: string; authentication: string; secretReference?: string; capabilities: string[] }>;
-  categories: Array<{ id: string; name: string; description: string; accent: string; order: number; isVisible: boolean }>;
-  familiars: Array<{ id: string; name: string; description: string; form: string; writingStyle: string; tone: string; accent: string; helpLevel: number; capabilities: string[]; availableForms: string[]; availableTones: string[] }>;
+  categories: Array<{ id: string; name: string; description: string; accent: string; order: number; isVisible: boolean; imageUrl?: string; tags: string[]; scenarioIds: string[] }>;
+  journeys: Array<{ id: string; name: string; description: string; accent: string; imageUrl?: string; order: number; isVisible: boolean; categoryIds: string[]; prerequisiteJourneyIds: string[]; tags: string[] }>;
+  assignments: Array<{ id: string; organizationUnitId: string; contentType: "Journey" | "Category" | "Scenario"; contentId: string; name: string; required: boolean; availableFrom?: string; dueAt?: string }>;
+  familiars: Array<{ id: string; name: string; description: string; form: string; writingStyle: string; tone: string; accent: string; helpLevel: number; capabilities: string[]; availableForms: string[]; availableTones: string[]; portraitUrl?: string; avatarUrl?: string; backgroundUrl?: string; license?: string; attribution?: string }>;
   economy: {
     currencyCode: string; currencyName: string; currencyIcon: string; initialBalance: number;
     rewardRules: Array<{ trigger: string; referenceId: string; amount: number; description: string }>;
@@ -132,3 +135,6 @@ export interface PlayerExperienceContract {
 export interface UserContextContract { access: UserAccessContract; experience: PublishedExperienceContract; player: PlayerExperienceContract }
 export interface RoleContract { id: string; name: string; description: string; isSystem: boolean; permissions: string[] }
 export interface PermissionContract { code: string; description: string }
+export interface RoleAssignmentContract { roleId: string; roleName: string; scope: string; expiresAt?: string; assignedAt: string }
+export interface AdminUserContract { id: string; userName: string; createdAt: string; isActive: boolean; deletedAt?: string; externalProvider?: string; roleAssignments: RoleAssignmentContract[] }
+export interface PagedUsersContract { items: AdminUserContract[]; page: number; pageSize: number; total: number }
