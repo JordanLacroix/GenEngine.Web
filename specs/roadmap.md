@@ -42,6 +42,12 @@ Memberships et encadrants dans les unités école/classes ou entreprise/équipes
 
 **Statut : planifié.**
 
+## Jalon 4.3 — expérience joueur immersive
+
+Introduction publique versionnée, page compte explicite, bootstrap moteur, tutoriel persistant, carte et recherche, journal personnel, maîtrise cross-session, compagnon illustré/personnalisable, magasin, centre d'aide et déconnexion.
+
+**Statut : implémenté sur `feat/immersive-player-experience`.** Typecheck, lint, tests et build production sont validés.
+
 ## Jalon 4.2 — opérations produit et Studio low-code
 
 Console utilisateurs avec recherche, activation et suppression logique ; suppression des rôles custom ; parcours et catégories avec rattachement des scénarios ; assets du familier ; progression par catégorie ; bibliothèque de brouillons recherchable et Studio visuel éditable ; démonstration narrative portée à environ quinze minutes. Administration et outils techniques sont regroupés.

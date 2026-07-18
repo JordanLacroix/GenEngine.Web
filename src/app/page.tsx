@@ -5,12 +5,14 @@ import { StoryCard } from "@/shared/ui/story-card";
 import type { PublishedExperienceContract } from "@/shared/api/contracts";
 import { genEngineRequest } from "@/shared/api/genengine-server";
 import { gameCopy } from "@/shared/lib/game-copy";
+import { StoryIntro } from "@/features/experience/ui/story-intro";
 
 export default async function DiscoverPage() {
   const experience = await genEngineRequest<PublishedExperienceContract>("configuration", "/experience/default", {}, false).catch(() => undefined);
   const copy = (key: string, fallback: string) => gameCopy(experience?.document, key, fallback);
   return (
     <>
+      <StoryIntro experience={experience} />
       <section className="hero page-shell">
         <div className="hero-copy">
           <p className="eyebrow eyebrow--accent"><Sparkles size={15} aria-hidden="true" /> {copy("welcome.eyebrow", "Vos choix. Votre histoire.")}</p>

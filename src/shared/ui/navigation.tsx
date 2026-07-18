@@ -55,7 +55,7 @@ export function Navigation() {
           return <Link key={href} href={href as Route} className={active ? "nav-link is-active" : "nav-link"} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)}><Icon size={16} aria-hidden="true" />{label}</Link>;
         })}
       </nav>
-      <Link className="profile-button" href={(context ? "/experience" : "/studio") as Route} aria-label={context ? `Ouvrir le profil de ${context.access.userName}` : "Se connecter"}>{initials}</Link>
+      <Link className="profile-button" href={(context ? "/experience" : "/account") as Route} aria-label={context ? `Ouvrir le profil de ${context.access.userName}` : "Se connecter"}>{initials}</Link>
     </header>
   );
 }

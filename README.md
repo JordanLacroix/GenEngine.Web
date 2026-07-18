@@ -41,17 +41,21 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Administration jeu, RBAC, Foundry, Entra et économie | ✅ Connectée et séparée du Studio |
 | Génération de scénarios contextualisée | ✅ Offline et Azure AI Foundry |
 | Familier, portefeuille et magasin | ✅ Connectés à PlayerExperience |
+| Introduction, connexion/déconnexion et mode démo | ✅ Flux explicite et configurable |
+| Bootstrap, tutoriel persistant, carte et aide | ✅ Pilotés par le moteur |
+| Journal et maîtrise cross-session | ✅ Alimentés par Play et PlayerExperience |
 
 ## Parcours disponibles
 
 | Route | Intention |
 |---|---|
 | `/` | Découverte éditoriale et sélection de récits |
+| `/account` | Connexion locale/Microsoft, création de compte et accès au mode démo |
 | `/library` | Bibliothèque et reprise de lecture |
 | `/play/demo` | Player interactif de démonstration hors ligne |
 | `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
 | `/studio` | Import, validation, analyse, prévisualisation et publication |
-| `/experience` | Familier personnel, portefeuille, historique et magasin |
+| `/experience` | Carte, tutoriel, journal, familier, magasin, aide et compte joueur |
 | `/administration` | Configuration plateforme et RBAC, distincts du Studio |
 
 ## Démarrage rapide
@@ -145,7 +149,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable : navigation RBAC, jeu global, vocabulaire/copies éditables, structures hiérarchiques école/classes ou entreprise/équipes, Studio contextualisé, familier, économie, magasin, Entra ID et Administration séparée. La prochaine tranche reliera les membres et encadrants à ces unités. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable. La tranche immersive ajoute l'introduction avant connexion, un compte explicite, le bootstrap autoritatif, l'onboarding persistant, la carte, la recherche, le journal, la maîtrise, le familier illustré et le centre d'aide. La prochaine tranche complétera l'édition low-code de ces objets dans l'Administration et les affectations d'organisation. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 
