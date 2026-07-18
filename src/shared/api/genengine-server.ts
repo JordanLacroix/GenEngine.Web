@@ -32,6 +32,7 @@ export async function genEngineRequest<T>(
     const problem = await response.json().catch(() => undefined) as { title?: string; detail?: string } | undefined;
     throw new GenEngineServerError(response.status, problem);
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 

@@ -26,6 +26,12 @@ Build Next.js standalone, image multi-stage durcie, Compose et validation CI.
 
 ## Jalon 4 — première expérience produit
 
-Exposer progressivement les capacités du jalon 4 du backend : configuration, RBAC, organisations, assistant et économie.
+Exposer Configuration, RBAC custom et scoped, Entra ID, le familier, l’économie, le magasin et la génération contextualisée, avec séparation stricte du Studio et de l’Administration.
 
-**Statut : en attente de contrats publiés et d’un besoin produit validé.** Le client ne doit ni anticiper les modèles ni dupliquer les règles serveur.
+**Statut : terminé.**
+
+## Jalon 5 — structures et exploitation avancées
+
+Écoles/classes/groupes ou entreprises/départements/équipes, affectations scoped guidées, workflows éditoriaux collaboratifs et configuration économique avancée.
+
+**Statut : planifié.**

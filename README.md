@@ -145,7 +145,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client a livré sa fondation visuelle, la connexion au parcours narratif actuel et son conteneur de production. Les prochaines tranches suivront les contrats publiés du backend, sans anticiper les règles de configuration, d’autorisation ou d’organisation. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la première plateforme configurable : navigation RBAC, jeu global, Studio contextualisé, familier, économie, magasin, Entra ID et Administration séparée. La prochaine tranche approfondira les structures école/classes et entreprise/équipes ainsi que leurs scopes. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 

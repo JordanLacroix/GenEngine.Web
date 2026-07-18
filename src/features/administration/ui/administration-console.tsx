@@ -21,6 +21,9 @@ export function AdministrationConsole() {
   const [roleName, setRoleName] = useState("");
   const [roleDescription, setRoleDescription] = useState("");
   const [rolePermissions, setRolePermissions] = useState<string[]>([]);
+  const [assignmentUserId, setAssignmentUserId] = useState("");
+  const [assignmentRoleId, setAssignmentRoleId] = useState("");
+  const [assignmentScope, setAssignmentScope] = useState("");
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string>();
 
@@ -67,6 +70,17 @@ export function AdministrationConsole() {
       setRoles((value) => [...value, role]); setRoleName(""); setRoleDescription(""); setRolePermissions([]); setMessage("Rôle personnalisé créé.");
     } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); }
   }
+  async function assignRole() {
+    setBusy(true); setMessage(undefined);
+    try {
+      const response = await fetch("/api/admin/access/assign", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: assignmentUserId, roleId: assignmentRoleId, scope: assignmentScope || undefined }),
+      });
+      if (!response.ok) await read<void>(response);
+      setAssignmentUserId(""); setAssignmentScope(""); setMessage("Rôle affecté à l’utilisateur.");
+    } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); }
+  }
   function update(mutator: (current: AdminConfigurationContract) => AdminConfigurationContract) {
     setConfiguration((current) => current ? mutator(current) : current);
   }
@@ -96,6 +110,7 @@ export function AdministrationConsole() {
       {tab === "access" && <AdminSection icon={ShieldCheck} eyebrow="RBAC explicable" title="Rôles et permissions">
         <div className="role-list">{roles.map((role) => <article key={role.id}><div><strong>{role.name}</strong>{role.isSystem && <span>Système</span>}<p>{role.description}</p></div><small>{role.permissions.length} permissions</small><div className="permission-pills">{role.permissions.map((permission) => <span key={permission}>{permission}</span>)}</div></article>)}</div>
         <div className="role-builder"><h3><Plus /> Nouveau rôle personnalisé</h3><div className="admin-grid"><Field label="Nom"><input value={roleName} onChange={(event) => setRoleName(event.target.value)} /></Field><Field label="Description"><input value={roleDescription} onChange={(event) => setRoleDescription(event.target.value)} /></Field></div><div className="permission-picker">{permissions.map((permission) => <label key={permission.code}><input type="checkbox" checked={rolePermissions.includes(permission.code)} onChange={() => setRolePermissions((value) => value.includes(permission.code) ? value.filter((code) => code !== permission.code) : [...value, permission.code])} /><span><strong>{permission.code}</strong><small>{permission.description}</small></span></label>)}</div><button className="button button--primary" disabled={busy || !roleName || rolePermissions.length === 0} onClick={createRole}><Plus /> Créer le rôle</button></div>
+        <div className="role-builder"><h3><ShieldCheck /> Affecter un rôle</h3><p className="scene-copy">Utilisez l’identifiant stable du compte. Le scope optionnel prépare les périmètres école, classe, entreprise ou équipe.</p><div className="admin-grid"><Field label="ID utilisateur"><input value={assignmentUserId} onChange={(event) => setAssignmentUserId(event.target.value)} placeholder="UUID du compte" /></Field><Field label="Rôle"><select value={assignmentRoleId} onChange={(event) => setAssignmentRoleId(event.target.value)}><option value="">Sélectionner…</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field><Field label="Scope optionnel"><input value={assignmentScope} onChange={(event) => setAssignmentScope(event.target.value)} placeholder="ex. class:6e-a" /></Field></div><button className="button button--primary" disabled={busy || !assignmentUserId || !assignmentRoleId} onClick={assignRole}><ShieldCheck /> Affecter</button></div>
       </AdminSection>}
       {tab === "ai" && <AdminSection icon={Bot} eyebrow="Provider & compagnon" title="IA et expérience du familier">
         {foundry && <div className="provider-card"><div className="provider-heading"><span className="azure-mark">A</span><div><strong>Azure AI Foundry</strong><small>OpenAI v1 · DefaultAzureCredential</small></div><label className="switch"><input type="checkbox" checked={foundry.enabled} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, aiProviders: value.document.aiProviders.map((item) => item.id === foundry.id ? { ...item, enabled: event.target.checked } : item) } }))} /><span /></label></div><div className="admin-grid"><Field label="Endpoint"><input value={foundry.endpoint} onChange={(event) => updateProvider(foundry.id, "endpoint", event.target.value, update)} /></Field><Field label="Déploiement"><input value={foundry.deployment} onChange={(event) => updateProvider(foundry.id, "deployment", event.target.value, update)} /></Field><Field label="Référence de secret"><input value={foundry.secretReference ?? ""} onChange={(event) => updateProvider(foundry.id, "secretReference", event.target.value, update)} /></Field><Field label="Authentification"><input value={foundry.authentication} disabled /></Field></div></div>}
