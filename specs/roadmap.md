@@ -38,7 +38,7 @@ Dictionnaire extensible de copies publié par le moteur, éditeur de libellés d
 
 ## Jalon 5 — structures et exploitation avancées
 
-Memberships et encadrants dans les unités école/classes ou entreprise/équipes, et affectations scoped guidées sont livrés. Restent les périodes métier, opérations en masse, reporting collectif, workflows éditoriaux collaboratifs et configuration économique avancée.
+Memberships et encadrants dans les unités école/classes ou entreprise/équipes, périodes métier, import CSV prévalidé et affectations scénario/catégorie/parcours résolues sont livrés. La carte filtre le catalogue des membres selon ces affectations. Restent l'export et les autres opérations en masse, le reporting collectif, les workflows éditoriaux collaboratifs et la configuration économique avancée.
 
 **Statut : en cours.**
 

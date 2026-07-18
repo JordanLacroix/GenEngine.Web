@@ -50,6 +50,8 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Bilan de fin avec chemin et gains | ✅ Démo et sessions connectées |
 | Journal francisé et sans projections dupliquées | ✅ Normalisé côté présentation |
 | Portes ancrées aux repères de la carte | ✅ Adaptées au ratio du viewport |
+| Périodes métier et import CSV de memberships | ✅ Prévalidation, rapport d’erreurs et application idempotente |
+| Affectations de parcours et catalogue filtré | ✅ Résolues côté serveur et reflétées sur la carte |
 
 ## Parcours disponibles
 
@@ -167,7 +169,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte plein écran, HUD superposée, portes positionnées dans le monde, recherche, journal, maîtrise, familier illustré et aide. Hors des écrans de connexion, l’expérience joueur n’utilise pas la navigation de la plateforme : les fonctions deviennent des overlays du jeu. L’Administration sépare désormais la configuration éditoriale des opérations : unités, participants, encadrants et affectations de scénarios/catégories/parcours. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte plein écran, HUD superposée, portes positionnées dans le monde, recherche, journal, maîtrise, familier illustré et aide. Hors des écrans de connexion, l’expérience joueur n’utilise pas la navigation de la plateforme : les fonctions deviennent des overlays du jeu. L’Administration sépare désormais la configuration éditoriale des opérations : périodes, unités, participants, encadrants, import CSV prévalidé et affectations de scénarios/catégories/parcours. La carte connectée ne présente à un membre que les catégories couvertes par ses affectations effectives. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 

@@ -160,11 +160,15 @@ export type MembershipKindContract = "Participant" | "Supervisor";
 export type AssignedContentTypeContract = "Journey" | "Category" | "Scenario";
 export interface OrganizationFrontContract { id: string; frontId: string; name: string; type: string; isActive: boolean; revision: number; updatedAt: string }
 export interface OrganizationUnitContract { id: string; frontId: string; parentId?: string; name: string; type: string; code: string; isActive: boolean; revision: number; updatedAt: string }
-export interface MembershipContract { id: string; frontId: string; unitId: string; userId: string; kind: MembershipKindContract; startsAt: string; endsAt?: string; isActive: boolean; revision: number; updatedAt: string }
+export interface OperatingPeriodContract { id: string; frontId: string; name: string; code: string; startsAt: string; endsAt: string; isActive: boolean; revision: number; updatedAt: string }
+export interface MembershipContract { id: string; frontId: string; unitId: string; userId: string; periodId?: string; kind: MembershipKindContract; startsAt: string; endsAt?: string; isActive: boolean; revision: number; updatedAt: string }
+export interface MembershipImportContract { dryRun: boolean; received: number; created: number; unchanged: number; errors: Array<{ row: number; code: string; message: string }> }
 export interface ContentAssignmentContract { id: string; frontId: string; unitId: string; contentType: AssignedContentTypeContract; contentId: string; name: string; required: boolean; availableFrom?: string; dueAt?: string; isActive: boolean; revision: number; updatedAt: string }
 export interface OrganizationOperationsContract {
   front: OrganizationFrontContract;
+  periods: OperatingPeriodContract[];
   units: OrganizationUnitContract[];
   memberships: { items: MembershipContract[]; page: number; pageSize: number; total: number };
   assignments: { items: ContentAssignmentContract[]; page: number; pageSize: number; total: number };
 }
+export interface PlayerOrganizationContextContract { frontId: string; isMember: boolean; unitIds: string[]; supervisedUnitIds: string[]; assignments: ContentAssignmentContract[]; hasGlobalScope: boolean }
