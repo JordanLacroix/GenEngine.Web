@@ -1,8 +1,8 @@
 "use client";
 
-import { BookOpenCheck, CircleCheck, Eye, FileUp, GitBranch, Rocket, Save } from "lucide-react";
-import { useState } from "react";
-import type { ProblemDetailsContract, ScenarioContract, ScenarioPreviewContract, ScenarioVersionContract, StructureReportContract, ValidationReportContract } from "@/shared/api/contracts";
+import { BookOpenCheck, CircleCheck, Eye, FileUp, GitBranch, Rocket, Save, WandSparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { ProblemDetailsContract, PublishedExperienceContract, ScenarioContract, ScenarioPreviewContract, ScenarioVersionContract, StructureReportContract, ValidationReportContract } from "@/shared/api/contracts";
 
 type Report = { kind: "validation"; value: ValidationReportContract } | { kind: "analysis"; value: StructureReportContract } | { kind: "preview"; value: ScenarioPreviewContract } | { kind: "published"; value: ScenarioVersionContract };
 
@@ -18,6 +18,20 @@ export function StudioWorkbench() {
   const [report, setReport] = useState<Report>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [experience, setExperience] = useState<PublishedExperienceContract>();
+  const [categoryId, setCategoryId] = useState("");
+  const [generationPrompt, setGenerationPrompt] = useState("");
+  const [provider, setProvider] = useState("offline");
+  const [targetMinutes, setTargetMinutes] = useState("10");
+  const [tone, setTone] = useState("immersive");
+
+  useEffect(() => {
+    void fetch("/api/experience").then((response) => read<PublishedExperienceContract>(response)).then((value) => {
+      setExperience(value);
+      setCategoryId(value.document.categories.find((category) => category.isVisible)?.id ?? "");
+      if (value.document.aiProviders.some((item) => item.type === "AzureAiFoundry" && item.enabled)) setProvider("azureAiFoundry");
+    }).catch(() => undefined);
+  }, []);
 
   async function importScenario() {
     await run(async () => {
@@ -43,6 +57,23 @@ export function StudioWorkbench() {
     });
   }
 
+  async function generateScenario() {
+    await run(async () => {
+      const generated = await read<ScenarioContract>(await fetch("/api/studio/generate", jsonRequest({
+        categoryId,
+        prompt: generationPrompt,
+        provider,
+        targetMinutes: Number(targetMinutes),
+        tone,
+      })));
+      const document = parse(generated.draftJson);
+      setScenario(generated);
+      setSource(formatDraft(generated.draftJson));
+      setNodeId(typeof document.initialNodeId === "string" ? document.initialNodeId : "");
+      setReport(undefined);
+    });
+  }
+
   async function action(kind: "validate" | "analyze" | "preview" | "publish") {
     if (!scenario) return;
     await run(async () => {
@@ -59,7 +90,11 @@ export function StudioWorkbench() {
 
   return <>
     {error && <p className="studio-error" role="alert">{error}</p>}
-    <details className="studio-auth"><summary>{authenticated ? "Compte auteur connecté" : "Connecter un compte auteur"}</summary><div><label>Identifiant<input autoComplete="username" value={userName} onChange={(event) => setUserName(event.target.value)} /></label><label>Mot de passe<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button className="button button--quiet" type="button" disabled={busy || !userName || !password} onClick={authenticate}>Se connecter</button></div></details>
+    <details className="studio-auth"><summary>{authenticated ? "Compte auteur connecté" : "Connecter un compte auteur"}</summary><div><label>Identifiant<input autoComplete="username" value={userName} onChange={(event) => setUserName(event.target.value)} /></label><label>Mot de passe<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button className="button button--quiet" type="button" disabled={busy || !userName || !password} onClick={authenticate}>Se connecter</button><a className="button microsoft-button" href="/api/auth/entra/start"><span>▦</span> Continuer avec Microsoft</a></div></details>
+    <section className="generation-canvas">
+      <div className="generation-intro"><span><WandSparkles /></span><div><p className="eyebrow">Copilote narratif</p><h2>Du monde global au premier brouillon</h2><p>Le moteur combine l’histoire de <strong>{experience?.document.game.name ?? "votre jeu"}</strong>, la catégorie et votre intention. Le résultat reste un brouillon validé, jamais publié automatiquement.</p></div></div>
+      <div className="generation-form"><label>Catégorie<select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>{experience?.document.categories.filter((category) => category.isVisible).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Provider<select value={provider} onChange={(event) => setProvider(event.target.value)}><option value="offline">Hors ligne déterministe</option>{experience?.document.aiProviders.some((item) => item.type === "AzureAiFoundry" && item.enabled) && <option value="azureAiFoundry">Azure AI Foundry</option>}</select></label><label>Durée cible<input type="number" min="3" max="90" value={targetMinutes} onChange={(event) => setTargetMinutes(event.target.value)} /></label><label>Ton<input value={tone} onChange={(event) => setTone(event.target.value)} /></label><label className="prompt-field">Votre intention<textarea value={generationPrompt} onChange={(event) => setGenerationPrompt(event.target.value)} placeholder="Une enquête dans une bibliothèque qui échange les souvenirs des visiteurs contre des vérités…" /></label><button className="button button--primary generation-submit" disabled={busy || !authenticated || generationPrompt.trim().length < 20 || !categoryId} onClick={generateScenario}><WandSparkles /> Générer le brouillon</button></div>
+    </section>
     <section className="connected-studio" aria-label="Atelier de scénario">
       <div className="studio-editor"><div className="studio-toolbar"><div><p className="eyebrow">Document Narrative JSON</p><strong>{scenario ? `${scenario.title} · révision ${scenario.revision}` : "Nouveau brouillon"}</strong></div><div>{scenario && <button type="button" className="button button--quiet" disabled={busy} onClick={updateDraft}><Save size={16} /> Enregistrer</button>}<button type="button" className="button button--primary" disabled={busy || !source.trim()} onClick={importScenario}><FileUp size={16} /> {scenario ? "Importer une copie" : "Importer"}</button></div></div><textarea aria-label="Document de scénario JSON" spellCheck={false} value={source} onChange={(event) => setSource(event.target.value)} placeholder={'{\n  "schemaVersion": 2,\n  "title": "Mon histoire",\n  "initialNodeId": "opening",\n  "nodes": []\n}'} /></div>
       <aside className="studio-actions"><p className="eyebrow">Capacités moteur</p><button type="button" disabled={!scenario || busy} onClick={() => action("validate")}><BookOpenCheck /> Valider le graphe</button><button type="button" disabled={!scenario || busy} onClick={() => action("analyze")}><GitBranch /> Analyser la structure</button><fieldset disabled={!scenario || busy}><legend>Prévisualisation injectée</legend><label>Nœud<input value={nodeId} onChange={(event) => setNodeId(event.target.value)} /></label><label>Tour<input inputMode="numeric" value={turn} onChange={(event) => setTurn(event.target.value)} /></label><label>État joueur JSON<textarea value={world} onChange={(event) => setWorld(event.target.value)} /></label><button type="button" onClick={() => action("preview")}><Eye /> Prévisualiser</button></fieldset><button type="button" className="publish-action" disabled={!scenario || busy} onClick={() => action("publish")}><Rocket /> Publier la révision</button></aside>
