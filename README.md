@@ -48,6 +48,8 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Carte illustrée à portes et interactions d’écran | ✅ Matérialisées par le client |
 | Packs visuels de familier importables | ✅ Assets locaux, sans propriété |
 | Bilan de fin avec chemin et gains | ✅ Démo et sessions connectées |
+| Journal francisé et sans projections dupliquées | ✅ Normalisé côté présentation |
+| Portes ancrées aux repères de la carte | ✅ Adaptées au ratio du viewport |
 
 ## Parcours disponibles
 
@@ -129,6 +131,8 @@ Le player consomme les statuts et transitions calculés par Play : choix legacy 
 ### Packs visuels de familier
 
 L’espace Compagnon accepte un manifeste JSON de schéma `1`. Il déclare un portrait HTTPS ou un asset local sous `/illustrations/`, ainsi qu’une licence et une attribution. Le pack ne modifie que la présentation locale : il ne crée ni propriété, ni achat, ni progression. La sélection du familier reste enregistrée par PlayerExperience.
+
+Le configurateur conserve les valeurs contractuelles lors de l’enregistrement, mais présente leurs libellés en français. Son action d’enregistrement reste accessible pendant le défilement et confirme la projection relue depuis le serveur.
 
 Un exemple est disponible dans [`public/familiar-packs/aster.json`](public/familiar-packs/aster.json).
 

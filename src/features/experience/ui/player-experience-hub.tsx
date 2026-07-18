@@ -2,7 +2,7 @@
 
 import {
   BookHeart, Check, CircleHelp, Coins, DoorOpen, Gem, KeyRound, LoaderCircle,
-  LogOut, Map, Search, ShoppingBag, Sparkles, Upload, UserRound,
+  LogOut, Map, Search, ShoppingBag, Sparkles, Upload, UserRound, X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -15,15 +15,15 @@ import {
   parseFamiliarAssetPack, readFamiliarAssetPack, saveFamiliarAssetPack,
   type FamiliarAssetPack,
 } from "@/features/experience/model/familiar-assets";
+import {
+  doorAnchorsForViewport, familiarOptionLabel, journalTypeLabel, projectMapPoint, uniqueJournalEntries, uniqueMasteries,
+  worldMapSize,
+} from "@/features/experience/model/player-experience-presentation";
 
 type Tab = "map" | "journal" | "companion" | "shop" | "help" | "account";
 type Story = { id: string; slug: string; title: string; synopsis: string; durationMinutes: number; scenarioVersionId: string };
 type Context = UserContextContract & { bootstrap: PlayerBootstrapContract };
 type Familiar = Context["experience"]["document"]["familiars"][number];
-
-const doorPositions = [
-  [68, 24], [84, 44], [56, 52], [76, 69], [40, 72],
-];
 
 export function PlayerExperienceHub() {
   const [context, setContext] = useState<Context>();
@@ -40,6 +40,8 @@ export function PlayerExperienceHub() {
   const [frequency, setFrequency] = useState(2);
   const [proactive, setProactive] = useState(true);
   const [assetPack, setAssetPack] = useState<FamiliarAssetPack>(() => readFamiliarAssetPack());
+  const [mapElement, setMapElement] = useState<HTMLDivElement | null>(null);
+  const [mapSize, setMapSize] = useState<{ width: number; height: number }>(worldMapSize);
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string>();
   const [showsKeyReward, setShowsKeyReward] = useState(false);
@@ -56,6 +58,15 @@ export function PlayerExperienceHub() {
     }).catch((error: unknown) => setMessage(asMessage(error))).finally(() => setBusy(false));
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!mapElement) return;
+    const update = () => setMapSize({ width: mapElement.clientWidth, height: mapElement.clientHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(mapElement);
+    return () => observer.disconnect();
+  }, [mapElement]);
 
   const categories = useMemo(() => context?.experience.document.categories.filter((item) => item.isVisible) ?? [], [context]);
   const filteredStories = useMemo(() => stories.filter((story) => {
@@ -92,7 +103,7 @@ export function PlayerExperienceHub() {
       }));
       const refreshed = await read<Context>(await fetch("/api/me"));
       setContext(refreshed); hydrateFamiliar(refreshed);
-      setMessage(`${customName.trim()} est prêt. Votre première histoire peut commencer.`);
+      setMessage(`Les réglages de ${customName.trim()} sont enregistrés.`);
     });
   }
 
@@ -143,6 +154,8 @@ export function PlayerExperienceHub() {
   const copy = (key: string, fallback: string) => gameCopy(document, key, fallback);
   const familiar = document.familiars.find((item) => item.id === familiarId) ?? document.familiars[0];
   const hasKey = context.player.onboarding.status === "Completed";
+  const journalEntries = uniqueJournalEntries(journal?.items ?? context.player.recentJournal);
+  const masteries = uniqueMasteries(context.player.masteries);
 
   if (context.bootstrap.nextAction === "ConfigureFamiliar") {
     return <FirstFamiliar
@@ -185,13 +198,14 @@ export function PlayerExperienceHub() {
 
     {tab === "map" && <section className="universe-panel world-map world-map--illustrated">
       <header><div><p className="eyebrow">La carte des passages</p><h2>Choisissez une porte</h2><p>{hasKey ? "Votre clé ouvre toutes les catégories." : "Le prologue a été passé : terminez-le depuis votre compte pour gagner la clé."} Chaque histoire reste libre de raconter ses propres règles.</p></div><label className="universe-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une histoire…" /></label></header>
-      <div className="door-map" style={{ backgroundImage: "url(/illustrations/world-map.jpg)" }}>
+      <div className="door-map" ref={setMapElement} style={{ backgroundImage: "url(/illustrations/world-map.jpg)" }}>
         {categories.map((category, index) => {
-          const position = doorPositions[index % doorPositions.length]!;
+          const anchors = doorAnchorsForViewport(mapSize);
+          const position = projectMapPoint(anchors[index % anchors.length]!, mapSize);
           const storiesInCategory = stories.filter((story) => category.scenarioIds.length === 0 || category.scenarioIds.includes(story.id));
           const mastery = context.player.masteries.filter((item) => category.scenarioIds.includes(item.scenarioId));
           const progress = mastery.length ? Math.round(mastery.reduce((sum, item) => sum + item.masteryPercent, 0) / mastery.length) : 0;
-          return <button key={category.id} className={selectedCategory === category.id ? "world-door is-selected" : "world-door"} style={{ left: `${position[0]}%`, top: `${position[1]}%` }} onClick={() => setSelectedCategory(category.id)}>
+          return <button key={category.id} className={selectedCategory === category.id ? "world-door is-selected" : "world-door"} style={{ left: `${position.x}px`, top: `${position.y}px` }} onClick={() => setSelectedCategory(category.id)}>
             <span className="door-arch"><DoorOpen /></span><strong>{category.name}</strong><small>{storiesInCategory.length} récit(s) · {progress}%</small>
           </button>;
         })}
@@ -202,9 +216,9 @@ export function PlayerExperienceHub() {
       })}</div>
     </section>}
 
-    {tab === "journal" && <section className="universe-panel journal-panel game-overlay"><button className="game-overlay-close" onClick={() => setTab("map")}>Retour au monde ×</button><header><div><p className="eyebrow">Votre parcours</p><h2>Le journal de vos choix</h2></div><strong>{journal?.total ?? 0} traces</strong></header><div className="journal-layout"><div>{(journal?.items ?? context.player.recentJournal).map((entry) => <article key={entry.id}><time>{new Date(entry.occurredAt).toLocaleDateString("fr-FR")}</time><span /><div><p className="eyebrow">{entry.type}</p><h3>{entry.title}</h3><p>{entry.summary}</p></div></article>)}</div><aside><h3>Maîtrise des histoires</h3>{context.player.masteries.map((mastery) => <div key={mastery.scenarioVersionId}><span>{mastery.endingIds.length} fin(s) · {mastery.choiceIds.length} choix</span><b>{mastery.masteryPercent}%</b><div className="progress-track"><span style={{ width: `${mastery.masteryPercent}%` }} /></div></div>)}</aside></div></section>}
+    {tab === "journal" && <section className="universe-panel journal-panel game-overlay"><OverlayClose onClose={() => setTab("map")} /><header><div><p className="eyebrow">Votre parcours</p><h2>Le journal de vos choix</h2></div><strong>{journalEntries.length} trace{journalEntries.length > 1 ? "s" : ""}</strong></header><div className="journal-layout"><div>{journalEntries.map((entry) => <article key={entry.id}><time>{new Date(entry.occurredAt).toLocaleDateString("fr-FR")}</time><span /><div><p className="eyebrow">{journalTypeLabel(entry.type)}</p><h3>{entry.title}</h3><p>{entry.summary}</p></div></article>)}</div><aside><h3>Maîtrise des histoires</h3>{masteries.map((mastery) => <div key={mastery.scenarioVersionId}><span>{mastery.endingIds.length} fin(s) · {mastery.choiceIds.length} choix</span><b>{mastery.masteryPercent}%</b><div className="progress-track"><span style={{ width: `${mastery.masteryPercent}%` }} /></div></div>)}</aside></div></section>}
 
-    {tab === "companion" && familiar && <section className="familiar-studio game-overlay"><button className="game-overlay-close" onClick={() => setTab("map")}>Retour au monde ×</button><FamiliarPreview familiar={familiar} name={customName} tone={tone} helpLevel={helpLevel} assetPack={assetPack} /><div className="familiar-controls"><p className="eyebrow">Configuration personnelle</p><h2>Une présence vraiment à vous</h2><p>{familiar.description}</p><FamiliarFields definitions={document.familiars} familiarId={familiarId} familiar={familiar} form={form} tone={tone} customName={customName} helpLevel={helpLevel} frequency={frequency} proactive={proactive} onSelect={(id) => hydrateFamiliar(context, id)} onForm={setForm} onTone={setTone} onName={setCustomName} onHelpLevel={setHelpLevel} onFrequency={setFrequency} onProactive={setProactive} /><AssetPackImport assetPack={assetPack} onImport={importAssetPack} /><button className="button button--primary" disabled={busy} onClick={saveFamiliar}><Sparkles /> Enregistrer mon compagnon</button></div></section>}
+    {tab === "companion" && familiar && <section className="familiar-studio game-overlay"><OverlayClose onClose={() => setTab("map")} /><FamiliarPreview familiar={familiar} name={customName} tone={tone} helpLevel={helpLevel} assetPack={assetPack} /><div className="familiar-controls"><p className="eyebrow">Configuration personnelle</p><h2>Une présence vraiment à vous</h2><p>{familiar.description}</p><FamiliarFields definitions={document.familiars} familiarId={familiarId} familiar={familiar} form={form} tone={tone} customName={customName} helpLevel={helpLevel} frequency={frequency} proactive={proactive} onSelect={(id) => hydrateFamiliar(context, id)} onForm={setForm} onTone={setTone} onName={setCustomName} onHelpLevel={setHelpLevel} onFrequency={setFrequency} onProactive={setProactive} /><AssetPackImport assetPack={assetPack} onImport={importAssetPack} /><button className="button button--primary companion-save" disabled={busy || !customName.trim()} onClick={saveFamiliar}><Sparkles /> Enregistrer les réglages</button></div></section>}
 
     {tab === "shop" && <section className="universe-panel shop-section"><header><div><p className="eyebrow">Magasin</p><h2>Des objets gagnés par vos choix</h2></div><span><Coins /> {context.player.balance} {context.player.currencyCode}</span></header><div className="shop-grid">{document.economy.offers.filter((offer) => offer.enabled).map((offer) => { const owned = context.player.ownedOfferIds.includes(offer.id); return <article key={offer.id}><div className="shop-art">{offer.rewardType === "FamiliarCosmetic" ? <Gem /> : <ShoppingBag />}</div><h3>{offer.name}</h3><p>{offer.description}</p><button className={owned ? "button button--quiet" : "button button--primary"} disabled={busy || owned || context.player.balance < offer.price} onClick={() => purchase(offer.id)}>{owned ? "Acquis" : `${offer.price} ${context.player.currencyIcon}`}</button></article>; })}</div></section>}
 
@@ -229,7 +243,7 @@ function FamiliarPreview({ familiar, name, tone, helpLevel, assetPack }: { famil
   const usesPack = !assetPack.targetFamiliarId || assetPack.targetFamiliarId === familiar.id;
   const portrait = usesPack ? assetPack.portraitUrl : familiar.portraitUrl ?? familiar.avatarUrl;
   const background = usesPack ? assetPack.backgroundUrl : familiar.backgroundUrl;
-  return <div className="familiar-preview" style={background ? { backgroundImage: `linear-gradient(rgb(5 10 12 / 18%), rgb(5 10 12 / 82%)), url(${background})` } : undefined}>{portrait ? <img src={portrait} alt={name || familiar.name} /> : <span>✦</span>}<strong>{name || familiar.name}</strong><small>{tone} · aide {helpLevel}/5</small></div>;
+  return <div className="familiar-preview" style={background ? { backgroundImage: `linear-gradient(rgb(5 10 12 / 18%), rgb(5 10 12 / 82%)), url(${background})` } : undefined}>{portrait ? <img src={portrait} alt={name || familiar.name} /> : <span>✦</span>}<strong>{name || familiar.name}</strong><small>{familiarOptionLabel(tone)} · aide {helpLevel}/5</small></div>;
 }
 
 function FamiliarFields(props: {
@@ -238,7 +252,11 @@ function FamiliarFields(props: {
   onTone(value: string): void; onName(value: string): void; onHelpLevel(value: number): void;
   onFrequency(value: number): void; onProactive(value: boolean): void;
 }) {
-  return <><fieldset><legend>Présence</legend><div className="segmented">{props.definitions.map((item) => <button key={item.id} className={props.familiarId === item.id ? "is-selected" : ""} onClick={() => props.onSelect(item.id)}>{props.familiarId === item.id && <Check />}{item.name}</button>)}</div></fieldset><label>Son nom<input value={props.customName} maxLength={80} onChange={(event) => props.onName(event.target.value)} /></label><fieldset><legend>Forme</legend><div className="segmented">{props.familiar.availableForms.map((value) => <button key={value} className={props.form === value ? "is-selected" : ""} onClick={() => props.onForm(value)}>{props.form === value && <Check />}{value}</button>)}</div></fieldset><fieldset><legend>Ton</legend><div className="segmented">{props.familiar.availableTones.map((value) => <button key={value} className={props.tone === value ? "is-selected" : ""} onClick={() => props.onTone(value)}>{value}</button>)}</div></fieldset><Slider label="Niveau d’aide" value={props.helpLevel} onChange={props.onHelpLevel} /><Slider label="Fréquence d’intervention" value={props.frequency} onChange={props.onFrequency} /><label className="toggle-line"><input type="checkbox" checked={props.proactive} onChange={(event) => props.onProactive(event.target.checked)} /> Me proposer de l’aide au bon moment</label></>;
+  return <><fieldset><legend>Présence</legend><div className="segmented">{props.definitions.map((item) => <button type="button" key={item.id} className={props.familiarId === item.id ? "is-selected" : ""} onClick={() => props.onSelect(item.id)}>{props.familiarId === item.id && <Check />}{item.name}</button>)}</div></fieldset><label>Son nom<input value={props.customName} maxLength={80} onChange={(event) => props.onName(event.target.value)} /></label><fieldset><legend>Forme</legend><div className="segmented">{props.familiar.availableForms.map((value) => <button type="button" key={value} className={props.form === value ? "is-selected" : ""} onClick={() => props.onForm(value)}>{props.form === value && <Check />}{familiarOptionLabel(value)}</button>)}</div></fieldset><fieldset><legend>Personnalité</legend><div className="segmented">{props.familiar.availableTones.map((value) => <button type="button" key={value} className={props.tone === value ? "is-selected" : ""} onClick={() => props.onTone(value)}>{props.tone === value && <Check />}{familiarOptionLabel(value)}</button>)}</div></fieldset><Slider label="Niveau d’aide" value={props.helpLevel} onChange={props.onHelpLevel} /><Slider label="Fréquence d’intervention" value={props.frequency} onChange={props.onFrequency} /><label className="toggle-line"><input type="checkbox" checked={props.proactive} onChange={(event) => props.onProactive(event.target.checked)} /> Me proposer de l’aide au bon moment</label></>;
+}
+
+function OverlayClose({ onClose }: { onClose(): void }) {
+  return <button className="game-overlay-close" type="button" onClick={onClose} aria-label="Fermer ce panneau et revenir à la carte" title="Retour à la carte"><X aria-hidden="true" /></button>;
 }
 
 function AssetPackImport({ assetPack, onImport }: { assetPack: FamiliarAssetPack; onImport(file?: File): void }) {
