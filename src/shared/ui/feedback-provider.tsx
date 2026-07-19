@@ -4,6 +4,7 @@ import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from "lucide-react";
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from "react";
+import { randomId } from "@/shared/lib/random-id";
 
 /**
  * Système unique de confirmation et de retour.
@@ -56,18 +57,26 @@ export function useFeedback(): FeedbackApi {
 
 const noticeLifetimeMs = 6_000;
 
-interface PendingConfirm { options: ConfirmOptions; resolve(value: boolean): void }
+// `crypto.randomUUID` n'existe qu'en secure context, or ce client se déploie
+// explicitement en HTTP sur des hôtes d'intranet. L'employer ici faisait lever
+// `notify()` — appelé depuis tous les gestionnaires de succès *et* d'erreur,
+// donc le moindre retour cassait l'écran.
+
+interface PendingConfirm { options: ConfirmOptions }
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [pending, setPending] = useState<PendingConfirm>();
+  // La résolution vit dans une ref, pas dans l'état : un updater React doit
+  // rester pur, et StrictMode l'invoque deux fois en développement.
+  const resolvePending = useRef<((value: boolean) => void) | undefined>(undefined);
 
   const dismiss = useCallback((id: string) => {
     setNotices((current) => current.filter((notice) => notice.id !== id));
   }, []);
 
   const notify = useCallback((notice: { tone: FeedbackTone; message: string; title?: string }) => {
-    const id = crypto.randomUUID();
+    const id = randomId();
     setNotices((current) => [...current.slice(-3), { ...notice, id }]);
     // Une erreur reste affichée : elle demande une décision, pas un coup d'œil.
     if (notice.tone !== "error") {
@@ -76,7 +85,13 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const confirm = useCallback((options: ConfirmOptions) => new Promise<boolean>((resolve) => {
-    setPending({ options, resolve });
+    // Une seconde demande remplace la première, mais ne l'abandonne pas : sans
+    // cette résolution, l'appelant restait bloqué sur son `await` pour le reste
+    // de la session — deux clics rapides sur deux boutons de suppression
+    // suffisaient à figer le premier définitivement.
+    resolvePending.current?.(false);
+    resolvePending.current = resolve;
+    setPending({ options });
   }), []);
 
   const api = useMemo<FeedbackApi>(() => ({
@@ -88,8 +103,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   }), [confirm, dismiss, notify]);
 
   function settle(value: boolean) {
-    pending?.resolve(value);
+    const resolve = resolvePending.current;
+    resolvePending.current = undefined;
     setPending(undefined);
+    resolve?.(value);
   }
 
   return <FeedbackContext.Provider value={api}>

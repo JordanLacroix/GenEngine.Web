@@ -27,6 +27,7 @@ import { FamiliarConfigurator, FamiliarPreviewPane } from "@/features/experience
 import { PlaceOverlay } from "@/features/experience/ui/place-overlay";
 import { useInstanceMedia } from "@/shared/assets/instance-media";
 import { useAmbience, useAudio } from "@/shared/audio/audio-provider";
+import { randomId } from "@/shared/lib/random-id";
 import { useFeedback } from "@/shared/ui/feedback-provider";
 
 type Tab = "map" | "journal" | "companion" | "shop" | "help" | "account";
@@ -147,7 +148,7 @@ export function PlayerExperienceHub() {
     await run(async () => {
       const state = await read<OnboardingStateContract>(await fetch("/api/player/onboarding", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, stepId, idempotencyKey: crypto.randomUUID() }),
+        body: JSON.stringify({ action, stepId, idempotencyKey: randomId() }),
       }));
       const refreshed = await read<Context>(await fetch("/api/me"));
       setContext(refreshed);
@@ -160,7 +161,7 @@ export function PlayerExperienceHub() {
     await run(async () => {
       const player = await read<Context["player"]>(await fetch("/api/shop/purchases", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }),
+        body: JSON.stringify({ offerId, idempotencyKey: randomId() }),
       }));
       setContext({ ...context, player, bootstrap: { ...context.bootstrap, experience: player } });
       feedback.succeed("Objet ajouté à votre collection.");
