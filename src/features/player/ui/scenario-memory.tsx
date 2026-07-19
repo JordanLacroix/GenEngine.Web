@@ -2,29 +2,33 @@
 
 import { ArrowLeft, LoaderCircle, Route } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { PlayerExperienceContract, ScenarioMasteryContract, SessionStateContract } from "@/shared/api/contracts";
-import type { QuestTreeInput } from "@/features/player/model/quest-graph";
+import { useEffect, useMemo, useState } from "react";
+import type { PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, ScenarioStructureContract } from "@/shared/api/contracts";
+import { questTreeFromStructure, type QuestNodeState } from "@/features/player/model/quest-graph";
 import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
 
 /**
  * Scenario memory outside a run.
  *
- * Play exposes the narrative structure through `GET /sessions/{id}/tree` only:
- * without a session there is no structure to draw. The last session opened on
- * this device is therefore reused when it exists, and the screen degrades to the
- * cumulative counters otherwise. No new backend endpoint is invented.
+ * Play exposes the topology of a published version through
+ * `GET /scenario-versions/{versionId}/tree`, without any session. The map is
+ * therefore the real structure, coloured by the cumulative mastery of the
+ * player. When the backend refuses the version — unknown, or not assigned to
+ * this player — the screen says so; it never falls back to a fixture.
  */
+
+/** Outside a run only these two states can occur. */
+const outOfRunLegend: readonly QuestNodeState[] = ["discoveredBefore", "unseen"];
+
 export function ScenarioMemory({ scenarioVersionId }: { scenarioVersionId: string }) {
   const [title, setTitle] = useState("Histoire GenEngine");
-  const [tree, setTree] = useState<QuestTreeInput>();
+  const [structure, setStructure] = useState<ScenarioStructureContract>();
   const [mastery, setMastery] = useState<ScenarioMasteryContract>();
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string>();
 
   useEffect(() => {
     const controller = new AbortController();
-    const sessionId = window.localStorage.getItem(`genengine.session.${scenarioVersionId}`);
 
     void Promise.all([
       fetch("/api/catalog", { signal: controller.signal })
@@ -33,17 +37,23 @@ export function ScenarioMemory({ scenarioVersionId }: { scenarioVersionId: strin
       fetch("/api/me", { cache: "no-store", signal: controller.signal })
         .then((response) => response.ok ? response.json() as Promise<{ player: PlayerExperienceContract }> : undefined)
         .then((context) => setMastery(context?.player.masteries.find((item) => item.scenarioVersionId === scenarioVersionId))),
-      sessionId
-        ? fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, { cache: "no-store", signal: controller.signal })
-          .then((response) => response.ok ? response.json() as Promise<SessionStateContract> : undefined)
-          .then((state) => setTree(state?.tree))
-        : Promise.resolve(),
+      fetch(`/api/scenario-versions/${encodeURIComponent(scenarioVersionId)}/tree`, { cache: "no-store", signal: controller.signal })
+        .then(async (response) => {
+          if (response.ok) {
+            setStructure(await response.json() as ScenarioStructureContract);
+            return;
+          }
+          const problem = await response.json().catch(() => undefined) as ProblemDetailsContract | undefined;
+          setMessage(structureMessage(response.status, problem));
+        }),
     ])
       .catch((error: unknown) => { if (!(error instanceof DOMException && error.name === "AbortError")) setMessage(asMessage(error)); })
       .finally(() => setBusy(false));
 
     return () => controller.abort();
   }, [scenarioVersionId]);
+
+  const tree = useMemo(() => structure && questTreeFromStructure(structure), [structure]);
 
   return (
     <div className="page-shell inner-page scenario-memory">
@@ -70,15 +80,25 @@ export function ScenarioMemory({ scenarioVersionId }: { scenarioVersionId: strin
         tree={tree}
         masteryNodeIds={mastery?.nodeIds}
         masteryChoiceIds={mastery?.choiceIds}
-        caption="Le récit entier tel que le moteur le décrit, avec la mémoire cumulée de toutes vos parties."
+        legendStates={outOfRunLegend}
+        caption="Le récit entier tel que le moteur le décrit, avec la mémoire cumulée de toutes vos parties. Hors partie, la disponibilité des passages n’est pas évaluée."
       />}
 
       {!busy && !tree && <section className="quest-graph quest-graph--empty">
-        <p>La structure de ce récit est fournie par une session de jeu. Ouvrez l’histoire une fois pour afficher la carte complète : votre mémoire cumulée y sera reportée.</p>
-        <Link className="button button--primary" href={`/play/${encodeURIComponent(scenarioVersionId)}`}>Ouvrir l’histoire</Link>
+        <p>La carte de ce récit n’est pas consultable pour le moment.</p>
+        <Link className="button button--primary" href="/library">Revenir à la bibliothèque</Link>
       </section>}
     </div>
   );
+}
+
+/** Honest wording per backend refusal: no silent fixture, no invented permission. */
+function structureMessage(status: number, problem?: ProblemDetailsContract) {
+  if (status === 401) return "Connectez-vous pour consulter la carte de ce récit.";
+  if (status === 422 && problem?.title === "content_not_assigned") return "Cette histoire ne vous est pas affectée : sa carte reste indisponible.";
+  if (status === 403) return "Vous n’êtes pas autorisé à consulter la carte de ce récit.";
+  if (status === 404) return "Cette version d’histoire est introuvable.";
+  return problem?.detail ?? problem?.title ?? "La structure de ce récit n’a pas pu être chargée.";
 }
 
 function asMessage(error: unknown) { return error instanceof Error ? error.message : "Votre mémoire n’a pas pu être consultée."; }

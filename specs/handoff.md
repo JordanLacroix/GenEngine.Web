@@ -18,6 +18,7 @@ Dernière mise à jour : 19 juillet 2026.
 - Les packs visuels de familier sont importables localement avec licence et attribution, sans notion de propriété.
 - La démo s’arrête sur un bilan du chemin et des gains au lieu de boucler.
 - La fin de quête et la page `/library/[versionId]` affichent le graphe complet du récit avec la mémoire cumulée de toutes les parties, en mode connecté comme en démonstration.
+- La page `/library/[versionId]` lit la structure réelle de la version publiée sur Play, sans session ouverte ni repli sur une fixture.
 - La passe de stabilisation de l’univers joueur localise les valeurs moteur, déduplique journal et maîtrises, rend la sauvegarde du compagnon accessible et projette les portes sur les repères réels de l’illustration quel que soit le ratio d’écran.
 
 ## Démarrage rapide de reprise
@@ -40,9 +41,13 @@ curl --fail http://localhost:3001/
 docker compose down
 ```
 
-## Limite connue du graphe hors partie
+## Graphe hors partie
 
-Play n'expose la structure narrative que par `GET /sessions/{id}/tree`. Sans session, aucune structure n'est atteignable : `/library/[versionId]` réutilise la dernière session ouverte sur l'appareil et, à défaut, n'affiche que les compteurs de maîtrise avec une invitation explicite à ouvrir l'histoire. Aucun endpoint n'a été inventé. Un futur contrat « structure du scénario publié » côté Authoring lèverait cette limite.
+La limite est levée. Play expose désormais `GET /scenario-versions/{versionId}/tree` : la topologie d'une version publiée, sans session. Le contrat est volontairement distinct de `NarrativeTreeContract` et ne porte ni `state` de nœud ni `evaluation` de condition, ces valeurs dépendant d'un état de monde qui n'existe pas hors partie.
+
+`/library/[versionId]` ne réutilise plus la dernière session de l'appareil : la page appelle la route serveur `/api/scenario-versions/[id]/tree`, adapte la structure avec `questTreeFromStructure` et rend le graphe avec la maîtrise cumulée. Hors partie, un nœud est `discoveredBefore` s'il figure dans la maîtrise, `unseen` sinon ; ni `current`, ni `takenThisRun`, ni `locked` ne peuvent apparaître, et la légende est réduite en conséquence. La disponibilité des passages n'étant pas évaluée, le client ne l'affirme pas.
+
+L'autorisation reste celle du démarrage de session : 401 sans jeton, 422 `content_not_assigned` pour un joueur non affecté, 404 pour une version inconnue. Chaque refus produit un message explicite ; aucune fixture ne remplace une erreur distante.
 
 ## Prochaine unité de travail
 
@@ -60,10 +65,13 @@ Validation du graphe de quête : lint sans warning, typecheck, 35 tests Vitest (
 
 Validation de la stabilisation joueur : revue visuelle navigateur de la carte, du configurateur et du journal ; localisation, déduplication et projection de carte couvertes par tests unitaires le 18 juillet 2026.
 
+Validation de la carte hors partie : lint sans warning, typecheck, 47 tests Vitest (dont 12 sur la structure sans état) et build Next.js production réussis le 19 juillet 2026. Non vérifié contre un backend en fonctionnement : la route serveur et les états de refus n'ont pas été exercés sur une instance Play réelle.
+
 ## Décisions à préserver
 
 - Backend autoritatif et aucune règle Narrative dans le client.
 - Démonstration isolée, jamais utilisée comme fallback silencieux.
+- Une seule implémentation de disposition du graphe : la structure sans état passe par un adaptateur, pas par une seconde dérivation.
 - Échanges réseau centralisés dans `src/shared/api`.
 - JWT en cookie `HttpOnly` et variables backend côté serveur.
 - Accessibilité clavier, contrastes et réduction des animations.

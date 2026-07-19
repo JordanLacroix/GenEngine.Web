@@ -28,7 +28,7 @@ const edgeStateLabels: Record<QuestEdgeState, string> = {
   unavailable: "Non exploré",
 };
 
-const legend: QuestNodeState[] = ["current", "takenThisRun", "discoveredBefore", "locked", "unseen"];
+const defaultLegend: QuestNodeState[] = ["current", "takenThisRun", "discoveredBefore", "locked", "unseen"];
 
 export interface QuestGraphViewProps {
   tree: QuestTreeInput;
@@ -37,9 +37,14 @@ export interface QuestGraphViewProps {
   /** Short French sentence displayed above the diagram. */
   caption?: string;
   emptyMessage?: string;
+  /**
+   * States the legend may announce. Outside a run the in-run and lock states
+   * cannot occur, so the caller narrows the legend instead of promising them.
+   */
+  legendStates?: readonly QuestNodeState[];
 }
 
-export function QuestGraphView({ tree, masteryNodeIds = [], masteryChoiceIds = [], caption, emptyMessage }: QuestGraphViewProps) {
+export function QuestGraphView({ tree, masteryNodeIds = [], masteryChoiceIds = [], caption, emptyMessage, legendStates = defaultLegend }: QuestGraphViewProps) {
   const graph = useMemo(
     () => buildQuestGraph({ tree, masteryNodeIds, masteryChoiceIds }),
     [tree, masteryNodeIds, masteryChoiceIds],
@@ -71,7 +76,7 @@ export function QuestGraphView({ tree, masteryNodeIds = [], masteryChoiceIds = [
         : <QuestGraphDiagram graph={graph} titleId={`${titleId}-svg`} descriptionId={descriptionId} description={description} />}
 
       <ul className="quest-graph-legend">
-        {legend.map((state) => (
+        {legendStates.map((state) => (
           <li key={state} data-state={state}><span aria-hidden="true" />{nodeStateLabels[state]}</li>
         ))}
       </ul>

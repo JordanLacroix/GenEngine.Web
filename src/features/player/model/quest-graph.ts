@@ -29,9 +29,62 @@ export interface QuestTreeEdgeInput {
 
 export interface QuestTreeInput {
   initialNodeId: string;
-  currentNodeId: string;
+  /** Absent outside a run: without a session no node is the current one. */
+  currentNodeId?: string;
   nodes: readonly QuestTreeNodeInput[];
   edges: readonly QuestTreeEdgeInput[];
+}
+
+/** Node of a published version topology, without any world state. */
+export interface QuestStructureNodeInput {
+  id: string;
+  text: string;
+  isEnding: boolean;
+}
+
+/** Passage of a published version topology, without any condition evaluation. */
+export interface QuestStructureEdgeInput {
+  sourceNodeId: string;
+  targetNodeId: string;
+  inputId: string;
+  text: string;
+}
+
+/** Mirrors `ScenarioStructureContract`: topology only, no state, no evaluation. */
+export interface QuestStructureInput {
+  initialNodeId: string;
+  nodes: readonly QuestStructureNodeInput[];
+  edges: readonly QuestStructureEdgeInput[];
+}
+
+/**
+ * Adapts a stateless published structure onto the builder's input shape, so a
+ * single layout and a single derivation serve both the in-run and the out-of-run
+ * views.
+ *
+ * Outside a session there is no world state, therefore:
+ * - no node is `Current` and none is `Visited` — only the cumulative mastery can
+ *   mark a node as discovered, everything else stays unseen;
+ * - no node is `Locked`: availability is unknown, and the client never guesses
+ *   it. Passages are reported as not-known-to-be-locked and carry no
+ *   explanation, so the view claims nothing the backend did not say.
+ *
+ * The node array order and the edge set are preserved, which keeps the BFS ranks,
+ * the in-rank ordering and the resulting coordinates identical to the in-run
+ * graph of the same topology.
+ */
+export function questTreeFromStructure(structure: QuestStructureInput): QuestTreeInput {
+  return {
+    initialNodeId: structure.initialNodeId,
+    nodes: structure.nodes.map((node) => ({ id: node.id, text: node.text, isEnding: node.isEnding, state: "Unexplored" })),
+    edges: structure.edges.map((edge) => ({
+      sourceNodeId: edge.sourceNodeId,
+      targetNodeId: edge.targetNodeId,
+      inputId: edge.inputId,
+      text: edge.text,
+      isAvailable: true,
+    })),
+  };
 }
 
 export interface QuestGraphInput {
@@ -130,8 +183,8 @@ export function buildQuestGraph({ tree, masteryNodeIds = [], masteryChoiceIds = 
 }
 
 /** Precedence: current > takenThisRun > discoveredBefore > locked > unseen. */
-function nodeState(node: QuestTreeNodeInput, currentNodeId: string, mastered: ReadonlySet<string>): QuestNodeState {
-  if (node.id === currentNodeId) return "current";
+function nodeState(node: QuestTreeNodeInput, currentNodeId: string | undefined, mastered: ReadonlySet<string>): QuestNodeState {
+  if (currentNodeId !== undefined && node.id === currentNodeId) return "current";
   if (node.state === "Visited") return "takenThisRun";
   if (mastered.has(node.id)) return "discoveredBefore";
   if (node.state === "Locked") return "locked";

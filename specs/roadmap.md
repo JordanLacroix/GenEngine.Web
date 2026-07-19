@@ -61,3 +61,9 @@ La passe corrective `codex/fix-player-experience-polish` remplace le retour text
 Console utilisateurs avec recherche, activation et suppression logique ; suppression des rôles custom ; parcours et catégories avec rattachement des scénarios ; assets du familier ; progression par catégorie ; bibliothèque de brouillons recherchable et Studio visuel éditable ; démonstration narrative portée à environ quinze minutes. Administration et outils techniques sont regroupés.
 
 **Statut : terminé sur `feat/product-operations-ui`, en attente de revue.**
+
+## Jalon 4.5 — carte du récit hors partie
+
+Le graphe de quête devient consultable sans session. Play publie `GET /scenario-versions/{versionId}/tree`, la topologie d'une version publiée sans état de monde : ni `state` de nœud, ni `evaluation` de condition. Le client adapte cette structure vers l'entrée du constructeur existant, ce qui conserve une seule implémentation de disposition et une carte hors partie strictement superposable à la carte en partie. Les refus d'autorisation restent ceux du démarrage de session et sont affichés tels quels.
+
+**Statut : implémenté sur `feat/scenario-structure-graph`.** Non exercé contre une instance Play réelle.
