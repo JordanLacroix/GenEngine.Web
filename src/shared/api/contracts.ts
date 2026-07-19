@@ -68,6 +68,20 @@ export interface NarrativeTreeContract {
   }>;
 }
 
+/**
+ * Topology of a published scenario version, returned by
+ * `GET /scenario-versions/{versionId}/tree` on Play.
+ *
+ * Deliberately distinct from `NarrativeTreeContract`: outside a session there is
+ * no world state, therefore no node `state` and no condition `evaluation`.
+ * Do not add either field here — the backend does not send them.
+ */
+export interface ScenarioStructureContract {
+  initialNodeId: string;
+  nodes: Array<{ id: string; text: string; isEnding: boolean }>;
+  edges: Array<{ sourceNodeId: string; targetNodeId: string; inputId: string; text: string }>;
+}
+
 export interface SessionStateContract {
   session: SessionContract;
   currentStep: CurrentStepContract;

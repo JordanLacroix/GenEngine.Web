@@ -53,6 +53,7 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Périodes métier et import CSV de memberships | ✅ Prévalidation, rapport d’erreurs et application idempotente |
 | Affectations de parcours et catalogue filtré | ✅ Résolues côté serveur et reflétées sur la carte |
 | Graphe de fin de quête et mémoire cumulée | ✅ Récit complet, mémoire de toutes les parties, démo et sessions connectées |
+| Carte du récit hors partie | ✅ Structure publiée lue sur Play, colorée par la maîtrise cumulée |
 
 ## Parcours disponibles
 
@@ -61,7 +62,7 @@ Le dépôt conserve deux parcours explicitement séparés :
 | `/` | Découverte éditoriale et sélection de récits |
 | `/account` | Connexion locale/Microsoft, création de compte et accès au mode démo |
 | `/library` | Bibliothèque et reprise de lecture |
-| `/library/[versionId]` | Mémoire cumulée d’un récit, consultable hors partie |
+| `/library/[versionId]` | Carte complète du récit et mémoire cumulée, sans session ouverte |
 | `/play/demo` | Player interactif de démonstration hors ligne |
 | `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
 | `/studio` | Import, validation, analyse, prévisualisation et publication |
@@ -171,7 +172,7 @@ La CI exécute ces contrôles à chaque pull request et sur `main`.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte plein écran, HUD superposée, portes positionnées dans le monde, recherche, journal, maîtrise, familier illustré et aide. Hors des écrans de connexion, l’expérience joueur n’utilise pas la navigation de la plateforme : les fonctions deviennent des overlays du jeu. L’Administration sépare désormais la configuration éditoriale des opérations : périodes, unités, participants, encadrants, import CSV prévalidé et affectations de scénarios/catégories/parcours. La carte connectée ne présente à un membre que les catégories couvertes par ses affectations effectives. La fin de quête affiche désormais le graphe complet du récit, pas seulement le chemin emprunté, avec la mémoire cumulée de toutes les parties précédentes. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte plein écran, HUD superposée, portes positionnées dans le monde, recherche, journal, maîtrise, familier illustré et aide. Hors des écrans de connexion, l’expérience joueur n’utilise pas la navigation de la plateforme : les fonctions deviennent des overlays du jeu. L’Administration sépare désormais la configuration éditoriale des opérations : périodes, unités, participants, encadrants, import CSV prévalidé et affectations de scénarios/catégories/parcours. La carte connectée ne présente à un membre que les catégories couvertes par ses affectations effectives. La fin de quête affiche désormais le graphe complet du récit, pas seulement le chemin emprunté, avec la mémoire cumulée de toutes les parties précédentes. La page `/library/[versionId]` dessine la même carte hors partie : Play expose la topologie d’une version publiée par `GET /scenario-versions/{versionId}/tree`, sans état de monde donc sans étape courante ni verrou. Voir [`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 
