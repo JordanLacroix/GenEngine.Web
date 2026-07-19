@@ -3,7 +3,8 @@
 import { ArrowLeft, BookOpen, GitBranch, LogIn, MousePointer2, Pause, Play, RotateCcw, Route, Send, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { CurrentStepContract, NarrativeTreeContract, ProblemDetailsContract, SessionContract, SessionStateContract } from "@/shared/api/contracts";
+import type { CurrentStepContract, NarrativeTreeContract, PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, SessionContract, SessionStateContract } from "@/shared/api/contracts";
+import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
 
 interface ConnectedPlayerProps { scenarioVersionId: string }
 type CommandKind = "choice" | "continue" | "answer" | "text" | "confirm" | "pause" | "resume";
@@ -17,6 +18,7 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   const [seed, setSeed] = useState("42");
   const [text, setText] = useState("");
   const [showsTree, setShowsTree] = useState(false);
+  const [mastery, setMastery] = useState<ScenarioMasteryContract>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -42,6 +44,19 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
     }
     void restore();
   }, [loadSession, scenarioVersionId, storageKey]);
+
+  const scenarioVersion = state?.session.scenarioVersionId;
+  const isCompleted = state?.session.status === "Completed";
+  useEffect(() => {
+    if (!isCompleted || !scenarioVersion) return;
+    const controller = new AbortController();
+    // Cumulative memory of every past playthrough of this scenario version, accumulated server-side.
+    fetch("/api/me", { cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() as Promise<{ player: PlayerExperienceContract }> : undefined)
+      .then((context) => setMastery(context?.player.masteries.find((item) => item.scenarioVersionId === scenarioVersion)))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [isCompleted, scenarioVersion]);
 
   async function authenticate(mode: "login" | "register") {
     await run(async () => {
@@ -106,7 +121,7 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
       <div className="player-progress" aria-label={state ? `Tour ${state.session.turn + 1}` : "Session non démarrée"}><span style={{ width: state ? `${Math.min(100, (state.session.turn + 1) * 8)}%` : "0%" }} /></div>
       {error && <p className="player-error" role="alert">{error}</p>}
       {needsAuthentication ? <AuthenticationPanel userName={userName} password={password} seed={seed} busy={busy} onUserName={setUserName} onPassword={setPassword} onSeed={setSeed} onAuthenticate={authenticate} onStart={startSession} />
-        : state ? <SessionScene state={state} text={text} busy={busy} onText={setText} onCommand={command} />
+        : state ? <SessionScene state={state} mastery={mastery} text={text} busy={busy} onText={setText} onCommand={command} />
           : <main className="scene player-entry"><BookOpen aria-hidden="true" /><p className="eyebrow">Prêt à entrer</p><h1>{title}</h1><label>Graine déterministe<input value={seed} inputMode="numeric" onChange={(event) => setSeed(event.target.value)} /></label><button className="button button--primary" type="button" disabled={busy} onClick={startSession}>Commencer</button></main>}
       {showsTree && state && <TreePanel tree={state.tree} onClose={() => setShowsTree(false)} />}
       <footer className="player-footer"><span>{state ? `${statusLabel(state.session.status)} · Révision ${state.session.revision}` : "Connexion directe au moteur"}</span>{state && <button className="text-button" type="button" disabled={busy} onClick={restart}><RotateCcw size={14} aria-hidden="true" /> Nouvelle partie</button>}</footer>
@@ -118,9 +133,9 @@ function AuthenticationPanel(props: { userName: string; password: string; seed: 
   return <main className="scene auth-panel"><LogIn size={36} aria-hidden="true" /><p className="eyebrow">Compte GenEngine</p><h1>Retrouvez vos chemins.</h1><p className="scene-copy">Le moteur associe chaque session à votre identité. Le jeton reste proté dans un cookie inaccessible au navigateur.</p><div className="auth-fields"><label>Identifiant<input autoComplete="username" value={props.userName} onChange={(event) => props.onUserName(event.target.value)} /></label><label>Mot de passe<input type="password" autoComplete="current-password" value={props.password} onChange={(event) => props.onPassword(event.target.value)} /></label><label>Graine déterministe<input inputMode="numeric" value={props.seed} onChange={(event) => props.onSeed(event.target.value)} /></label><div><button className="button button--primary" type="button" disabled={props.busy || !props.userName || !props.password} onClick={() => props.onAuthenticate("login")}>Se connecter</button><button className="button button--quiet" type="button" disabled={props.busy || !props.userName || !props.password} onClick={() => props.onAuthenticate("register")}>Créer un compte</button></div></div><button type="button" className="text-button" disabled={props.busy} onClick={props.onStart}>J&apos;ai déjà une session authentifiée</button></main>;
 }
 
-function SessionScene({ state, text, busy, onText, onCommand }: { state: SessionStateContract; text: string; busy: boolean; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {
+function SessionScene({ state, mastery, text, busy, onText, onCommand }: { state: SessionStateContract; mastery?: ScenarioMasteryContract; text: string; busy: boolean; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {
   const step = state.currentStep;
-  return <main className="scene" key={`${step.nodeId}-${step.interactionId ?? "legacy"}-${state.session.revision}`}><div className="scene-ornament" aria-hidden="true"><span /><i /></div><p className="eyebrow">Tour {step.turn + 1} · {kindLabel(step.kind)}</p><h1>{step.kind === "Completed" ? "Épilogue" : step.nodeId}</h1><div className="scene-copy"><p>{step.text}</p></div>{step.kind !== "Completed" && <EngineInteractionMaterial step={step} />}<Interaction step={step} busy={busy} text={text} onText={onText} onCommand={onCommand} />{step.kind === "Completed" && <EngineSummary state={state} />}</main>;
+  return <main className="scene" key={`${step.nodeId}-${step.interactionId ?? "legacy"}-${state.session.revision}`}><div className="scene-ornament" aria-hidden="true"><span /><i /></div><p className="eyebrow">Tour {step.turn + 1} · {kindLabel(step.kind)}</p><h1>{step.kind === "Completed" ? "Épilogue" : step.nodeId}</h1><div className="scene-copy"><p>{step.text}</p></div>{step.kind !== "Completed" && <EngineInteractionMaterial step={step} />}<Interaction step={step} busy={busy} text={text} onText={onText} onCommand={onCommand} />{step.kind === "Completed" && <EngineSummary state={state} mastery={mastery} />}</main>;
 }
 
 function EngineInteractionMaterial({ step }: { step: CurrentStepContract }) {
@@ -128,9 +143,9 @@ function EngineInteractionMaterial({ step }: { step: CurrentStepContract }) {
   return <aside className="screen-interaction screen-interaction--engine"><span><MousePointer2 aria-hidden="true" /></span><div><small>{labels[0]}</small><strong>{labels[1]}</strong><p>Interaction {step.interactionId ?? step.nodeId} fournie par le scénario publié.</p></div></aside>;
 }
 
-function EngineSummary({ state }: { state: SessionStateContract }) {
+function EngineSummary({ state, mastery }: { state: SessionStateContract; mastery?: ScenarioMasteryContract }) {
   const visited = state.tree.nodes.filter((node) => node.state === "Visited" || node.state === "Current");
-  return <section className="engine-summary"><div><Trophy aria-hidden="true" /><p className="eyebrow">Bilan enregistré</p><h2>Votre chemin rejoint le journal.</h2></div><p><Route aria-hidden="true" /> {visited.length} étapes parcourues · {state.session.turn + 1} tours joués</p><div>{visited.map((node) => <span key={node.id}>{node.id}</span>)}</div><Link className="button button--primary" href="/experience">Voir ma carte et mes gains</Link></section>;
+  return <section className="engine-summary"><div><Trophy aria-hidden="true" /><p className="eyebrow">Bilan enregistré</p><h2>Votre chemin rejoint le journal.</h2></div><p><Route aria-hidden="true" /> {visited.length} étapes parcourues · {state.session.turn + 1} tours joués</p><div>{visited.map((node) => <span key={node.id}>{node.id}</span>)}</div><QuestGraphView tree={state.tree} masteryNodeIds={mastery?.nodeIds} masteryChoiceIds={mastery?.choiceIds} caption="Le récit entier, avec ce que vous avez emprunté aujourd’hui et ce que vos parties précédentes ont déjà révélé." /><Link className="button button--primary" href="/experience">Voir ma carte et mes gains</Link></section>;
 }
 
 function Interaction({ step, busy, text, onText, onCommand }: { step: CurrentStepContract; busy: boolean; text: string; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {

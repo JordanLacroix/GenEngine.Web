@@ -1,4 +1,4 @@
-import { ArrowUpRight, Clock3 } from "lucide-react";
+import { ArrowUpRight, Clock3, Route as Route2 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import type { StorySummary } from "@/entities/story/model/story";
@@ -18,6 +18,7 @@ export function StoryCard({ story, priority = false }: { story: StorySummary; pr
           <span>par {story.author}</span>
           <span><Clock3 size={14} aria-hidden="true" />{formatDuration(story.durationMinutes)}</span>
         </footer>
+        {story.scenarioVersionId && <Link className="text-button" href={`/library/${story.scenarioVersionId}` as Route}><Route2 size={14} aria-hidden="true" /> Mémoire de mes parcours</Link>}
         <Link className="card-link" href={href}><span className="sr-only">Jouer à {story.title}</span><ArrowUpRight aria-hidden="true" /></Link>
       </div>
     </article>
