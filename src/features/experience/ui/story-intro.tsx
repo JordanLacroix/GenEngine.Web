@@ -10,7 +10,7 @@ const fallbackIntro = {
   allowSkip: true,
   minimumDisplaySeconds: 0,
   scenes: [
-    { id: "threshold", eyebrow: "Avant le premier choix", title: "Chaque monde commence par une porte.", body: "Derrière elle, rien n’est écrit à votre place. Vos décisions dessinent la route, les rencontres et les souvenirs.", imageUrl: "/illustrations/intro-gateway.jpg", order: 1 },
+    { id: "threshold", eyebrow: "Avant le premier choix", title: "Chaque monde commence par une porte.", body: "Derrière elle, rien n’est écrit à votre place. Vos décisions dessinent la route, les rencontres et les souvenirs.", imageUrl: "/illustrations/diapason-resonance.svg", order: 1 },
     { id: "companion", eyebrow: "Une présence à vos côtés", title: "Créez le familier qui apprendra votre manière d’avancer.", body: "Il peut éclairer un détail, reformuler une énigme ou se taire. Il conseille ; il ne choisit jamais pour vous.", imageUrl: "/illustrations/familiar-aster.jpg", order: 2 },
     { id: "key", eyebrow: "Le prologue", title: "Votre première histoire vous remettra une clé.", body: "Terminez le tutoriel, relisez le chemin parcouru, puis ouvrez la porte de l’aventure qui vous attire vraiment.", imageUrl: "/illustrations/tutorial-key.jpg", order: 3 },
   ],

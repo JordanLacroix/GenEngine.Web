@@ -16,7 +16,7 @@ export const bundledAsterPack: FamiliarAssetPack = {
   id: "genengine.aster.original",
   name: "Aster — constellation",
   portraitUrl: "/illustrations/familiar-aster.jpg",
-  backgroundUrl: "/illustrations/intro-gateway.jpg",
+  backgroundUrl: "/illustrations/diapason-resonance.svg",
   license: "GenEngine project asset — no external trademark or ownership metadata",
   attribution: "Illustration originale générée pour GenEngine",
 };
