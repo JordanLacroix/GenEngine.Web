@@ -81,3 +81,62 @@ body:has(.player-universe),body:has(.first-familiar),body:has(.tutorial-story){o
 .quest-graph-list{margin:1rem 0 0;border-top:1px solid var(--line);padding-top:.8rem}.quest-graph-list summary{cursor:pointer;color:var(--ivory);font-size:.76rem}.quest-graph-list h4{margin:1.1rem 0 .4rem;color:var(--ivory-muted);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase}.quest-graph-list ol,.quest-graph-list ul{margin:.7rem 0 0;padding:0;display:grid;gap:.45rem;list-style:none}.quest-graph-list li{padding:.55rem .7rem;border-left:2px solid var(--line);background:rgb(243 237 223/2%)}.quest-graph-list li strong{font-size:.76rem}.quest-graph-list li small{display:block;color:var(--ivory-muted);font-size:.62rem}.quest-graph-list li p{margin:.3rem 0 0;color:var(--ivory-muted);font-size:.7rem;line-height:1.5}.quest-graph-list li .quest-graph-explanation{color:var(--amber)}.quest-graph-list li[data-state=current]{border-left-color:var(--ember)}.quest-graph-list li[data-state=takenThisRun]{border-left-color:var(--verdigris)}.quest-graph-list li[data-state=discoveredBefore]{border-left-color:var(--amber)}
 .scenario-memory-counters{margin:1.4rem 0 0;display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;color:var(--ivory-muted);font-size:.74rem}.scenario-memory-counters b{color:var(--ivory);font:1.15rem var(--font-story)}
 @media(prefers-reduced-motion:no-preference){.quest-node--current rect{animation:quest-pulse 2.6s ease-in-out infinite}}@keyframes quest-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.45}}
+
+/* ── Lieu de la carte : franchir une porte ouvre une interface réelle ──────── */
+.place-scrim{position:absolute;z-index:var(--z-overlay);inset:0;display:grid;place-items:center;padding:clamp(.6rem,3vw,2rem);background:rgb(3 9 14 / 62%);backdrop-filter:blur(6px)}
+.place-panel{position:relative;width:min(720px,100%);max-height:min(84dvh,900px);padding:clamp(1.4rem,3.5vw,2.6rem);overflow:auto;border:1px solid rgb(215 167 70 / 32%);border-radius:1.4rem;background:linear-gradient(150deg,rgb(17 40 56 / 97%),rgb(6 15 23 / 99%));box-shadow:0 40px 120px rgb(0 0 0 / 55%)}
+.place-panel>header{margin-bottom:1.4rem;padding-right:3rem}
+.place-panel h2{margin:.3rem 0 .6rem;font:400 clamp(2rem,4vw,3.1rem)/1 var(--font-story);letter-spacing:-.04em}
+.place-description{margin:0;max-width:56ch;color:#c6d4de;font:1rem/1.65 var(--font-story)}
+.place-count{margin:.8rem 0 0;color:var(--ivory-muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.place-notice{margin:0 0 1.2rem;padding:.75rem .9rem;border:1px solid rgb(215 167 70 / 34%);border-radius:.65rem;background:rgb(215 167 70 / 7%);color:var(--ivory-muted);font-size:.74rem;line-height:1.6}
+.place-search{width:100%;margin-bottom:1rem;background:rgb(255 250 240 / 4%)}
+.place-list{margin:0;padding:0;display:grid;gap:.7rem;list-style:none}
+.place-list>li{padding:1.1rem 1.2rem;border:1px solid var(--line);border-radius:.9rem;background:rgb(255 250 240 / 3%);transition:border-color .2s,background .2s}
+.place-list>li:hover{border-color:rgb(215 167 70 / 42%);background:rgb(255 250 240 / 5%)}
+.place-list-head h3{margin:.15rem 0 0;font:400 1.5rem/1.15 var(--font-story)}
+.place-synopsis{margin:.55rem 0 0;color:var(--ivory-muted);font-size:.82rem;line-height:1.6}
+.place-due{display:flex;align-items:center;gap:.4rem;margin:.6rem 0 0;color:var(--or);font-size:.7rem}
+.place-progress{margin:.9rem 0;display:grid;gap:.35rem}
+.place-progress small{color:var(--ivory-muted);font-size:.64rem}
+.place-actions{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap}
+.place-actions .text-button{gap:.35rem}
+.place-empty{padding:1.4rem;display:grid;gap:.6rem;border:1px dashed var(--line);border-radius:.9rem;color:var(--ivory-muted);font-size:.8rem;line-height:1.65}
+.place-empty p{margin:0}
+.map-empty{position:absolute;z-index:14;right:2rem;bottom:2rem;left:6.9rem;margin:0;padding:1rem 1.2rem;max-width:60ch;border:1px solid var(--line);border-radius:.9rem;background:rgb(6 15 23 / 88%);backdrop-filter:blur(14px);color:var(--ivory-muted);font-size:.78rem;line-height:1.6}
+
+/* ── Familier : chaque paramètre a un effet visible avant validation ──────── */
+.familiar-preview{--familiar-accent:#d7a746}
+.familiar-preview .familiar-aura{position:absolute;width:min(74%,26rem);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--familiar-accent) 34%,transparent),transparent 70%);pointer-events:none}
+.familiar-preview>img{position:relative;border-color:color-mix(in srgb,var(--familiar-accent) 48%,transparent)!important;transition:border-radius .35s ease,clip-path .35s ease,filter .35s ease,transform .35s ease}
+.familiar-glyph{z-index:1;color:var(--familiar-accent);font-size:5rem}
+/* La forme n'est pas qu'une étiquette : elle change la silhouette de l'aperçu. */
+.familiar-form--spark>img{clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.familiar-form--orb>img{border-radius:50%!important}
+.familiar-form--owl>img{border-radius:48% 48% 34% 34%!important}
+.familiar-form--fox>img{border-radius:12% 44% 12% 44%!important}
+.familiar-form--lantern>img{border-radius:34% 34% 10% 10%!important;filter:sepia(.18) saturate(1.15) brightness(1.06)}
+.familiar-form--bot>img{border-radius:.9rem!important;filter:contrast(1.12)}
+.familiar-sample{z-index:1;width:min(94%,34rem);margin:1.2rem 0 .25rem;padding:.85rem 1rem;display:flex;align-items:start;gap:.6rem;border:1px solid color-mix(in srgb,var(--familiar-accent) 34%,transparent);border-radius:.8rem;background:rgb(6 15 23 / 72%);backdrop-filter:blur(10px);color:#e4ecf1;font:.92rem/1.6 var(--font-story);text-align:left}
+.familiar-sample svg{flex:0 0 auto;margin-top:.25rem;color:var(--familiar-accent)}
+.familiar-sample-note{z-index:1;color:var(--ivory-muted);font-size:.6rem!important;text-align:center}
+.familiar-capabilities{z-index:1;margin:1rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center;list-style:none}
+.familiar-capabilities li{padding:.25rem .55rem;border:1px solid var(--line);border-radius:999px;color:var(--ivory-muted);font-size:.6rem}
+.field-effect{margin:.55rem 0 0;color:var(--ivory-muted);font-size:.7rem;line-height:1.55}
+.familiar-controls fieldset .field-effect{margin-top:.6rem}
+.familiar-name{display:grid;gap:.4rem}
+.accent-row{display:flex;flex-wrap:wrap;gap:.4rem}
+.accent-chip{--chip:#c8b98d;padding:.5rem .75rem;display:flex;align-items:center;gap:.45rem;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ivory-muted);font-size:.72rem;cursor:pointer}
+.accent-chip span{width:.85rem;aspect-ratio:1;border-radius:50%;background:var(--chip);box-shadow:0 0 10px color-mix(in srgb,var(--chip) 60%,transparent)}
+.accent-chip.is-selected{border-color:var(--chip);color:var(--ivory);background:color-mix(in srgb,var(--chip) 12%,transparent)}
+.familiar-capability-note{margin:1.4rem 0 0;padding:.85rem 1rem;display:flex;align-items:start;gap:.6rem;border:1px dashed var(--line);border-radius:.75rem;color:var(--ivory-muted);font-size:.7rem;line-height:1.6}
+.familiar-capability-note svg{flex:0 0 auto;margin-top:.15rem;color:var(--sauge)}
+/* Curseurs et cases aux couleurs de la direction artistique. */
+.help-slider input[type=range],.toggle-line input[type=checkbox]{accent-color:var(--or)}
+@media(max-width:620px){.map-empty{left:.7rem;right:.7rem;bottom:5rem}.place-panel{max-height:88dvh}}
+/* Le bouton d'enregistrement est collant : la colonne réserve la place sous lui
+   pour qu'il ne recouvre jamais le dernier réglage. */
+.familiar-controls{padding-bottom:5.5rem}
+.companion-save{margin-top:1.5rem;background:linear-gradient(180deg,transparent,rgb(6 15 23 / 96%) 35%);border:0;padding-block:1rem}
+.companion-save.button--primary{background:var(--or)}
+.story-unavailable{margin:.8rem 0 0;color:var(--ivory-muted);font-size:.68rem}

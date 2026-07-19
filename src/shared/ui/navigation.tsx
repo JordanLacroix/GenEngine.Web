@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { PublishedExperienceContract, UserContextContract } from "@/shared/api/contracts";
 import { gameCopy } from "@/shared/lib/game-copy";
+import { AudioToggle } from "@/shared/ui/audio-toggle";
 
 export function Navigation() {
   const path = usePathname();
@@ -55,9 +56,12 @@ export function Navigation() {
           return <Link key={href} href={href as Route} className={active ? "nav-link is-active" : "nav-link"} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)}><Icon size={16} aria-hidden="true" />{label}</Link>;
         })}
       </nav>
-      {context
-        ? <Link className="profile-button" href={"/experience" as Route} aria-label={`Ouvrir le profil de ${context.access.userName}`}>{initials}</Link>
-        : <Link className="login-link" href={"/account" as Route}>Se connecter</Link>}
+      <div className="header-tools">
+        <AudioToggle />
+        {context
+          ? <Link className="profile-button" href={"/experience" as Route} aria-label={`Ouvrir le profil de ${context.access.userName}`}>{initials}</Link>
+          : <Link className="login-link" href={"/account" as Route}>Se connecter</Link>}
+      </div>
     </header>
   );
 }

@@ -11,7 +11,13 @@ export async function GET() {
       genEngineRequest<PlayerBootstrapContract>("playerExperience", "/me/experience/bootstrap?frontId=default"),
       genEngineRequest<PlayerOrganizationContextContract>("organization", "/me/organization/default"),
     ]);
-    const experience = organization.hasGlobalScope ? publishedExperience : filterAssignedCatalog(publishedExperience, organization);
+    // Le catalogue n'est restreint que pour une personne réellement rattachée à
+    // l'organisation : ses affectations décrivent alors ce qui la concerne. Une
+    // personne non rattachée n'a pas « zéro contenu », elle n'a simplement pas de
+    // restriction d'unité — la lui appliquer viderait la carte de ses portes.
+    // L'autorisation reste celle de Play, qui refuse un démarrage non affecté.
+    const restricted = !organization.hasGlobalScope && organization.isMember;
+    const experience = restricted ? filterAssignedCatalog(publishedExperience, organization) : publishedExperience;
     return NextResponse.json({ access, experience, player: bootstrap.experience, bootstrap } satisfies UserContextContract & { bootstrap: PlayerBootstrapContract });
   } catch (error) { return apiError(error); }
 }
