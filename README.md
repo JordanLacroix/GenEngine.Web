@@ -56,6 +56,10 @@ Le dépôt conserve deux parcours explicitement séparés :
 | Affectations de parcours et catalogue filtré | ✅ Résolues côté serveur et reflétées sur la carte |
 | Graphe de fin de quête et mémoire cumulée | ✅ Récit complet, mémoire de toutes les parties, démo et sessions connectées |
 | Carte du récit hors partie | ✅ Structure publiée lue sur Play, colorée par la maîtrise cumulée |
+| Studio de configuration du jeu | ✅ Jeu, catégories, parcours, prérequis, familier et libellés, avec aperçu par section |
+| Plan média par lieu et fin de partie | ⚠️ Interface prête, écriture conditionnée au bloc `media` du plan de configuration |
+| Médias de scène, de choix et repères d’animation | ⚠️ Édités et prévisualisés ; refusés à l’enregistrement par un moteur sans schéma média |
+| Catalogue d’assets `packId:assetId` | ⚠️ Lu depuis `/packs/manifest.json` ; absent tant qu’aucun pack n’est publié |
 
 ## Parcours disponibles
 
@@ -67,9 +71,57 @@ Le dépôt conserve deux parcours explicitement séparés :
 | `/library/[versionId]` | Carte complète du récit et mémoire cumulée, sans session ouverte |
 | `/play/demo` | Player de démonstration hors ligne, réservé aux visiteurs anonymes — redirige vers `/experience` si une session existe |
 | `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
-| `/studio` | Import, validation, analyse, prévisualisation et publication |
+| `/studio` | Configuration du jeu : identité, catégories et parcours, familier, libellés, médias, scénarios — chaque section avec son aperçu |
 | `/experience` | Carte, tutoriel, journal, familier, magasin, aide et compte joueur |
 | `/administration` | Configuration plateforme et RBAC, distincts du Studio |
+
+## Studio
+
+`/studio` est la surface où un client configure son propre jeu, sans toucher au
+code. Six sections, chacune doublée d'un aperçu de ce que le réglage produit :
+
+| Section | Ce qui se configure | Aperçu |
+|---|---|---|
+| Le jeu | Nom, description, histoire globale, langue, fuseau, organisation | Ouverture, avec le fond configuré pour l'accueil |
+| Catégories & parcours | Catégories par posture, accents, visibilité, scénarios rattachés, parcours et prérequis | Carte : une porte par catégorie visible |
+| Familier | Nom, forme, ton, style, accent, niveau d'aide, portrait, licence | Silhouette, aura et réplique d'exemple recomposée |
+| Libellés | Vocabulaire du jeu, clé par clé | Navigation et Studio rendus avec les libellés |
+| Médias | Ambiance, musique, fond, tempo et boucle par lieu, plus la fin de partie | Le lieu avec son fond, écoute directe des sons |
+| Scénarios | Scènes, choix, destinations, visuels, sons et repères d'animation | Scène jouable : le visuel, le texte, et l'interaction déclenchée au clic |
+
+Le document de configuration reste celui du plan de contrôle : le Studio le lit,
+le modifie et le renvoie tel quel, en conservant les champs qu'il ne connaît pas.
+**Enregistrer** écrit le brouillon, **Publier** publie une version.
+
+### Assigner un média
+
+Un champ média accepte une URL HTTPS absolue ou une référence `packId:assetId`
+résolue par [`/packs/manifest.json`](public/packs/README.md). Un son s'écoute et
+un visuel s'affiche directement dans le champ. Une référence non résolue le dit
+et reste transmise telle quelle : le serveur est seul juge.
+
+### Ce qui dépend d'une tranche moteur
+
+Deux capacités sont posées côté client mais conditionnées au moteur déployé, et
+l'interface l'annonce au lieu de le simuler :
+
+- **Plan média par lieu** — visible et éditable seulement si le plan de
+  configuration publie un bloc `media`. Sinon la section explique précisément ce
+  qui manque, n'affiche aucun formulaire, et laisse malgré tout auditionner le
+  pack, qui ne dépend pas du moteur.
+- **Médias de scène et de choix** — `visualUrl`, `visualDescription`, `soundUrl`
+  et `animationCue` sont écrits dans le document narratif. Un moteur sans schéma
+  média refuse l'enregistrement (`422 invalid_json`) ; le Studio nomme cette
+  cause probable au lieu de laisser « JSON invalide » seul.
+
+### Repères d'animation
+
+Un repère est une chaîne libre transmise au moteur. Le client sait en jouer
+cinq — `pulse`, `shake`, `glow`, `rise`, `fade` — et le dit quand il n'en connaît
+pas un plutôt que d'animer au hasard. L'aperçu nomme toujours en toutes lettres
+le choix, sa destination, le son joué et l'animation : l'information n'est jamais
+portée par la seule animation, et le mouvement est neutralisé sous
+`prefers-reduced-motion`.
 
 ## Démarrage rapide
 
@@ -160,6 +212,7 @@ src/
 ├── features/             # Capacités utilisateur verticales
 └── shared/
     ├── api/              # Frontière HTTP et contrats
+    ├── assets/           # Contrat de pack d'assets et résolution `packId:assetId`
     ├── audio/            # Contrat sonore, résolution des signaux, fournisseur React
     ├── lib/              # Utilitaires sans dépendance UI
     ├── mocks/            # Fixtures de démonstration isolées

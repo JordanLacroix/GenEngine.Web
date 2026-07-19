@@ -4,6 +4,7 @@ import { Navigation } from "@/shared/ui/navigation";
 import "./globals.css";
 import "./platform.css";
 import "./home.css";
+import "./studio.css";
 
 export const metadata: Metadata = {
   title: { default: "GenEngine — le moteur narratif configurable", template: "%s · GenEngine" },
