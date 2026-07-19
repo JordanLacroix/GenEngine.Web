@@ -30,6 +30,20 @@ Les contrats du backend et les invariants narratifs de référence vivent dans l
 - La démonstration ne s’adresse qu’aux visiteurs anonymes ; aucune sortie vers elle en état connecté.
 - Le son reste optionnel, désactivé par défaut, et ne porte jamais seul une information.
 
+## Configuration et autorisation obligatoires
+
+Adapté des obligations du dépôt `GenEngine`. Côté client, la règle centrale se
+reformule ainsi : **une permission masquée dans l'interface n'est pas un contrôle
+d'accès ; le serveur applique toujours la sienne.**
+
+- Toute nouvelle capacité déclare dans la même PR ses paramètres, leur défaut, leur portée, leur validation et le comportement obtenu lorsqu'elle est désactivée.
+- Le client teste des permissions et des portées effectives, jamais un nom de rôle : les rôles sont personnalisables par l'exploitant.
+- Masquer une action, griser un bouton ou retirer une entrée de navigation relève de la présentation. Le refus fait autorité seulement lorsqu'il vient du service propriétaire, et son message est affiché tel quel.
+- Une capacité que le moteur déployé n'expose pas est **annoncée absente**, jamais simulée : ni bloc de configuration fabriqué localement, ni catalogue d'assets inventé, ni fixture substituée à une erreur distante.
+- L'isolation par organisation est résolue et appliquée côté serveur. Le client reflète le résultat ; il ne le recalcule pas.
+- Aucun secret ne transite par le navigateur. Une référence opaque peut être configurée, jamais la valeur.
+- Le parcours anonyme reste jouable sans backend, sans cloud et sans IA : la démonstration hors ligne est ce repli, et elle est cantonnée à `src/shared/mocks`.
+
 ## Sécurité et configuration
 
 - Ne committe jamais secret, token, `.env.local`, donnée personnelle ou URL interne sensible.
@@ -49,6 +63,10 @@ Les contrats du backend et les invariants narratifs de référence vivent dans l
 6. Ne fusionne qu’après réussite des contrôles GitHub requis.
 
 ## Vérifications minimales
+
+Ces sept commandes sont exactement celles du job `quality` de
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml), dans le même ordre. Si tu
+en ajoutes une ici, ajoute-la aussi au workflow ; sinon elle n'est pas vérifiée.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -75,11 +93,28 @@ docker compose down
 - Seules les variables `NEXT_PUBLIC_` sont intégrées au bundle navigateur.
 - Le mode démonstration doit rester navigable sans backend et clairement identifiable.
 - Les routes serveur Next.js forment une façade technique, pas un nouveau service métier.
+- Le dépôt **n'a pas de linter Markdown**. La CI ne vérifie que le TypeScript, les tests, le build, Compose et l'image Docker : la justesse de la documentation reste une responsabilité humaine, pas un contrôle automatique.
+- Le pack `diapason-core` **déclare ses manques** dans `gaps[]` (`public/packs/manifest.json`). Lis-les avant d'affirmer qu'un média existe : il n'y a ni boucle d'ambiance, ni musique longue, ni illustration peinte.
+- Les illustrations de `public/illustrations/` sont des visuels d'heroic fantasy hérités d'une itération antérieure. Elles ne correspondent pas à la direction artistique Diapason ; ne les décris pas comme telles.
 
 ## Prochaine tâche
 
-Le pack d'assets `diapason-core` est livré et servi par le client : 62 fichiers CC0 sous `public/packs/diapason-core/`, `public/packs/manifest.json` et `public/audio/manifest.json` générés par `node scripts/build-pack-manifests.mjs`. Le Studio propose les assets livrés et les fait écouter ; le runtime les applique via `src/shared/assets/instance-media.ts`. Une dépendance moteur reste ouverte et est annoncée comme telle : les champs média du schéma narratif, refusés aujourd'hui par `422 invalid_json`.
+Aucune tranche n'est engagée, et aucun défaut n'est identifié sur `main`. Avant
+d'ouvrir une tranche, lis [`specs/handoff.md`](specs/handoff.md), qui distingue ce
+qui est livré, ce qui est cassé et ce qui est délibérément absent.
 
-Rappel de la tranche précédente : le Studio de configuration est livré — six sections, chacune doublée d'un aperçu, écrivant le plan de configuration réel.
+Deux chantiers sont identifiés et non commencés. **Aucun des deux n'est du code
+client** :
 
-Rappel de la tranche précédente : la refonte immersive est livrée : coque plein écran, accueil produit à deux niveaux, démonstration réservée aux visiteurs anonymes, portes de la carte réparées, configuration du familier complète avec aperçu par paramètre, et abstraction audio prête à recevoir un pack. La suite dépend de deux tranches externes : la publication d’un `/audio/manifest.json` par le pack d’assets, et le rattachement des scénarios à des catégories dans la configuration — sans lui, chaque porte de la carte donne sur l’ensemble du catalogue et l’interface l’annonce.
+1. **Champs média du schéma narratif.** `visualUrl`, `visualDescription`,
+   `soundUrl` et `animationCue` sont édités et prévisualisés par le Studio mais
+   refusés à l'enregistrement par le moteur (`422 invalid_json`). Dépendance du
+   dépôt `GenEngine`.
+2. **Direction artistique.** Ni le pack CC0 ni les illustrations livrées ne
+   servent l'univers Diapason. C'est une production d'assets.
+
+Réserve mineure sur la carte : au-delà de six catégories publiées, une porte est
+décalée en spirale et tombe hors clairière dessinée (`doorAnchorForIndex`). Jamais
+superposée, mais pas placée à la main.
+
+N'implémente rien au-delà sans besoin utilisateur validé.

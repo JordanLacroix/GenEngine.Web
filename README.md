@@ -10,7 +10,7 @@
 [![Status](https://img.shields.io/badge/statut-client%20connecté-2EA44F)](#état-du-projet)
 [![License](https://img.shields.io/badge/licence-non%20définie-lightgrey)](#licence)
 
-[Vision](#vision) · [Démarrage rapide](#démarrage-rapide) · [Docker](#docker) · [Architecture](#architecture) · [Roadmap](#roadmap) · [Documentation](#documentation) · [Contribuer](#contribuer)
+[Vision](#vision) · [Démarrage rapide](#démarrage-rapide) · [Docker](#docker) · [Architecture](#architecture) · [Limites connues](#limites-connues) · [Roadmap](#roadmap) · [Documentation](#documentation) · [Contribuer](#contribuer)
 
 </div>
 
@@ -18,7 +18,32 @@
 
 ## Vision
 
-GenEngine Web est le client d’un moteur narratif entièrement paramétrable, vendu avec son interface de configuration aux écoles d’ingénieurs, aux entreprises et aux organismes de formation professionnelle. « Le Diapason » en est la configuration de démonstration de référence. Le serveur reste l’autorité sur les scénarios, les sessions et les transitions ; le client présente les états reçus et transmet les intentions de l’utilisateur.
+### Ce que c’est
+
+GenEngine est un **moteur narratif entièrement paramétrable**, vendu avec son
+interface de configuration — le **Studio**. Ce dépôt en est le client Web.
+
+### Pour qui
+
+Les **écoles d’ingénieurs**, les **entreprises** et les **organismes de formation
+professionnelle**. Un client achète le moteur et compose son propre jeu depuis le
+Studio, sans écrire de code : identité, catégories, parcours, prérequis,
+compagnon, vocabulaire, médias et scénarios.
+
+### La configuration de référence
+
+**« Le Diapason »** est la configuration jouée à la première initialisation, et
+industrialisable par instance client. 2026, notre monde, les systèmes génératifs
+partout, le joueur en alternance dans une école d’ingénieurs. Six **postures** —
+Lucidité, Discernement, Arbitrage, Courage, Transmission, Autonomie — remplacent
+les catégories par matière, pour dix scénarios.
+
+### Comment ça tourne
+
+Le serveur reste l’autorité sur les scénarios, les sessions, les transitions et
+les permissions ; le client présente les états reçus et transmet les intentions de
+l’utilisateur. Voir [Démarrage rapide](#démarrage-rapide) pour lancer le client, et
+[Connexion au backend](#connexion-au-backend) pour le raccorder aux six services.
 
 L’application est immersive : elle occupe le viewport, ne borde jamais la scène d’un bandeau de page, et fait de toute navigation une surcouche HUD. Sous 900 px la scène passe en premier et la navigation devient une barre basse.
 
@@ -41,13 +66,18 @@ achète. Un nœud d’accueil laisse le visiteur choisir :
 | La réunion où personne ne doute | Courage | conflit professionnel : objecter au bon moment, dans la bonne forme |
 | La spécification avant le code | Transmission | apprentissage d’une matière — Spec Driven Development |
 
-Chaque situation se termine en quelques minutes. Les fins reprennent la
-convention de nommage du contenu canonique : `fin-accord-*` lorsque la posture
-est tenue et comprise, `fin-partielle-*` lorsque le résultat est bon mais le
-raisonnement non consolidé, `fin-rupture-*` lorsque la situation ne peut plus
-être rattrapée. Le moteur n’expose aucun drapeau de type « game over » : une
-rupture est portée par le texte et par l’interface, qui désactive le retour
-arrière et fait de la reprise l’action principale.
+La fixture compte **23 scènes** et **12 fins**, et chaque situation se termine en
+quelques minutes. Les fins reprennent la convention de nommage du contenu
+canonique : `fin-accord-*` (3) lorsque la posture est tenue et comprise,
+`fin-partielle-*` (3) lorsque le résultat est bon mais le raisonnement non
+consolidé, `fin-rupture-*` (6) lorsque la situation ne peut plus être rattrapée.
+Chaque situation mène à deux ruptures.
+
+Le moteur n’expose aucun drapeau de type « game over » : une rupture est portée
+par le texte et par l’interface, qui **désactive** le retour arrière — sans le
+retirer — et fait de « Reprendre depuis le début » l’action principale. La
+distinction entre les trois natures de fin est un champ `outcome` **local à la
+démonstration**, pas un contrat serveur.
 
 La fixture vit dans `src/shared/mocks` et ne dépend d’aucun appel réseau. Elle
 n’est jamais servie à la place d’une erreur distante, et la démonstration reste
@@ -77,15 +107,18 @@ inaccessible dès qu’une session existe.
 | Packs visuels de familier importables | ✅ Assets locaux, sans propriété |
 | Bilan de fin avec chemin et gains | ✅ Démo et sessions connectées |
 | Journal francisé et sans projections dupliquées | ✅ Normalisé côté présentation |
-| Portes ancrées aux repères de la carte | ✅ Adaptées au ratio du viewport |
+| Portes ancrées aux repères de la carte | ✅ Adaptées au ratio du viewport, une ancre par posture, décalage en spirale au-delà des six clairières dessinées |
 | Périodes métier et import CSV de memberships | ✅ Prévalidation, rapport d’erreurs et application idempotente |
 | Affectations de parcours et catalogue filtré | ✅ Résolues côté serveur et reflétées sur la carte |
 | Graphe de fin de quête et mémoire cumulée | ✅ Récit complet, mémoire de toutes les parties, démo et sessions connectées |
 | Carte du récit hors partie | ✅ Structure publiée lue sur Play, colorée par la maîtrise cumulée |
 | Studio de configuration du jeu | ✅ Jeu, catégories, parcours, prérequis, familier et libellés, avec aperçu par section |
-| Plan média par lieu et fin de partie | ⚠️ Interface prête, écriture conditionnée au bloc `media` du plan de configuration |
-| Médias de scène, de choix et repères d’animation | ⚠️ Édités et prévisualisés ; refusés à l’enregistrement par un moteur sans schéma média |
-| Catalogue d’assets `packId:assetId` | ⚠️ Lu depuis `/packs/manifest.json` ; absent tant qu’aucun pack n’est publié |
+| Plan média par lieu et fin de partie | ✅ Le bloc `media` du plan de configuration est publié et consommé au runtime |
+| Médias de scène, de choix et repères d’animation | ⚠️ Édités et prévisualisés ; refusés à l’enregistrement par un moteur sans schéma média (`422 invalid_json`) |
+| Catalogue d’assets `packId:assetId` | ✅ Pack `diapason-core` livré : 62 assets CC0, manifeste vérifié par empreinte |
+| Ambiances, musiques et illustrations Diapason | ❌ Absentes du pack CC0 — voir [Limites connues](#limites-connues) |
+| Game over de première classe | ❌ Le moteur n’expose aucun drapeau d’échec ; l’échec est narratif seulement |
+| Rotation quotidienne | ❌ Décrite dans la bible d’univers du dépôt `GenEngine`, non implémentée ici |
 
 ## Parcours disponibles
 
@@ -128,17 +161,18 @@ et reste transmise telle quelle : le serveur est seul juge.
 
 ### Ce qui dépend d'une tranche moteur
 
-Deux capacités sont posées côté client mais conditionnées au moteur déployé, et
+Une capacité reste posée côté client mais conditionnée au moteur déployé, et
 l'interface l'annonce au lieu de le simuler :
 
-- **Plan média par lieu** — visible et éditable seulement si le plan de
-  configuration publie un bloc `media`. Sinon la section explique précisément ce
-  qui manque, n'affiche aucun formulaire, et laisse malgré tout auditionner le
-  pack, qui ne dépend pas du moteur.
 - **Médias de scène et de choix** — `visualUrl`, `visualDescription`, `soundUrl`
   et `animationCue` sont écrits dans le document narratif. Un moteur sans schéma
   média refuse l'enregistrement (`422 invalid_json`) ; le Studio nomme cette
   cause probable au lieu de laisser « JSON invalide » seul.
+
+Le **plan média par lieu** ne l'est plus : le bloc `media` du plan de
+configuration est publié et consommé au runtime. La section reste défensive — si
+une instance ne le publiait pas, elle expliquerait ce qui manque, n'afficherait
+aucun formulaire, et laisserait malgré tout auditionner le pack.
 
 ### Repères d'animation
 
@@ -189,7 +223,12 @@ Les illustrations placées dans `public/` sont copiées dans l’image de produc
 | PlayerExperience | `http://host.docker.internal:5205` |
 | Organization | `http://host.docker.internal:5206` |
 
-Les variables `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`, `GENENGINE_IDENTITY_URL` et `GENENGINE_WEB_PORT` permettent de remplacer ces valeurs au lancement.
+Les six variables `GENENGINE_*_URL` du tableau ci-dessus, ainsi que
+`GENENGINE_WEB_PORT`, permettent de remplacer ces valeurs au lancement. Les noms
+exacts sont ceux de [`.env.example`](.env.example) et de
+[`compose.yaml`](compose.yaml) : `GENENGINE_AUTHORING_URL`, `GENENGINE_PLAY_URL`,
+`GENENGINE_IDENTITY_URL`, `GENENGINE_CONFIGURATION_URL`,
+`GENENGINE_PLAYER_EXPERIENCE_URL` et `GENENGINE_ORGANIZATION_URL`.
 
 ```bash
 docker compose down
@@ -215,11 +254,17 @@ Le player consomme les statuts et transitions calculés par Play : choix legacy 
 
 ### Son
 
-Le client lit `/audio/manifest.json` au démarrage. Sans manifeste publié il reste
-silencieux et le réglage sonore de la HUD est désactivé en affichant la raison ;
-aucun son n’est simulé. Le son est désactivé par défaut, ne porte jamais seul une
-information, et l’ambiance continue reste coupée sous `prefers-reduced-motion`.
-Le contrat attendu est décrit dans [`public/audio/README.md`](public/audio/README.md).
+Le client lit `/audio/manifest.json` au démarrage. Ce manifeste **est publié** :
+**6 des 11 signaux** du contrat sont liés au pack `diapason-core`, et le réglage
+sonore de la HUD est actif. Les **5 signaux `ambience.*` restent muets** parce que
+le pack déclare ne fournir aucune boucle d’ambiance ; les deux signaux `music.*`
+jouent un stinger court, faute de piste longue. Sans manifeste du tout, la source
+resterait silencieuse et le réglage désactivé en affichant la raison — aucun son
+n’est jamais simulé.
+
+Le son est désactivé par défaut, ne porte jamais seul une information, et
+l’ambiance continue reste coupée sous `prefers-reduced-motion`. Le contrat attendu
+est décrit dans [`public/audio/README.md`](public/audio/README.md).
 
 ### Packs visuels de familier
 
@@ -247,9 +292,48 @@ src/
 
 Une feature ne dépend pas directement d’une autre. La composition vit dans `app`, les échanges réseau dans `shared/api` et les fixtures dans `shared/mocks`. Voir [`specs/architecture.md`](specs/architecture.md).
 
+## Limites connues
+
+Ces manques sont assumés et annoncés, jamais simulés. Le détail et les causes
+sont dans [`specs/handoff.md`](specs/handoff.md).
+
+### Défaut réel sur `main`
+
+Aucun défaut identifié à ce jour. Le seul connu — la sixième porte de la carte
+inatteignable — a été corrigé et fusionné par [#20](https://github.com/JordanLacroix/GenEngine.Web/pull/20).
+
+Réserve mineure qui subsiste : au-delà de six catégories publiées, une porte reste
+placée mais **hors clairière dessinée**, décalée en spirale. C’est un compromis
+assumé — jamais superposé, mais pas une position choisie à la main.
+
+### Manques du pack d’assets
+
+Le pack `diapason-core` **déclare lui-même** ces manques dans son champ `gaps[]`.
+Aucune source non CC0 n’a été substituée pour les combler.
+
+- **Aucune boucle d’ambiance ni musique longue** : le catalogue CC0 de Kenney n’en publie pas. 6 signaux sonores sur 11 sont liés ; les 5 `ambience.*` restent muets.
+- **Aucune illustration peinte ni portrait de personnage** : Kenney ne publie pas de 2D compatible avec la direction artistique Diapason.
+
+### Direction artistique
+
+Les visuels de `public/illustrations/` relèvent de l’**heroic fantasy** — portail
+elfique, îles flottantes avec phare, renard céleste — et **ne correspondent pas**
+à l’univers Diapason (2026, notre monde, IA partout). Ils sont hérités d’une
+itération antérieure. L’accueil n’en utilise qu’un, en fond décoratif.
+
+### Dépendances moteur
+
+- **Médias de scène et de choix** : `visualUrl`, `visualDescription`, `soundUrl` et `animationCue` sont édités et prévisualisés par le Studio, mais refusés à l’enregistrement (`422 invalid_json`). Dépendance du dépôt `GenEngine`.
+- **Pas de game over de première classe** : le moteur ne publie que `isEnding`. L’échec est **narratif seulement** ; la distinction accord / partielle / rupture est un champ `outcome` local à la démonstration, jamais un contrat serveur.
+
+### Non implémenté
+
+- **Rotation quotidienne** : décrite dans la bible d’univers du dépôt `GenEngine`, absente de ce dépôt et annoncée nulle part dans l’interface.
+
 ## Qualité
 
 ```bash
+pnpm install --frozen-lockfile
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -258,11 +342,25 @@ docker compose config --quiet
 docker build --tag genengine-web:local .
 ```
 
-La CI exécute ces contrôles à chaque pull request et sur `main`.
+La CI exécute exactement ces sept étapes, dans cet ordre, à chaque pull request
+et sur `main` — voir [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Il
+n’y a **pas** de linter Markdown : la justesse de la documentation reste une
+responsabilité humaine.
 
 ## Roadmap
 
-Le client livre le parcours narratif, son conteneur de production et la plateforme configurable. La tranche immersive couvre introduction, compte, onboarding persistant, carte plein écran, HUD superposée, portes positionnées dans le monde, recherche, journal, maîtrise, familier illustré et aide. Hors des écrans de connexion, l’expérience joueur n’utilise pas la navigation de la plateforme : les fonctions deviennent des overlays du jeu. L’Administration sépare désormais la configuration éditoriale des opérations : périodes, unités, participants, encadrants, import CSV prévalidé et affectations de scénarios/catégories/parcours. La carte connectée ne présente à un membre que les catégories couvertes par ses affectations effectives. La fin de quête affiche désormais le graphe complet du récit, pas seulement le chemin emprunté, avec la mémoire cumulée de toutes les parties précédentes. La page `/library/[versionId]` dessine la même carte hors partie : Play expose la topologie d’une version publiée par `GET /scenario-versions/{versionId}/tree`, sans état de monde donc sans étape courante ni verrou. Voir [`specs/roadmap.md`](specs/roadmap.md).
+Les jalons 0 à 4.7 sont fusionnés dans `main` : parcours narratif, conteneur de
+production, plateforme configurable, coque immersive, carte du récit hors partie,
+Studio de configuration en six sections et pack d’assets `diapason-core`.
+
+Le **jalon 5** — structures et exploitation avancées — est en cours : périodes,
+unités, memberships, import CSV prévalidé et affectations sont livrés ; restent
+l’export en masse, le reporting collectif, les workflows éditoriaux collaboratifs
+et la configuration économique avancée.
+
+Aucune tranche n’est engagée au-delà. Les chantiers identifiés sont ceux de
+[Limites connues](#limites-connues). Détail et réserves par jalon dans
+[`specs/roadmap.md`](specs/roadmap.md).
 
 ## Documentation
 
