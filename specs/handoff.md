@@ -1,25 +1,130 @@
 # Passage de relais
 
-Dernière mise à jour : 19 juillet 2026.
+Dernière mise à jour : 19 juillet 2026, sur `main` à la révision `b4edb39`.
 
-## État vérifié
+Ce document décrit l'état **réel** du client. Il distingue trois catégories et ne
+les mélange pas : ce qui est livré et vérifié, ce qui est cassé, et ce qui est
+délibérément absent. Une intention n'y est jamais écrite au présent de l'indicatif.
 
-- `main` contient un client Next.js avec TypeScript strict et App Router.
-- La démonstration hors ligne reste isolée dans `src/shared/mocks` et joue le contenu « Le Diapason ».
-- Le client consomme le catalogue Authoring, Identity et le parcours Play complet.
-- Le JWT reste dans un cookie `HttpOnly` et les références de session sont opaques.
-- Les routes serveur forment une façade vers les trois API.
-- Une image Next.js standalone et un workflow Compose durci sont disponibles.
-- La CI exécute lint, typecheck, tests, build, validation Compose et build Docker.
-- Le shell joueur consomme `GET /me/experience/bootstrap` et ne déduit plus localement l'ordre familier → tutoriel → carte.
-- L'introduction publique, la page compte, la carte, le journal, le familier illustré, le magasin et l'aide sont disponibles.
-- Le seuil narratif est rejouable depuis la connexion, qui propose la démo sous le formulaire sans afficher de profil avant authentification.
-- Le prologue est illustré, matérialise les interactions configurées, remet une clé et ouvre une carte à portes.
-- Les packs visuels de familier sont importables localement avec licence et attribution, sans notion de propriété.
-- La démo s’arrête sur un bilan du chemin et des gains au lieu de boucler.
-- La fin de quête et la page `/library/[versionId]` affichent le graphe complet du récit avec la mémoire cumulée de toutes les parties, en mode connecté comme en démonstration.
-- La page `/library/[versionId]` lit la structure réelle de la version publiée sur Play, sans session ouverte ni repli sur une fixture.
-- La passe de stabilisation de l’univers joueur localise les valeurs moteur, déduplique journal et maîtrises, rend la sauvegarde du compagnon accessible et projette les portes sur les repères réels de l’illustration quel que soit le ratio d’écran.
+## Ce qui est livré et vérifié
+
+### Socle
+
+- Client Next.js 16 / React 19, App Router, TypeScript strict.
+- Les routes serveur forment une façade vers **six** services : Authoring (5201), Play (5202), Identity (5203), Configuration (5204), PlayerExperience (5205), Organization (5206).
+- Le JWT vit dans le cookie `HttpOnly` `genengine_access` ; le navigateur ne conserve que des références opaques.
+- Image Next.js `standalone` multi-stage, conteneur non-root, filesystem en lecture seule, healthcheck.
+- CI : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `docker compose config --quiet`, `docker build`.
+
+### Parcours
+
+- Identity, catalogue Authoring, session Play complète (choix legacy et typés, quiz, texte libre confirmé, pause/reprise, arbre explicable).
+- Coque immersive : `body` en `100dvh` sans défilement, `main` porteur du défilement, en-tête en pastille flottante devenant barre basse sous 900 px.
+- Accueil à deux niveaux — ouverture d'univers puis promesse plateforme — dans `src/features/home/model/home-content.ts`. Le contenu éditorial n'est pas lu dans la configuration d'un client : l'accueil vend le moteur, pas une histoire.
+- La démonstration ne s'adresse qu'aux visiteurs anonymes : `/account` et `/play/demo` redirigent vers `/experience` dès que le cookie de session existe.
+- Configurateur du familier avec un effet écrit par paramètre et un aperçu rendu par le composant de production, sans brouillon intermédiaire. L'accent pilote la propriété CSS `--familiar-accent` consommée par l'aura.
+- Graphe de quête complet avec mémoire cumulée de toutes les parties, en fin de quête comme sur `/library/[versionId]`, qui lit `GET /scenario-versions/{versionId}/tree` sur Play. Une seule implémentation de disposition : la structure sans état passe par l'adaptateur `questTreeFromStructure`.
+- Administration : RBAC, rôles custom, Entra ID, Azure AI Foundry, économie, périodes métier, unités, memberships, import CSV prévalidé et affectations.
+- Carte à portes : une ancre par posture sur les deux illustrations, projection tenant le ratio du viewport, et décalage en spirale au-delà des clairières dessinées (`doorAnchorForIndex`) pour qu'aucune porte ne se superpose. Franchir une porte ouvre un `dialog` modal listant les scénarios du lieu ; un lieu sans contenu le dit.
+
+### Studio de configuration
+
+`/studio` est la surface de configuration d'un jeu. Six sections, **chacune
+réellement doublée d'un aperçu** (vérifié : `figure.surface-preview` pour le jeu,
+le catalogue, le familier, les libellés et les médias ; `section.scene-preview`
+pour les scénarios) :
+
+| Section | Fichier |
+|---|---|
+| Le jeu, Catégories & parcours, Familier, Libellés | `src/features/studio/ui/configuration-sections.tsx` |
+| Médias | `src/features/studio/ui/media-section.tsx` |
+| Scénarios | `src/features/studio/ui/scenario-section.tsx` |
+
+Le Studio lit le document du plan de contrôle, le modifie et le renvoie tel quel
+en conservant les champs qu'il ne connaît pas. Il partage l'endpoint
+`/api/admin/configuration` avec l'Administration : les deux ne doivent pas être
+ouverts en parallèle sur la même instance, le second enregistrement échouerait sur
+un conflit de révision.
+
+### Pack d'assets `diapason-core`
+
+- 62 assets CC0 de Kenney — 46 images, 16 sons — servis sous `public/packs/diapason-core/` (68 fichiers avec les quatre licences et le manifeste amont).
+- `public/packs/manifest.json` et `public/audio/manifest.json` sont **générés** par `node scripts/build-pack-manifests.mjs`, qui recalcule chaque empreinte SHA-256 depuis les octets copiés. `src/shared/assets/shipped-pack.test.ts` refait le contrôle à chaque `pnpm test`.
+- Résolution en un seul point, `resolveAssetReference` : le Studio l'appelle pour ses aperçus, le runtime via `useInstanceMedia`. Un aperçu d'auteur et le rendu d'un joueur ne peuvent pas diverger.
+- Le client héberge sa copie parce que la démonstration doit rester jouable **sans backend**.
+
+### Démonstration « Le Diapason »
+
+- 23 scènes dans `src/shared/mocks/stories.ts`, sans aucun appel réseau, jamais substituées à une erreur distante.
+- Un nœud d'accueil ouvre sur **trois situations** : `note-arrivee` (Lucidité), `reunion-table` (Courage), `spec-demande` (Transmission). Le vocabulaire de tonalité est restreint aux six postures ; la démonstration n'en exerce que trois.
+- **12 fins** : 3 `fin-accord-*`, 3 `fin-partielle-*`, 6 `fin-rupture-*`. Chaque situation mène à **deux** ruptures.
+- 7 tests couvrent la fixture, dont l'accessibilité des 23 scènes depuis l'ouverture et la cohérence entre le préfixe d'identifiant et le champ `outcome`.
+
+## Ce qui est cassé sur `main`
+
+**Rien d'identifié à ce jour.**
+
+Le seul défaut connu au moment de la rédaction — la sixième porte de la carte
+inatteignable — a été corrigé et fusionné entre-temps par
+[#20](https://github.com/JordanLacroix/GenEngine.Web/pull/20) (révision `b4edb39`).
+
+Pour mémoire, parce que le piège peut revenir : `worldDoorAnchors` et
+`compactWorldDoorAnchors` ne déclaraient que **cinq** ancres alors que la
+configuration de référence publie **six** postures, et les portes étaient
+positionnées par `anchors[index % anchors.length]` — la sixième retombait donc au
+pixel près sur la première. Le correctif ajoute une sixième ancre par
+illustration et, **au-delà des ancres dessinées**, décale chaque tour
+supplémentaire en spirale via `doorAnchorForIndex`. Un test de non-superposition
+couvre douze portes sur deux ratios de viewport.
+
+Toute catégorie publiée au-delà de six reste donc placée, mais hors clairière
+dessinée : c'est un compromis assumé, pas une position choisie à la main.
+
+## Ce qui est délibérément absent, et pourquoi
+
+Ces manques sont assumés et annoncés dans l'interface plutôt que simulés. Aucun
+n'est un oubli.
+
+| Manque | Cause | Conséquence visible |
+|---|---|---|
+| Aucune boucle d'ambiance | Le catalogue CC0 de Kenney n'en publie pas. Aucune source non CC0 n'a été substituée. | Les 5 signaux `ambience.*` restent non liés. 6 signaux sur 11 sont liés au pack. |
+| Aucune musique longue | Idem : seulement des stingers courts. Les pistes de 48 s par acte restent à produire. | `music.ending` et `music.gameOver` jouent un jingle, pas une piste. |
+| Aucune illustration peinte dans le pack | Kenney ne publie pas de 2D compatible avec la direction artistique Diapason. | Le pack ne contient que de l'UI, des icônes, des sfx et des stingers. Aucun décor de scène. |
+| Aucun portrait de personnage dans le pack | Idem. | Le seul portrait livré est `public/illustrations/familiar-aster.jpg`, un asset projet, pas un asset du pack. |
+| Rotation quotidienne | **Documentée dans la bible d'univers du dépôt `GenEngine`, jamais implémentée ici.** Le mot n'apparaît nulle part dans ce dépôt, ni en code ni en configuration. | Aucune. La capacité n'existe pas et n'est annoncée nulle part dans l'interface. |
+| Game over de première classe | Le moteur ne publie que `isEnding` sur un nœud ; aucun drapeau d'échec dans `ScenarioStructureContract` ni `NarrativeTreeContract`. | L'échec est **narratif seulement**. Le champ `outcome` (`accord` / `partielle` / `rupture`) est un type **local à la démonstration** (`src/entities/story/model/story.ts`), jamais présenté comme un contrat serveur. Sur une rupture, l'interface désactive le retour arrière et promeut « Reprendre depuis le début » ; elle ne le supprime pas. |
+| Médias de scène et de choix | Le schéma narratif du moteur les refuse : `PUT /scenarios/{id}/draft` répond `200` sur un document intact et `422 invalid_json` sur le même document augmenté d'un `visualUrl` de nœud et d'un `animationCue` de choix. | Le Studio édite et prévisualise, puis nomme cette cause probable quand l'enregistrement échoue. Dépendance `GenEngine`. |
+
+### Les illustrations ne servent pas Diapason
+
+`public/illustrations/` contient quatre visuels d'**heroic fantasy** hérités d'une
+itération antérieure : `intro-gateway.jpg` (figure encapuchonnée devant un portail
+doré, cité elfique), `world-map.jpg` (îles flottantes isométriques avec phare,
+forêt enchantée, ruine gothique, forteresse de lave), `familiar-aster.jpg` (renard
+céleste à oreilles de cristal) et `tutorial-key.jpg`.
+
+Ils contredisent la configuration de référence — 2026, notre monde, IA partout,
+un apprenti d'école d'ingénieur. La copie qui les entoure suit la même veine
+(« Chaque monde commence par une porte », « une clé », « un familier »).
+
+Précision utile : l'accueil n'utilise qu'**un seul** de ces visuels,
+`intro-gateway.jpg`, en fond décoratif `aria-hidden`. Les trois autres
+appartiennent aux features `experience` et `player`.
+
+## Écarts de documentation corrigés le 19 juillet 2026
+
+Ces affirmations figuraient dans les documents et étaient fausses ou périmées.
+Elles sont listées pour éviter qu'elles ne reviennent par copie d'un ancien
+handoff.
+
+- « 113 tests Vitest » — il y en a **132**, répartis en 14 fichiers.
+- « la démo comporte treize scènes pour une cible d'environ quinze minutes » — elle en compte **23**, et chaque situation se termine en quelques minutes.
+- « le bloc `media` du plan de configuration est conditionné au moteur » coexistait avec « publié depuis GenEngine #46 et consommé au runtime ». La seconde affirmation est la bonne ; seuls les **médias de scène et de choix** restent refusés.
+- Plusieurs jalons étaient annoncés « implémenté sur `<branche>` » alors que la branche est fusionnée dans `main` depuis longtemps.
+- `specs/architecture.md` ne décrivait que **trois** API et omettait `src/shared/assets` de ses frontières.
+- L'échelle `z` était présentée comme entièrement déclarée en variables. Seules quatre le sont — `--z-hud`, `--z-overlay`, `--z-fullscreen`, `--z-dialog` — et le niveau 40 s'appelle `--z-overlay`, pas `--z-panel`.
+- `ART_DIRECTION` était présenté comme « source de vérité ». Aucune constante de ce nom n'existe dans ce dépôt ; le terme n'apparaît que dans un commentaire de `globals.css` et renvoie aux specs du dépôt `GenEngine`.
+- Les portes de la carte étaient annoncées « réparées » et « ancrées aux repères » alors que la sixième restait inatteignable. Corrigé depuis par #20 ; l'affirmation est redevenue vraie, mais elle était fausse au moment où elle a été écrite.
 
 ## Démarrage rapide de reprise
 
@@ -41,236 +146,29 @@ curl --fail http://localhost:3001/
 docker compose down
 ```
 
-## Graphe hors partie
+## Ce qui n'a jamais été vérifié
 
-La limite est levée. Play expose désormais `GET /scenario-versions/{versionId}/tree` : la topologie d'une version publiée, sans session. Le contrat est volontairement distinct de `NarrativeTreeContract` et ne porte ni `state` de nœud ni `evaluation` de condition, ces valeurs dépendant d'un état de monde qui n'existe pas hors partie.
-
-`/library/[versionId]` ne réutilise plus la dernière session de l'appareil : la page appelle la route serveur `/api/scenario-versions/[id]/tree`, adapte la structure avec `questTreeFromStructure` et rend le graphe avec la maîtrise cumulée. Hors partie, un nœud est `discoveredBefore` s'il figure dans la maîtrise, `unseen` sinon ; ni `current`, ni `takenThisRun`, ni `locked` ne peuvent apparaître, et la légende est réduite en conséquence. La disponibilité des passages n'étant pas évaluée, le client ne l'affirme pas.
-
-L'autorisation reste celle du démarrage de session : 401 sans jeton, 422 `content_not_assigned` pour un joueur non affecté, 404 pour une version inconnue. Chaque refus produit un message explicite ; aucune fixture ne remplace une erreur distante.
-
-## Refonte immersive et accueil produit
-
-L'application est désormais plein écran de bout en bout : `body` occupe `100dvh`
-sans défiler, `main` porte le défilement et l'en-tête est une HUD flottante qui
-devient une barre basse sous 900 px. Le pied de page vit dans la scène.
-
-L'accueil a été refait en deux niveaux. Une ouverture pleine page présente
-l'univers de la configuration de référence « Le Diapason » — 2026, systèmes
-génératifs omniprésents, recul qui s'érode, un diapason confié à une personne en
-alternance — puis la promesse plateforme s'adresse à une personne qui décide :
-catégories par posture, surface de configuration réelle, suivi par traces sans
-classement, et ce qu'une école obtient. Aucun chiffre de résultat n'est avancé :
-la plateforme décrit ce qu'elle rend observable. Le contenu éditorial vit dans
-`src/features/home/model/home-content.ts` ; il n'est pas lu dans la configuration
-d'un client, parce que l'accueil vend le moteur et non une histoire.
-
-La démonstration ne s'adresse plus qu'aux visiteurs anonymes. `/account` et
-`/play/demo` redirigent vers `/experience` lorsqu'un cookie de session existe,
-l'accueil bascule ses appels à l'action vers « Reprendre mon univers », et
-`StoryCard` ne renvoie plus vers la démonstration lorsqu'une histoire n'a pas de
-version publiée — elle annonce l'indisponibilité. Vérifié : zéro occurrence de
-`/play/demo` dans le HTML de `/`, `/library`, `/account` et `/experience` en état
-connecté.
-
-### Portes de la carte
-
-Deux défauts distincts empêchaient une porte de mener quelque part.
-
-1. `/api/me` restreignait le catalogue aux affectations d'organisation dès que la
-   portée n'était pas globale. Une personne non rattachée — le cas d'un compte
-   fraîchement créé — se retrouvait donc avec zéro catégorie et une carte sans
-   aucune porte. La restriction ne s'applique plus qu'aux personnes réellement
-   membres ; l'autorisation reste celle de Play, qui refuse un démarrage non
-   affecté par `422 content_not_assigned`.
-2. Le rattachement comparait `category.scenarioIds` à l'identifiant de *version*,
-   jamais à l'identifiant de scénario, et le `categoryId` publié par le catalogue
-   n'était pas transporté par le client. Les deux liaisons sont désormais
-   exprimées en identifiant de scénario dans `map-places.ts`.
-
-Franchir une porte ouvre maintenant une interface réelle : `PlaceOverlay` liste
-les scénarios du lieu avec durée, découverte cumulée, obligation et échéance
-issues des affectations, et propose de jouer ou de relire la mémoire du parcours.
-Un lieu sans contenu le dit ; une configuration où rien n'est classé l'annonce au
-lieu d'afficher des portes vides. Le panneau est un `dialog` modal avec piège de
-focus et fermeture au clavier.
-
-### Familier
-
-Le modèle du moteur était largement plus riche que l'interface. Style
-d'explication, accent et capacités sont désormais exposés, et le style et l'accent
-sont envoyés depuis l'état réglé au lieu d'être recopiés de la définition. Chaque
-paramètre est doublé de son effet en une phrase, et l'aperçu rend la différence
-visible avant validation : la forme change la silhouette, l'accent pilote une
-propriété CSS `--familiar-accent` consommée par l'aura, et une réplique d'exemple
-est recomposée à chaque réglage à partir du ton, du style et du niveau d'aide.
-L'aperçu lit l'état en cours sans brouillon intermédiaire : ce qui est montré est
-ce qui sera enregistré.
-
-### Audio
-
-`src/shared/audio` prépare la lecture sonore configurable derrière un contrat
-stable : ambiances par lieu, signatures de choix, d'erreur, de récompense et
-d'ouverture, musiques de fin. Le moteur et le pack d'assets sont produits par
-d'autres tranches. `/audio/manifest.json` est **désormais publié** : six signaux
-sur onze sont liés au pack `diapason-core`, et le réglage de la HUD est actif. Les
-cinq `ambience.*` restent non liés parce que le pack déclare ne fournir aucune
-boucle d'ambiance ; sans manifeste du tout, la source resterait silencieuse et le
-réglage désactivé avec la raison affichée.
-Le son est désactivé par défaut, ne porte jamais seul une information, et
-l'ambiance continue reste coupée sous `prefers-reduced-motion`. Le contrat attendu
-est documenté dans `public/audio/README.md`.
-
-### Palette
-
-Les cinq teintes de `ART_DIRECTION` deviennent la source de vérité — encre
-`#17344a`, ivoire `#fffaf0`, sauge `#7a9a55`, or `#d7a746`, azur `#2f7fa0` — et
-les alias historiques `ink`/`ivory`/`ember`/`verdigris` en dérivent, ce qui fait
-suivre les feuilles existantes sans les réécrire ligne à ligne.
-
-## Studio de configuration
-
-`/studio` n'est plus un atelier d'import : c'est la surface où un client
-configure son jeu. Six sections — le jeu, catégories & parcours, familier,
-libellés, médias, scénarios — écrivent le document du plan de contrôle et le
-renvoient tel quel, en conservant les champs inconnus du client. Chaque section
-est doublée d'un aperçu rendu depuis l'état en cours, sans brouillon
-intermédiaire : ce qui est montré est ce qui sera enregistré.
-
-Le Studio et l'Administration éditent le même document par le même endpoint
-(`/api/admin/configuration`). Le partage est volontaire : le Studio s'adresse à
-la personne qui compose le jeu, l'Administration à celle qui exploite
-l'organisation, l'identité et l'économie. Les deux ne doivent pas être ouverts en
-parallèle sur la même instance : la révision attendue est portée par le document
-chargé, donc le second enregistrement échouerait sur un conflit de révision.
-
-### Médias
-
-Le contrat média est posé côté client — `packId:assetId` ou URL HTTPS, contrat de
-pack dans `src/shared/assets/asset-pack.ts`, plan par lieu dans
-`src/features/studio/model/media-configuration.ts`.
-
-**Le catalogue d'assets est publié.** `public/packs/diapason-core/` embarque les
-62 fichiers CC0 du pack `diapason-core` et `public/packs/manifest.json` les
-déclare. Les deux manifestes servis sont générés par
-`node scripts/build-pack-manifests.mjs`, qui recalcule chaque empreinte SHA-256
-depuis les octets copiés ; `src/shared/assets/shipped-pack.test.ts` refait ce
-contrôle à chaque `pnpm test`. Le backend sert le même pack
-(`GET /asset-packs/{packId}/files/…` sur `Configuration`) ; le client en garde sa
-copie parce que la démonstration doit rester jouable **sans backend**.
-
-**La résolution a lieu en un seul point** : `resolveAssetReference`. Le Studio
-l'appelle pour ses aperçus, le runtime via `src/shared/assets/instance-media.ts`
-(`useInstanceMedia`), qui applique le décor et l'ambiance d'un emplacement sur la
-carte et sur le lecteur connecté. Un aperçu d'auteur et le rendu d'un joueur ne
-peuvent donc pas diverger. Une référence non résolue ne fabrique jamais d'URL :
-la surface garde son rendu par défaut.
-
-**Une dépendance moteur reste ouverte** : le schéma narratif refuse les médias de
-scène et de choix. Vérifié par appel direct : `PUT /scenarios/{id}/draft` répond
-`200` sur un document intact et `422 invalid_json` sur le même document augmenté
-d'un `visualUrl` de nœud et d'un `animationCue` de choix. Le Studio nomme cette
-cause probable quand un enregistrement échoue alors que le brouillon porte des
-médias. Le bloc `media` du plan de configuration, lui, est publié depuis
-GenEngine #46 et consommé au runtime.
-
-## Démonstration « Le Diapason »
-
-La démonstration anonyme jouait encore l’histoire que Diapason remplace — « Le
-dernier phare », « Lueur », catégories « Courage / Intuition » — alors que
-l’accueil et le pied de page annonçaient déjà la configuration de référence.
-L’écart est corrigé : la fixture porte désormais 23 scènes tirées de la bible
-d’univers (`specs/domain/diapason` dans le dépôt `GenEngine`).
-
-La démonstration n’est plus une histoire mais un échantillon d’usages, parce que
-c’est l’étendue qui se vend et non un récit. Un nœud d’accueil ouvre sur trois
-situations : **La note de service** (Lucidité, provenance d’un document sans
-auteur), **La réunion où personne ne doute** (Courage, conflit professionnel) et
-**La spécification avant le code** (Transmission, Spec Driven Development).
-Chacune se termine en quelques minutes, et les tonalités de choix n’emploient
-que le vocabulaire des six postures.
-
-Les douze fins suivent la convention du contenu canonique — `fin-accord-*`,
-`fin-partielle-*`, `fin-rupture-*` — et chacune des trois situations mène à au
-moins une rupture. Le moteur ne connaissant que `isEnding`, la nature de la fin
-reste un champ `outcome` **local à la démonstration**, documenté comme tel et
-jamais présenté comme un contrat serveur. Sur une rupture, l’interface retire le
-retour arrière et fait de « Reprendre depuis le début » l’action principale :
-l’obligation de recommencer est portée par le texte et par l’interface, pas par
-un drapeau moteur qui n’existe pas.
-
-La démonstration reste sans appel réseau, cantonnée à `src/shared/mocks`, jamais
-substituée à une erreur distante, et inaccessible dès qu’une session existe.
-
-Non traité ici : le familier nommé « Lueur » servi par le document de
-configuration du backend (`familiars[0].name`) est du contenu serveur, pas du
-code client ; il porte encore le nom du compagnon de l’ancienne histoire. Le
-renommer relève du dépôt `GenEngine`.
-
-## Prochaine unité de travail
-
-La plateforme configurable est raccordée : permissions, rôles custom, Entra ID, Azure AI Foundry, familier, économie/magasin et Studio contextualisé. L’espace « Structures & affectations » consomme maintenant le service Organization pour gérer périodes métier, unités hiérarchiques, participants, encadrants, import CSV prévalidé et affectations avec suppression. Les contrats backend restent autoritatifs : Play résout les parcours au démarrage et la carte filtre les catégories d'un membre selon ses affectations.
-
-Sur `feat/product-operations-ui`, l'Administration est réorganisée par domaines et intègre une console utilisateurs recherchable, le cycle de vie des rôles custom, parcours/catégories/rattachements et la configuration visuelle du familier. Le Studio est devenu un éditeur low-code avec bibliothèque, graphe sélectionnable, inspecteur de scènes/choix, validation, prévisualisation, publication et archivage. La bibliothèque affiche la progression par catégorie et la démo comporte treize scènes pour une cible d'environ quinze minutes.
-
-Validation de la tranche immersive : typecheck, lint sans warning, 3 tests Vitest et build Next.js production réussis le 18 juillet 2026.
-
-Validation de la tranche Organization : typecheck, lint, tests Vitest et build Next.js production réussis le 18 juillet 2026.
-
-Validation du seuil narratif : revue visuelle navigateur du compte, de l’intro, des interactions et du bilan ; lint, typecheck, 6 tests Vitest, build Next.js, Compose, image Docker durcie et sondes HTTP des illustrations réussis le 18 juillet 2026.
-
-Validation du graphe de quête : lint sans warning, typecheck, 35 tests Vitest (dont 26 sur `buildQuestGraph`) et build Next.js production réussis le 19 juillet 2026. Revue navigateur de la démonstration sur deux parcours successifs : la mémoire cumulée fait passer la découverte de 46 % à 77 % et révèle les deux fins.
-
-Validation de la stabilisation joueur : revue visuelle navigateur de la carte, du configurateur et du journal ; localisation, déduplication et projection de carte couvertes par tests unitaires le 18 juillet 2026.
-
-Validation de la carte hors partie : lint sans warning, typecheck, 47 tests Vitest (dont 12 sur la structure sans état) et build Next.js production réussis le 19 juillet 2026. Non vérifié contre un backend en fonctionnement : la route serveur et les états de refus n'ont pas été exercés sur une instance Play réelle.
-
-Validation de la refonte immersive : lint sans warning, typecheck, 84 tests
-Vitest et build Next.js production réussis le 19 juillet 2026. Revue navigateur
-contre les six API locales (ports 5201-5206) : accueil anonyme et connecté,
-coque plein écran et barre basse mobile, portes de la carte reproduites vides
-puis réparées, panneau de lieu ouvert au clic et fermé par Échap, aperçu du
-familier vérifié paramètre par paramètre, et absence de la démonstration en état
-connecté sur `/`, `/account`, `/play/demo`, `/library` et `/experience`.
-
-Validation du Studio de configuration : lint sans warning, typecheck, 113 tests
-Vitest (dont 14 sur le contrat de pack d'assets, 8 sur le plan média et 7 sur le
-brouillon narratif) et build Next.js production réussis le 19 juillet 2026.
-
-Revue navigateur contre une pile locale complète des six API (projet Compose
-isolé `genengine-verify`, ports 5301-5306, base vierge, compte administrateur
-bootstrappé) : chargement du plan de configuration réel, édition du nom du jeu
-répercutée en direct dans l'aperçu, enregistrement puis publication vérifiés sur
-`GET /experience/default` (version 1 → 2, nom publié), aperçu de carte avec une
-porte par catégorie visible, réplique du familier recomposée au changement de
-niveau d'aide, aperçu de navigation suivant un libellé modifié, génération d'un
-scénario par le provider hors ligne, assignation d'un visuel de scène et d'un son
-de choix depuis un manifeste de pack, et déclenchement de l'interaction dans
-l'aperçu — son lancé, repère `glow` appliqué, énoncé textuel complet.
-
-Non vérifié : la sortie sonore réelle (le navigateur automatisé confirme que la
-lecture démarre sans erreur, pas qu'un son est audible) ; le plan média sur une
-instance publiant réellement `media` (exercé via une injection locale temporaire
-de la route serveur, retirée depuis) ; le pack d'assets réel de la tranche #45
-(exercé avec un manifeste local temporaire, retiré depuis).
+- La sortie sonore **réelle** : le navigateur automatisé confirme que la lecture démarre sans erreur, pas qu'un son est audible.
+- Le pack `diapason-core` servi par le backend (`GET /asset-packs/{packId}/files/…`). Les deux copies sont réputées identiques ; seule celle du client est testée.
+- Les états de refus de `/library/[versionId]` — 401, `422 content_not_assigned`, 404 — sur une instance Play réelle.
 
 ## Décisions à préserver
 
-- Backend autoritatif et aucune règle Narrative dans le client.
-- Démonstration isolée, jamais utilisée comme fallback silencieux.
+- Backend autoritatif ; aucune règle `GenEngine.Narrative` dans le client.
+- Démonstration isolée dans `src/shared/mocks`, jamais utilisée comme repli silencieux, réservée aux visiteurs anonymes.
 - Une seule implémentation de disposition du graphe : la structure sans état passe par un adaptateur, pas par une seconde dérivation.
-- Échanges réseau centralisés dans `src/shared/api`.
-- JWT en cookie `HttpOnly` et variables backend côté serveur.
-- Accessibilité clavier, contrastes et réduction des animations.
-- La démonstration ne s'adresse qu'aux visiteurs anonymes.
+- Échanges réseau centralisés dans `src/shared/api` ; JWT en cookie `HttpOnly` ; URLs backend sans préfixe `NEXT_PUBLIC_`.
+- Masquer une action dans l'interface ne remplace jamais l'autorisation serveur.
+- Accessibilité clavier, contrastes et `prefers-reduced-motion`.
 - Le son est optionnel, désactivé par défaut, et ne porte jamais seul une information.
 - Une porte de la carte ouvre toujours une interface réelle ou dit pourquoi elle est vide.
-- L'aperçu du familier est rendu par le composant de production, sans brouillon intermédiaire.
-- Une capacité que le moteur n'expose pas est annoncée absente, jamais simulée : ni bloc média fabriqué localement, ni catalogue d'assets inventé.
+- Une capacité que le moteur n'expose pas est annoncée absente, jamais simulée.
 - Un média assigné est toujours auditionnable ou visible dans le Studio même.
 - Un repère d'animation inconnu du client n'est pas joué, et l'aperçu le dit.
 - Conteneur non-root, en lecture seule et observable par healthcheck.
 
 ## Critère de passage de relais réussi
 
-Un nouvel agent doit pouvoir lire `AGENTS.md`, lancer les contrôles locaux, démarrer Compose et identifier la prochaine tranche sans dépendre de l’historique de conversation.
+Un nouvel agent doit pouvoir lire `AGENTS.md`, lancer les sept contrôles locaux,
+démarrer Compose, et distinguer sans ambiguïté ce qui est livré, ce qui est cassé
+et ce qui est délibérément absent — sans dépendre de l'historique de conversation.
