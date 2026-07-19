@@ -4,6 +4,8 @@ import { ArrowLeft, BookOpen, GitBranch, LogIn, MousePointer2, Pause, Play, Rota
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CurrentStepContract, NarrativeTreeContract, PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, SessionContract, SessionStateContract } from "@/shared/api/contracts";
+import { fetchStoryByVersionId } from "@/shared/api/catalog-browser";
+import { sessionStorageKey } from "@/shared/lib/local-sessions";
 import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
 import { useInstanceMedia } from "@/shared/assets/instance-media";
 import { useAudio } from "@/shared/audio/audio-provider";
@@ -29,7 +31,9 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
-  const storageKey = `genengine.session.${scenarioVersionId}`;
+  // La composition de la clé appartient à `local-sessions` : la bibliothèque
+  // énumère ces mêmes clés pour retrouver les reprises sans lire le catalogue.
+  const storageKey = sessionStorageKey(scenarioVersionId);
 
   useEffect(() => {
     setAmbienceUrl(playerMedia.ambienceUrl);
@@ -45,8 +49,10 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   }, []);
 
   useEffect(() => {
-    fetch("/api/catalog").then(async (response) => response.ok ? response.json() as Promise<Array<{ id: string; title: string }>> : [])
-      .then((stories) => setTitle(stories.find((story) => story.id === scenarioVersionId)?.title ?? "Histoire GenEngine"))
+    // Seul le titre de cette version est nécessaire : il est résolu par
+    // identifiant, sans télécharger le catalogue paginé.
+    fetchStoryByVersionId(scenarioVersionId)
+      .then((story) => setTitle(story?.title ?? "Histoire GenEngine"))
       .catch(() => undefined);
     const saved = window.localStorage.getItem(storageKey);
     async function restore() {

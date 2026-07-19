@@ -12,6 +12,7 @@ import type {
   UserContextContract,
 } from "@/shared/api/contracts";
 import type { StorySummary } from "@/entities/story/model/story";
+import { fetchWholeCatalog } from "@/shared/api/catalog-browser";
 import { gameCopy } from "@/shared/lib/game-copy";
 import {
   parseFamiliarAssetPack, readFamiliarAssetPack, saveFamiliarAssetPack,
@@ -67,7 +68,11 @@ export function PlayerExperienceHub() {
     const controller = new AbortController();
     void Promise.all([
       fetch("/api/me", { signal: controller.signal }).then((response) => read<Context>(response)),
-      fetch("/api/catalog", { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<Story[]> : []),
+      // La carte classe l'intégralité du catalogue par catégorie avant de
+      // dessiner une porte : un comptage sur la seule première page afficherait
+      // des lieux artificiellement vides. Le parcours de pages est fait côté
+      // serveur, en un aller-retour pour le navigateur.
+      fetchWholeCatalog(controller.signal).then((page) => page.items).catch(() => [] as Story[]),
       fetch("/api/player/journal", { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<JournalContract> : undefined),
     ]).then(([value, catalog, timeline]) => {
       setContext(value); setStories(catalog); setJournal(timeline); hydrateFamiliar(value);

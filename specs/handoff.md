@@ -48,6 +48,7 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
 ### Parcours
 
 - Identity, catalogue Authoring, session Play complète (choix legacy et typés, quiz, texte libre confirmé, pause/reprise, arbre explicable).
+- Catalogue **paginé** : le client décode l'enveloppe `{ items, page, pageSize, total }`, envoie `page`/`pageSize`/`query` et n'utilise plus `offset`/`limit`. La bibliothèque charge 24 récits à la fois avec un bouton « Charger la suite » et annonce le `total` du serveur ; sa recherche est exécutée par le backend. La carte des passages assemble le catalogue entier côté serveur, parce qu'une porte compte ses récits. Les écrans qui n'ont besoin que d'un titre le résolvent par identifiant de version. Détail du raisonnement par écran dans le README.
 - Coque immersive : `body` en `100dvh` sans défilement, `main` porteur du défilement, en-tête en pastille flottante devenant barre basse sous 900 px.
 - Accueil à deux niveaux — ouverture d'univers puis promesse plateforme — dans `src/features/home/model/home-content.ts`. Le contenu éditorial n'est pas lu dans la configuration d'un client : l'accueil vend le moteur, pas une histoire.
 - La démonstration ne s'adresse qu'aux visiteurs anonymes : `/account` et `/play/demo` redirigent vers `/experience` dès que le cookie de session existe.
@@ -185,6 +186,7 @@ docker compose down
 - La sortie sonore **réelle** : le navigateur automatisé confirme que la lecture démarre sans erreur, pas qu'un son est audible.
 - Le pack `diapason-core` servi par le backend (`GET /asset-packs/{packId}/files/…`). Les deux copies sont réputées identiques ; seule celle du client est testée.
 - Les états de refus de `/library/[versionId]` — 401, `422 content_not_assigned`, 404 — sur une instance Play réelle.
+- **Le catalogue paginé contre le moteur réel.** La rupture de contrat vient de la PR backend `GenEngine` #55, non fusionnée : aucun moteur déployé ne renvoie encore l'enveloppe. Les tests sont écrits contre le contrat documenté et contre un backend simulé en mémoire ; ils prouvent le décodage et le parcours de pages de ce client, pas que le moteur les produise. Les deux PR doivent être fusionnées ensemble.
 
 ## Décisions à préserver
 
@@ -192,6 +194,7 @@ docker compose down
 - Démonstration isolée dans `src/shared/mocks`, jamais utilisée comme repli silencieux, réservée aux visiteurs anonymes.
 - Une seule implémentation de disposition du graphe : la structure sans état passe par un adaptateur, pas par une seconde dérivation.
 - Échanges réseau centralisés dans `src/shared/api` ; JWT en cookie `HttpOnly` ; URLs backend sans préfixe `NEXT_PUBLIC_`.
+- Un écran qui affiche un nombre de récits affiche le `total` du serveur, jamais le nombre d'éléments chargés ; une recherche sur une liste paginée est exécutée par le serveur, jamais sur la page.
 - Masquer une action dans l'interface ne remplace jamais l'autorisation serveur.
 - Accessibilité clavier, contrastes et `prefers-reduced-motion`.
 - Le son est optionnel, désactivé par défaut, et ne porte jamais seul une information.

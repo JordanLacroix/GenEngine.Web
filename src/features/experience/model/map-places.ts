@@ -2,6 +2,7 @@ import type {
   ContentAssignmentContract, ExperienceDocumentContract, ScenarioMasteryContract,
 } from "@/shared/api/contracts";
 import type { StorySummary } from "@/entities/story/model/story";
+import { belongsToCategory } from "@/entities/story/model/story-category";
 
 type Category = ExperienceDocumentContract["categories"][number];
 
@@ -30,16 +31,10 @@ export interface Place {
 /**
  * Rattache un scénario à une catégorie.
  *
- * Deux liaisons coexistent dans les contrats : la catégorie peut énumérer ses
- * `scenarioIds`, et le catalogue peut porter un `categoryId`. Les deux sont
- * exprimées en identifiant de *scénario*, jamais de version — confondre les deux
- * revient à ne rien rattacher du tout.
+ * La règle a été déplacée dans `entities` pour que la bibliothèque compte de la
+ * même façon que la carte ; elle reste exportée ici pour ses appelants.
  */
-export function belongsToCategory(story: StorySummary, category: Category): boolean {
-  const scenarioId = story.scenarioId ?? story.slug;
-  if (story.categoryId && story.categoryId === category.id) return true;
-  return category.scenarioIds.includes(scenarioId);
-}
+export { belongsToCategory };
 
 /**
  * Quand aucune catégorie ne revendique aucun scénario, la configuration n'a pas
