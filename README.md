@@ -90,7 +90,7 @@ inaccessible dès qu’une session existe.
 | Accueil et bibliothèque éditoriale | ✅ Disponible |
 | Démonstration hors ligne | ✅ Disponible |
 | Authentification avec cookie `HttpOnly` | ✅ Connectée |
-| Catalogue public Authoring | ✅ Connecté |
+| Catalogue public Authoring | ✅ Connecté à l’enveloppe paginée `{items, page, pageSize, total}`, recherche exécutée par le serveur |
 | Choix, quiz et texte libre confirmé | ✅ Connectés à Play |
 | Pause, reprise et arbre explicable | ✅ Connectés à Play |
 | Atelier d’import et publication | ✅ Connecté à Authoring |
@@ -251,6 +251,34 @@ ENTRA_CLIENT_SECRET=
 Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l’identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration.
 
 Le player consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session. Il ne réimplémente aucune règle Narrative.
+
+### Catalogue paginé
+
+`GET /catalog` renvoie une enveloppe `{ items, page, pageSize, total }`. La
+convention est celle du backend, valable sur toutes ses listes volumineuses :
+`page` en base 1 (défaut 1), `pageSize` par défaut 25 et **borné à 100**, et
+`query` en recherche sous-chaîne insensible à la casse. `offset` et `limit`
+n’existent plus.
+
+`src/shared/api/pagination.ts` porte seul ces bornes et le décodage de
+l’enveloppe. Un tableau nu — la forme d’avant la rupture — **échoue
+explicitement** au lieu d’être réinterprété : sans cela, un moteur resté sur
+l’ancienne version afficherait un catalogue silencieusement vide (invariant 14).
+
+Le comportement retenu dépend de ce dont l’écran a réellement besoin :
+
+| Écran | Comportement | Pourquoi |
+|---|---|---|
+| `/library` | Une page de 24 récits, bouton « Charger la suite », total du serveur affiché | Le catalogue peut porter des centaines de récits ; en montrer 20 en annonçant 20 serait faux |
+| `/library` — recherche | Envoyée au serveur via `query`, avec un délai de 300 ms | Filtrer localement une page de 24 éléments donnerait des résultats faux |
+| `/library` — reprises et progression par catégorie | Sessions locales résolues par identifiant de version ; dénominateur pris dans l’expérience publiée | Ni le numérateur ni le dénominateur ne dépendent alors de la page affichée |
+| `/experience` — carte des passages | Catalogue entier, pages assemblées **côté serveur** | Une porte compte ses récits : un comptage sur la première page afficherait des lieux artificiellement vides |
+| `/play/[versionId]`, `/library/[versionId]` | Résolution d’un seul titre par identifiant de version | Un titre ne justifie pas de rapatrier le catalogue |
+
+Les résolutions par identifiant passent par `/api/catalog?versionIds=…`, qui
+parcourt les pages côté serveur en un seul balayage. C’est un contournement
+assumé : le backend n’expose pas de lecture unitaire du catalogue, et une route
+`GET /catalog/{versionId}` le supprimerait.
 
 ### Son
 

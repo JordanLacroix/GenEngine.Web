@@ -4,6 +4,7 @@ import { ArrowLeft, LoaderCircle, Route } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, ScenarioStructureContract } from "@/shared/api/contracts";
+import { fetchStoryByVersionId } from "@/shared/api/catalog-browser";
 import { questTreeFromStructure, type QuestNodeState } from "@/features/player/model/quest-graph";
 import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
 
@@ -31,9 +32,11 @@ export function ScenarioMemory({ scenarioVersionId }: { scenarioVersionId: strin
     const controller = new AbortController();
 
     void Promise.all([
-      fetch("/api/catalog", { signal: controller.signal })
-        .then((response) => response.ok ? response.json() as Promise<Array<{ id: string; title: string }>> : [])
-        .then((stories) => setTitle(stories.find((story) => story.id === scenarioVersionId)?.title ?? "Histoire GenEngine")),
+      // Un seul titre est nécessaire : il est résolu par identifiant de version,
+      // sans rapatrier le catalogue — qui peut compter des milliers d'entrées.
+      fetchStoryByVersionId(scenarioVersionId, controller.signal)
+        .then((story) => setTitle(story?.title ?? "Histoire GenEngine"))
+        .catch(() => undefined),
       fetch("/api/me", { cache: "no-store", signal: controller.signal })
         .then((response) => response.ok ? response.json() as Promise<{ player: PlayerExperienceContract }> : undefined)
         .then((context) => setMastery(context?.player.masteries.find((item) => item.scenarioVersionId === scenarioVersionId))),

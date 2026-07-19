@@ -58,6 +58,34 @@ runtime est `--ink-950: #060f17`. Elles renvoient aux specs de direction
 artistique du dépôt `GenEngine` ; aucune constante `ART_DIRECTION` n'existe dans
 ce dépôt.
 
+## Pagination du catalogue
+
+Le backend expose une convention unique sur ses listes volumineuses : `page`
+(base 1), `pageSize` (défaut 25, borné à `[1, 100]`), `query`, et l'enveloppe
+`{ items, page, pageSize, total }`. `offset` et `limit` n'existent plus.
+
+`src/shared/api/pagination.ts` est **le seul endroit** qui connaît ces bornes et
+décode l'enveloppe. Un tableau nu y échoue explicitement : l'ancienne forme du
+contrat ne doit pas être réinterprétée en catalogue vide (invariant 14).
+
+`src/shared/api/catalog-browser.ts` est le seul point d'accès navigateur à
+`/api/catalog`. Les écrans choisissent une stratégie, jamais une URL :
+
+- une page à la fois plus chargement progressif, avec recherche serveur, pour la
+  bibliothèque ;
+- le catalogue entier, assemblé côté serveur, pour la carte des passages, qui
+  doit classer chaque récit par catégorie avant de dessiner une porte ;
+- une résolution par identifiants de version pour les écrans qui n'ont besoin que
+  d'un titre.
+
+Cette dernière résolution parcourt les pages côté serveur. C'est un
+contournement : le backend n'expose pas de lecture unitaire du catalogue. Il
+disparaîtra le jour où `GET /catalog/{versionId}` existera.
+
+La règle de rattachement d'un scénario à une catégorie vit dans
+`src/entities/story/model/story-category.ts`, et non dans une feature : la carte
+et la bibliothèque doivent compter de la même façon.
+
 ## Sécurité
 
 Les URLs de services restent côté serveur, sans préfixe `NEXT_PUBLIC_`. Identity fournit le JWT conservé dans le cookie `HttpOnly` `genengine_access`. Les permissions sont appliquées par le service propriétaire ; l'interface peut adapter sa présentation mais ne devient jamais la frontière d'autorisation. `isAuthenticated()` ne teste que la présence du cookie : c'est un signal de présentation, pas un contrôle d'accès.
