@@ -285,9 +285,14 @@ barrière, l’écran ferait du serveur un relais vers tout ce qu’il peut join
 pas le visiteur : contournement de frontière réseau et scanner de ports
 (CWE-918). Elle s’applique à l’enregistrement, au test de joignabilité **et** à
 la relecture du cookie, pour qu’un durcissement ultérieur de la liste invalide
-les surcharges déjà posées. `*` lève la restriction et doit rester un choix
-explicite de l’exploitant. L’écran annonce la liste au lieu de la laisser
-découvrir par un refus.
+les surcharges déjà posées. **Il n’existe aucun joker** : un exploitant qui vise
+d’autres machines les nomme. Un `*` rendrait au cookie le pouvoir de désigner
+l’hôte appelé, ce que cette liste retire précisément. L’écran annonce la liste
+au lieu de la laisser découvrir par un refus.
+
+La surcharge ne fournit d’ailleurs jamais la chaîne appelée : elle *sélectionne*
+un hôte parmi ceux déclarés et un port entier borné, et l’URL est recomposée à
+partir de ces valeurs de confiance.
 
 `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` tranche l’autorisation. **Défaut : activé
 hors production, désactivé en production**, parce qu’une surcharge acceptée en

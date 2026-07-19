@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  assertHostsAllowed, defaultAllowedHosts, defaultGroupedEndpoints, endpointUrl, endpointUrls,
+  allowedHostFor, assertHostsAllowed, defaultAllowedHosts, defaultGroupedEndpoints, endpointUrl, endpointUrls,
   EndpointValidationError, isHostAllowed, normalizeServiceUrl, parseAllowedHosts,
   parseEndpointOverride, readEndpointOverride, serializeEndpointOverride,
   serviceDescriptors, serviceIds,
@@ -136,8 +136,13 @@ describe("liste d’hôtes autorisés", () => {
     expect(isHostAllowed("localhost.attaquant.example", defaultAllowedHosts)).toBe(false);
   });
 
-  it("ne lève la restriction que sur un astérisque explicite", () => {
-    expect(isHostAllowed("attaquant.example", ["*"])).toBe(true);
+  it("n’offre aucun joker : un astérisque n’est qu’un hôte qui ne correspond à rien", () => {
+    expect(isHostAllowed("attaquant.example", ["*"])).toBe(false);
+  });
+
+  it("rend l’entrée déclarée, pour que l’appelant recompose l’URL sans la valeur reçue", () => {
+    expect(allowedHostFor("LOCALHOST", defaultAllowedHosts)).toBe("localhost");
+    expect(allowedHostFor("attaquant.example", defaultAllowedHosts)).toBeUndefined();
   });
 });
 

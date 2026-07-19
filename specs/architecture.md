@@ -63,7 +63,9 @@ Deux barrières encadrent la capacité. `GENENGINE_ENDPOINT_ALLOWED_HOSTS` borne
 les hôtes visables — défaut `localhost`, `127.0.0.1`, `::1`,
 `host.docker.internal` — et s'applique à l'écriture, à la sonde et à la
 relecture du cookie ; sans elle, le serveur devient un relais vers son propre
-réseau interne (CWE-918). `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne la
+réseau interne (CWE-918). Aucun joker n'existe, et l'URL appelée est recomposée
+à partir de l'hôte déclaré et d'un port entier borné : une chaîne venant du
+cookie n'atteint jamais `fetch`. `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne la
 capacité — activée hors
 production, désactivée en production. Désactivée, l'écran reste consultable en
 lecture seule et l'enregistrement répond `403`.

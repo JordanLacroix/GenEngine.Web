@@ -79,7 +79,7 @@ export interface EndpointProbeResult {
 /** Réponse de `GET /api/settings/endpoints`. */
 export interface EndpointConfigurationContract {
   readonly overrideEnabled: boolean;
-  /** Hôtes que l'exploitant accepte comme cible ; `*` lève la restriction. */
+  /** Hôtes que l'exploitant accepte comme cible. Aucun joker n'existe. */
   readonly allowedHosts: readonly string[];
   readonly source: "override" | "environment";
   readonly override?: EndpointOverride;
@@ -145,8 +145,10 @@ function normalizePort(raw: unknown, service: ServiceId): number {
  * son choix — un contournement de frontière réseau (CWE-918), et un scanner de
  * ports pour tout ce que le serveur peut joindre et pas lui.
  *
- * Défaut : la convention de déploiement local. `*` lève la restriction et doit
- * rester un choix explicite de l'exploitant.
+ * Défaut : la convention de déploiement local. Il n'existe **pas** de joker :
+ * un exploitant qui vise d'autres machines les nomme. Un `*` rendrait au cookie
+ * le pouvoir de désigner l'hôte appelé, ce qui est précisément ce que cette
+ * liste retire.
  */
 export const defaultAllowedHosts: readonly string[] = [
   "localhost", "127.0.0.1", "::1", "host.docker.internal",
@@ -157,11 +159,26 @@ export function parseAllowedHosts(raw: string | undefined): readonly string[] {
   return declared.length > 0 ? declared : defaultAllowedHosts;
 }
 
-export function isHostAllowed(host: string, allowed: readonly string[]): boolean {
-  if (allowed.includes("*")) return true;
+function normalizeHostName(host: string): string {
   // `new URL` conserve les crochets d'une adresse IPv6 littérale.
-  const normalized = host.trim().toLowerCase().replace(/^\[|\]$/g, "");
-  return allowed.some((candidate) => candidate === normalized);
+  return host.trim().toLowerCase().replace(/^\[|\]$/g, "");
+}
+
+export function isHostAllowed(host: string, allowed: readonly string[]): boolean {
+  return allowedHostFor(host, allowed) !== undefined;
+}
+
+/**
+ * L'entrée de la liste qui correspond à cet hôte, ou `undefined`.
+ *
+ * Renvoyer la valeur **déclarée par l'exploitant** plutôt qu'un booléen n'est
+ * pas cosmétique : l'appelant reconstruit l'URL à partir de cette valeur, si
+ * bien que la chaîne atteignant `fetch` provient de l'environnement du serveur
+ * et non du cookie du visiteur.
+ */
+export function allowedHostFor(host: string, allowed: readonly string[]): string | undefined {
+  const normalized = normalizeHostName(host);
+  return allowed.find((candidate) => normalizeHostName(candidate) === normalized);
 }
 
 /**

@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import {
-  assertHostsAllowed, type EndpointOverride, endpointUrl, endpointUrls, isHostAllowed,
+  allowedHostFor, assertHostsAllowed, type EndpointOverride, endpointUrl, endpointUrls,
   parseAllowedHosts, readEndpointOverride, type ServiceId, serviceDescriptors, serviceIds,
 } from "@/shared/api/service-endpoints";
 
@@ -44,9 +44,9 @@ export function isEndpointOverrideEnabled(): boolean {
  *
  * `GENENGINE_ENDPOINT_ALLOWED_HOSTS`, liste séparée par des virgules. Défaut :
  * la convention locale — `localhost`, `127.0.0.1`, `::1`,
- * `host.docker.internal`. `*` lève la restriction, au choix explicite de
- * l'exploitant. Sans elle, l'écran de configuration ferait du serveur un relais
- * vers n'importe quel hôte joignable depuis lui (CWE-918).
+ * `host.docker.internal`. Aucun joker : un exploitant qui vise d'autres
+ * machines les nomme. Sans cette liste, l'écran de configuration ferait du
+ * serveur un relais vers n'importe quel hôte joignable depuis lui (CWE-918).
  */
 export function allowedEndpointHosts(): readonly string[] {
   return parseAllowedHosts(process.env.GENENGINE_ENDPOINT_ALLOWED_HOSTS);
@@ -96,20 +96,32 @@ export async function endpointConfiguration(): Promise<{
 /**
  * L'URL réellement appelée pour un service, surcharge de session comprise.
  *
- * L'hôte est reconstruit à partir des composants validés d'une `URL` analysée,
- * et refusé s'il sort de la liste autorisée. Une valeur venant du cookie ne
- * peut donc pas atteindre `fetch` sans être passée par ce point de contrôle.
+ * La surcharge ne fournit jamais la chaîne appelée : elle ne fait que
+ * *sélectionner* un hôte parmi ceux que l'exploitant a déclarés, et un port
+ * entier borné. L'URL rendue est ensuite recomposée à partir de ces valeurs de
+ * confiance — schéma littéral, hôte issu de la liste d'environnement, port
+ * numérique. Une chaîne venant du cookie ne peut donc pas atteindre `fetch`.
+ *
+ * Un hôte hors liste ne provoque pas d'erreur ici : on retombe sur
+ * l'environnement du serveur, pour qu'un durcissement de la liste dégrade vers
+ * la configuration d'instance plutôt que vers une panne.
  */
 export async function resolveServiceUrl(service: Service): Promise<string> {
   const override = await sessionOverride();
-  if (!override) return endpointUrl(environmentEndpoints(), service);
-  const parsed = new URL(endpointUrl(override, service));
-  if (!isHostAllowed(parsed.hostname, allowedEndpointHosts())) {
-    return endpointUrl(environmentEndpoints(), service);
-  }
-  const port = parsed.port ? `:${parsed.port}` : "";
-  const path = parsed.pathname.replace(/\/+$/, "");
-  return `${parsed.protocol}//${parsed.hostname}${port}${path}`;
+  const fallback = endpointUrl(environmentEndpoints(), service);
+  if (!override) return fallback;
+
+  let requested: URL;
+  try { requested = new URL(endpointUrl(override, service)); }
+  catch { return fallback; }
+
+  const host = allowedHostFor(requested.hostname, allowedEndpointHosts());
+  if (host === undefined) return fallback;
+
+  const scheme = requested.protocol === "https:" ? "https" : "http";
+  const port = Number.parseInt(requested.port, 10);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) return `${scheme}://${host}`;
+  return `${scheme}://${host}:${port}`;
 }
 
 /**

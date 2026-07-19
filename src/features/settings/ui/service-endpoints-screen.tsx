@@ -128,13 +128,13 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
       </span>
     </p>}
 
-    {editable && !state.allowedHosts.includes("*") && <p className="settings-locked" role="note">
+    {editable && <p className="settings-locked" role="note">
       <ShieldAlert size={16} aria-hidden="true" />
       <span>
         Le serveur n’accepte de relayer que vers&nbsp;
         {state.allowedHosts.map((host) => <code key={host}>{host} </code>)}
-        — une adresse hors de cette liste sera refusée. L’exploitant élargit la liste avec
-        <code> GENENGINE_ENDPOINT_ALLOWED_HOSTS</code>.
+        — une adresse hors de cette liste sera refusée. L’exploitant élargit la liste en nommant
+        les machines dans <code>GENENGINE_ENDPOINT_ALLOWED_HOSTS</code>.
       </span>
     </p>}
 

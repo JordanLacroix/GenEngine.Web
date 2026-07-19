@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { allowedEndpointHosts, environmentEndpoints, isEndpointOverrideEnabled } from "@/shared/api/genengine-server";
 import { sameOriginRejection } from "@/shared/api/route-errors";
 import {
-  assertHostsAllowed, type EndpointProbeResult, EndpointValidationError, endpointUrl,
-  isHostAllowed, parseEndpointOverride, type ServiceId, serviceDescriptor, serviceIds,
+  allowedHostFor, assertHostsAllowed, type EndpointProbeResult, EndpointValidationError,
+  endpointUrl, parseEndpointOverride, type ServiceId, serviceDescriptor, serviceIds,
 } from "@/shared/api/service-endpoints";
 
 export const dynamic = "force-dynamic";
@@ -53,27 +53,35 @@ export async function POST(request: Request) {
 }
 
 async function probe(service: ServiceId, base: string): Promise<EndpointProbeResult> {
-  const parsed = new URL(base);
-  if (!isHostAllowed(parsed.hostname, allowedEndpointHosts())) {
+  // Même principe que `resolveServiceUrl` : l'adresse sondée est recomposée à
+  // partir de l'hôte déclaré par l'exploitant, jamais de la chaîne reçue.
+  const requested = new URL(base);
+  const host = allowedHostFor(requested.hostname, allowedEndpointHosts());
+  if (host === undefined) {
     return { service, url: base, reachable: false, latencyMs: 0, detail: "Hôte non autorisé par l’exploitant." };
   }
+  const scheme = requested.protocol === "https:" ? "https" : "http";
+  const port = Number.parseInt(requested.port, 10);
+  const origin = Number.isInteger(port) && port >= 1 && port <= 65_535
+    ? `${scheme}://${host}:${port}`
+    : `${scheme}://${host}`;
   const started = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), probeTimeoutMs);
   try {
-    const response = await fetch(new URL("/health", parsed.origin), {
+    const response = await fetch(new URL("/health", origin), {
       signal: controller.signal, cache: "no-store", headers: { Accept: "application/json" },
     });
     const latencyMs = Date.now() - started;
     return {
-      service, url: base, reachable: true, status: response.status, latencyMs,
+      service, url: origin, reachable: true, status: response.status, latencyMs,
       detail: response.ok
         ? `${serviceDescriptor(service).label} répond ${response.status} sur /health.`
         : `Un serveur répond ${response.status} sur /health : l’adresse est joignable, mais ce n’est peut-être pas ${serviceDescriptor(service).label}.`,
     };
   } catch (error) {
     return {
-      service, url: base, reachable: false, latencyMs: Date.now() - started,
+      service, url: origin, reachable: false, latencyMs: Date.now() - started,
       detail: controller.signal.aborted
         ? `Aucune réponse en ${probeTimeoutMs / 1000} s.`
         : error instanceof Error ? error.message : "Connexion impossible.",
