@@ -97,11 +97,17 @@ export const defaultGroupedEndpoints: GroupedEndpoints = {
 };
 
 /**
- * Une URL de service acceptable.
+ * Une URL de service acceptable : une **origine**, rien de plus.
  *
- * Refuse tout ce qui n'est pas `http`/`https`, tout identifiant embarqué dans
- * l'URL — un secret n'a rien à faire dans une configuration — et normalise en
- * origine plus chemin de base, sans barre finale superflue.
+ * Refuse tout ce qui n'est pas `http`/`https` et tout identifiant embarqué dans
+ * l'URL — un secret n'a rien à faire dans une configuration.
+ *
+ * Refuse aussi un chemin de base, et c'est un refus utile plutôt qu'une
+ * limitation arbitraire : la façade appelle `new URL("/auth/login", base)`, et
+ * un chemin absolu remplace celui de la base. Un préfixe saisi ici serait donc
+ * accepté, affiché, sondé avec succès — et silencieusement absent des vrais
+ * appels. Mieux vaut le dire à la saisie. Un déploiement derrière un
+ * reverse-proxy avec préfixe se configure côté serveur.
  */
 export function normalizeServiceUrl(raw: string): string {
   const trimmed = raw.trim();
@@ -117,7 +123,16 @@ export function normalizeServiceUrl(raw: string): string {
   }
   if (!url.hostname) throw new EndpointValidationError(`Hôte manquant dans « ${trimmed} ».`);
   const path = url.pathname.replace(/\/+$/, "");
-  return `${url.origin}${path}`;
+  if (path) {
+    throw new EndpointValidationError(
+      `« ${trimmed} » porte un chemin de base (« ${path} »), que la façade ne peut pas honorer : `
+      + "indiquez seulement le schéma, l’hôte et le port.",
+    );
+  }
+  if (url.search || url.hash) {
+    throw new EndpointValidationError(`« ${trimmed} » ne doit porter ni requête ni ancre.`);
+  }
+  return url.origin;
 }
 
 function normalizeHost(raw: string): string {
@@ -126,7 +141,13 @@ function normalizeHost(raw: string): string {
   if (/[\s/\\?#@]/.test(trimmed)) {
     throw new EndpointValidationError(`Hôte invalide : « ${trimmed} ». Indiquez seulement un nom ou une adresse.`);
   }
-  return trimmed;
+  // Une adresse IPv6 contient des `:` : sans crochets elle serait confondue
+  // avec un port. On la stocke sous la forme qui s'insère dans une URL, que la
+  // personne les ait saisis ou non.
+  const host = hostForUrl(trimmed);
+  try { void new URL(`http://${host}`); }
+  catch { throw new EndpointValidationError(`Hôte invalide : « ${trimmed} ».`); }
+  return host;
 }
 
 function normalizePort(raw: unknown, service: ServiceId): number {
@@ -160,8 +181,22 @@ export function parseAllowedHosts(raw: string | undefined): readonly string[] {
 }
 
 function normalizeHostName(host: string): string {
-  // `new URL` conserve les crochets d'une adresse IPv6 littérale.
+  // `new URL` conserve les crochets d'une adresse IPv6 littérale : on compare
+  // toujours la forme nue.
   return host.trim().toLowerCase().replace(/^\[|\]$/g, "");
+}
+
+/**
+ * L'hôte sous la forme qui s'insère dans une URL.
+ *
+ * Exact pendant de `normalizeHostName` : ce que la comparaison dénude, la
+ * recomposition doit le rhabiller. Sans ça, `::1` — présent dans la liste par
+ * défaut — produisait la base `http://::1:5203`, invalide, et chaque appel au
+ * service échouait sur un `TypeError` rendu en 502.
+ */
+export function hostForUrl(host: string): string {
+  const bare = normalizeHostName(host);
+  return bare.includes(":") ? `[${bare}]` : bare;
 }
 
 export function isHostAllowed(host: string, allowed: readonly string[]): boolean {
@@ -189,7 +224,13 @@ export function allowedHostFor(host: string, allowed: readonly string[]): string
  */
 export function assertHostsAllowed(override: EndpointOverride, allowed: readonly string[]): void {
   for (const id of serviceIds) {
-    const host = new URL(endpointUrl(override, id)).hostname;
+    const candidate = endpointUrl(override, id);
+    let host: string;
+    // Une URL irrecomposable est une erreur de configuration, pas une panne :
+    // elle doit ressortir en 422 avec un message actionnable, jamais en
+    // `TypeError` rendu « Configuration illisible ».
+    try { host = new URL(candidate).hostname; }
+    catch { throw new EndpointValidationError(`URL invalide pour ${serviceDescriptor(id).label} : « ${candidate} ».`); }
     if (!isHostAllowed(host, allowed)) {
       throw new EndpointValidationError(
         `L’hôte « ${host} » n’est pas autorisé par l’exploitant. `
@@ -202,7 +243,7 @@ export function assertHostsAllowed(override: EndpointOverride, allowed: readonly
 /** L'URL réellement appelée pour un service, quel que soit le mode. */
 export function endpointUrl(override: EndpointOverride, service: ServiceId): string {
   if (override.mode === "unit") return override.urls[service];
-  return `${override.scheme}://${override.host}:${override.ports[service]}`;
+  return `${override.scheme}://${hostForUrl(override.host)}:${override.ports[service]}`;
 }
 
 /** Toutes les URLs effectives, dans l'ordre des descripteurs. */

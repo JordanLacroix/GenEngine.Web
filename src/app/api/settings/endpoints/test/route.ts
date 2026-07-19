@@ -3,7 +3,7 @@ import { allowedEndpointHosts, environmentEndpoints, isEndpointOverrideEnabled }
 import { sameOriginRejection } from "@/shared/api/route-errors";
 import {
   allowedHostFor, assertHostsAllowed, type EndpointProbeResult, EndpointValidationError,
-  endpointUrl, parseEndpointOverride, type ServiceId, serviceDescriptor, serviceIds,
+  endpointUrl, hostForUrl, parseEndpointOverride, type ServiceId, serviceDescriptor, serviceIds,
 } from "@/shared/api/service-endpoints";
 
 export const dynamic = "force-dynamic";
@@ -56,10 +56,11 @@ async function probe(service: ServiceId, base: string): Promise<EndpointProbeRes
   // Même principe que `resolveServiceUrl` : l'adresse sondée est recomposée à
   // partir de l'hôte déclaré par l'exploitant, jamais de la chaîne reçue.
   const requested = new URL(base);
-  const host = allowedHostFor(requested.hostname, allowedEndpointHosts());
-  if (host === undefined) {
+  const declared = allowedHostFor(requested.hostname, allowedEndpointHosts());
+  if (declared === undefined) {
     return { service, url: base, reachable: false, latencyMs: 0, detail: "Hôte non autorisé par l’exploitant." };
   }
+  const host = hostForUrl(declared);
   const scheme = requested.protocol === "https:" ? "https" : "http";
   const port = Number.parseInt(requested.port, 10);
   const origin = Number.isInteger(port) && port >= 1 && port <= 65_535

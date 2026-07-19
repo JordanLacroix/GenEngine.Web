@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import {
   allowedHostFor, assertHostsAllowed, type EndpointOverride, endpointUrl, endpointUrls,
-  parseAllowedHosts, readEndpointOverride, type ServiceId, serviceDescriptors, serviceIds,
+  hostForUrl, parseAllowedHosts, readEndpointOverride, type ServiceId, serviceDescriptors, serviceIds,
 } from "@/shared/api/service-endpoints";
 
 export const accessCookieName = "genengine_access";
@@ -72,7 +72,15 @@ async function sessionOverride(): Promise<EndpointOverride | undefined> {
   return override;
 }
 
-/** État complet de la résolution, pour l'écran de configuration. */
+/**
+ * État complet de la résolution, pour l'écran de configuration.
+ *
+ * `effective` est calculé par `resolveServiceUrl`, la fonction qui décide
+ * réellement de l'adresse appelée — et non par une seconde dérivation. Un écran
+ * de diagnostic qui affiche autre chose que ce que le serveur appelle est pire
+ * qu'aucun écran ; le seul moyen de garantir qu'il ne mente pas est qu'il lise
+ * la même source.
+ */
 export async function endpointConfiguration(): Promise<{
   overrideEnabled: boolean;
   allowedHosts: readonly string[];
@@ -83,13 +91,14 @@ export async function endpointConfiguration(): Promise<{
 }> {
   const environment = environmentEndpoints();
   const override = await sessionOverride();
+  const resolved = await Promise.all(serviceIds.map(async (id) => [id, await resolveServiceUrl(id)] as const));
   return {
     overrideEnabled: isEndpointOverrideEnabled(),
     allowedHosts: allowedEndpointHosts(),
     source: override ? "override" : "environment",
     override,
     environment: endpointUrls(environment),
-    effective: endpointUrls(override ?? environment),
+    effective: Object.fromEntries(resolved) as Record<ServiceId, string>,
   };
 }
 
@@ -101,6 +110,10 @@ export async function endpointConfiguration(): Promise<{
  * entier borné. L'URL rendue est ensuite recomposée à partir de ces valeurs de
  * confiance — schéma littéral, hôte issu de la liste d'environnement, port
  * numérique. Une chaîne venant du cookie ne peut donc pas atteindre `fetch`.
+ *
+ * `hostForUrl` rhabille une adresse IPv6 de ses crochets : la comparaison les
+ * retire, la recomposition doit les remettre, sinon `::1` — présent dans la
+ * liste par défaut — produit `http://::1:5203` et casse tous les appels.
  *
  * Un hôte hors liste ne provoque pas d'erreur ici : on retombe sur
  * l'environnement du serveur, pour qu'un durcissement de la liste dégrade vers
@@ -115,8 +128,9 @@ export async function resolveServiceUrl(service: Service): Promise<string> {
   try { requested = new URL(endpointUrl(override, service)); }
   catch { return fallback; }
 
-  const host = allowedHostFor(requested.hostname, allowedEndpointHosts());
-  if (host === undefined) return fallback;
+  const declared = allowedHostFor(requested.hostname, allowedEndpointHosts());
+  if (declared === undefined) return fallback;
+  const host = hostForUrl(declared);
 
   const scheme = requested.protocol === "https:" ? "https" : "http";
   const port = Number.parseInt(requested.port, 10);

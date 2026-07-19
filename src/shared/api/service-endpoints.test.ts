@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  allowedHostFor, assertHostsAllowed, defaultAllowedHosts, defaultGroupedEndpoints, endpointUrl, endpointUrls,
+  allowedHostFor, assertHostsAllowed, defaultAllowedHosts, hostForUrl, defaultGroupedEndpoints, endpointUrl, endpointUrls,
   EndpointValidationError, isHostAllowed, normalizeServiceUrl, parseAllowedHosts,
   parseEndpointOverride, readEndpointOverride, serializeEndpointOverride,
   serviceDescriptors, serviceIds,
@@ -27,9 +27,25 @@ describe("descripteurs de services", () => {
 });
 
 describe("normalizeServiceUrl", () => {
-  it("retire la barre finale et conserve le chemin de base", () => {
-    expect(normalizeServiceUrl(" https://moteur.example/api/ ")).toBe("https://moteur.example/api");
+  it("ramène une adresse à son origine", () => {
+    expect(normalizeServiceUrl(" http://localhost:5201/ ")).toBe("http://localhost:5201");
     expect(normalizeServiceUrl("http://localhost:5201")).toBe("http://localhost:5201");
+  });
+
+  it("refuse un chemin de base plutôt que de le perdre en silence", () => {
+    // La façade appelle `new URL("/auth/login", base)` : un chemin absolu
+    // remplace celui de la base. L'accepter produirait un écran qui ment.
+    expect(() => normalizeServiceUrl("http://localhost:8080/authoring")).toThrow(/chemin de base/);
+    expect(() => normalizeServiceUrl("http://localhost:8080/authoring/")).toThrow(/chemin de base/);
+  });
+
+  it("refuse une requête ou une ancre", () => {
+    expect(() => normalizeServiceUrl("http://localhost:5201?a=1")).toThrow(EndpointValidationError);
+    expect(() => normalizeServiceUrl("http://localhost:5201#x")).toThrow(EndpointValidationError);
+  });
+
+  it("accepte une adresse IPv6 littérale et conserve ses crochets", () => {
+    expect(normalizeServiceUrl("http://[::1]:5203")).toBe("http://[::1]:5203");
   });
 
   it("refuse un schéma qui n’est pas http ou https", () => {
@@ -161,5 +177,60 @@ describe("assertHostsAllowed", () => {
   it("refuse un hôte groupé non déclaré", () => {
     const override = parseEndpointOverride({ ...defaultGroupedEndpoints, host: "attaquant.example" });
     expect(() => assertHostsAllowed(override, defaultAllowedHosts)).toThrow(/n’est pas autorisé/);
+  });
+});
+
+describe("recomposition d’un hôte dans une URL", () => {
+  it("rhabille une adresse IPv6 de ses crochets", () => {
+    expect(hostForUrl("::1")).toBe("[::1]");
+    expect(hostForUrl("[::1]")).toBe("[::1]");
+    expect(hostForUrl("fe80::1")).toBe("[fe80::1]");
+  });
+
+  it("laisse un nom ou une adresse IPv4 intacts", () => {
+    expect(hostForUrl("localhost")).toBe("localhost");
+    expect(hostForUrl("127.0.0.1")).toBe("127.0.0.1");
+  });
+
+  it("produit une base que `new URL` sait combiner — le défaut qui cassait tout", () => {
+    // `http://::1:5203` n'est pas une URL : chaque appel au service levait un
+    // `TypeError` rendu en 502, alors que `::1` est dans la liste par défaut.
+    for (const host of defaultAllowedHosts) {
+      const base = `http://${hostForUrl(host)}:5203`;
+      expect(() => new URL("/auth/login", base)).not.toThrow();
+      expect(new URL("/auth/login", base).pathname).toBe("/auth/login");
+    }
+  });
+});
+
+describe("mode groupé et IPv6", () => {
+  it("accepte une adresse IPv6 saisie sans crochets et compose une URL valide", () => {
+    const override = parseEndpointOverride({ ...defaultGroupedEndpoints, host: "::1" });
+    expect(endpointUrl(override, "identity")).toBe("http://[::1]:5203");
+    expect(() => new URL("/me", endpointUrl(override, "identity"))).not.toThrow();
+  });
+
+  it("laisse passer le contrôle d’hôte pour cette adresse", () => {
+    const override = parseEndpointOverride({ ...defaultGroupedEndpoints, host: "[::1]" });
+    expect(() => assertHostsAllowed(override, defaultAllowedHosts)).not.toThrow();
+  });
+
+  it("refuse un hôte irrecomposable par une erreur de validation, pas un TypeError", () => {
+    // Le message doit rester actionnable : un `TypeError` ressortait en 400
+    // « Configuration illisible », ce qui n'aide personne.
+    expect(() => parseEndpointOverride({ ...defaultGroupedEndpoints, host: "1:2:3" }))
+      .toThrow(EndpointValidationError);
+    expect(() => parseEndpointOverride({ ...defaultGroupedEndpoints, host: "g::1" }))
+      .toThrow(EndpointValidationError);
+  });
+
+  it("compose une URL valide pour chaque hôte de la liste par défaut", () => {
+    for (const host of defaultAllowedHosts) {
+      const override = parseEndpointOverride({ ...defaultGroupedEndpoints, host });
+      for (const id of serviceIds) {
+        expect(() => new URL("/health", endpointUrl(override, id))).not.toThrow();
+      }
+      expect(() => assertHostsAllowed(override, defaultAllowedHosts)).not.toThrow();
+    }
   });
 });
