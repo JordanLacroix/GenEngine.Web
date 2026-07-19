@@ -65,3 +65,16 @@ export function isActiveLink(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+/**
+ * Où envoyer quelqu'un qui vient de s'authentifier, ou qui clique son profil.
+ *
+ * `/experience` n'est proposé qu'avec `session.play` ; y rediriger tout le
+ * monde envoyait un compte d'auteur ou d'administration pur sur un écran hors
+ * de sa portée. On retient donc la première destination réellement proposée,
+ * et `/library` reste le repli — il ne demande aucune permission.
+ */
+export function primaryDestination(permissions: ReadonlySet<string>): string {
+  const links = buildNavigationLinks({ permissions, authenticated: true });
+  return links[0]?.href ?? "/library";
+}

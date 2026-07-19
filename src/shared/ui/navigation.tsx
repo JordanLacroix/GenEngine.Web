@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { AudioToggle } from "@/shared/ui/audio-toggle";
-import { buildNavigationLinks, hasOwnNavigation, isActiveLink } from "@/shared/ui/navigation-model";
+import { buildNavigationLinks, hasOwnNavigation, isActiveLink, primaryDestination } from "@/shared/ui/navigation-model";
 import { initialsOf, useNavigationContext } from "@/shared/ui/use-navigation-context";
 
 /**
@@ -47,7 +47,7 @@ export function Navigation() {
       <div className="header-tools">
         <AudioToggle />
         {authenticated
-          ? <Link className="profile-button" href={"/experience" as Route} aria-label={`Ouvrir le profil de ${userName ?? "votre compte"}`}>{initialsOf(userName)}</Link>
+          ? <Link className="profile-button" href={primaryDestination(permissions) as Route} aria-label={`Ouvrir le profil de ${userName ?? "votre compte"}`}>{initialsOf(userName)}</Link>
           : <Link className="login-link" href={"/" as Route}><LogIn size={14} aria-hidden="true" /> Se connecter</Link>}
       </div>
     </header>

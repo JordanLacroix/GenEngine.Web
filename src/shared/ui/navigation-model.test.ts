@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildNavigationLinks, hasOwnNavigation, isActiveLink } from "./navigation-model";
+import { buildNavigationLinks, hasOwnNavigation, isActiveLink, primaryDestination } from "./navigation-model";
 
 const anonymous = { permissions: new Set<string>(), authenticated: false };
 const full = { permissions: new Set(["session.play", "scenario.author", "config.read"]), authenticated: true };
@@ -59,5 +59,29 @@ describe("isActiveLink", () => {
   it("active une section sur ses sous-routes", () => {
     expect(isActiveLink("/library/abc", "/library")).toBe(true);
     expect(isActiveLink("/libraryother", "/library")).toBe(false);
+  });
+});
+
+describe("primaryDestination", () => {
+  it("envoie vers l’univers quand la personne peut jouer", () => {
+    expect(primaryDestination(new Set(["session.play"]))).toBe("/experience");
+  });
+
+  it("n’envoie pas un compte sans `session.play` sur un écran hors de sa portée", () => {
+    // `/experience` n'est proposé qu'avec `session.play` : y rediriger un
+    // compte d'auteur ou d'administration pur créait une impasse.
+    expect(primaryDestination(new Set(["scenario.author"]))).not.toBe("/experience");
+    expect(primaryDestination(new Set(["config.read"]))).not.toBe("/experience");
+  });
+
+  it("retombe sur une destination qui n’exige aucune permission", () => {
+    expect(primaryDestination(new Set())).toBe("/library");
+  });
+
+  it("ne propose jamais qu’une destination réellement offerte par le menu", () => {
+    for (const permissions of [new Set<string>(), new Set(["session.play"]), new Set(["config.read"])]) {
+      const offered = buildNavigationLinks({ permissions, authenticated: true }).map((link) => link.href);
+      expect(offered).toContain(primaryDestination(permissions));
+    }
   });
 });

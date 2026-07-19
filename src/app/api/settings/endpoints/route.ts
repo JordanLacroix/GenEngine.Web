@@ -50,7 +50,16 @@ export async function DELETE(request: Request) {
   const rejection = sameOriginRejection(request);
   if (rejection) return rejection;
   const response = NextResponse.json({ cleared: true });
-  response.cookies.set(endpointsCookieName, "", { httpOnly: true, sameSite: "strict", maxAge: 0, path: "/" });
+  // `secure` doit correspondre à celui du `PUT` : un cookie `Secure` n'est pas
+  // effacé de façon fiable par un `Set-Cookie` qui ne l'est pas, et « revenir à
+  // la configuration du serveur » n'effaçait alors rien en production.
+  response.cookies.set(endpointsCookieName, "", {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 0,
+    path: "/",
+  });
   return response;
 }
 
