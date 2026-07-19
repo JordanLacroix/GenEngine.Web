@@ -145,6 +145,35 @@ export interface ExperienceDocumentContract {
   onboarding: { id: string; version: number; enabled: boolean; allowSkip: boolean; requiredAfterUpgrade: boolean; steps: Array<{ id: string; title: string; body: string; target: string; action: string; order: number; required: boolean }> };
   assistantPolicy: { enabled: boolean; requireFirstRunConfiguration: boolean; proactive: boolean; warnOnKnownPath: boolean; defaultFrequency: number; offlineCapabilities: string[] };
   journal: { enabled: boolean; allowExport: boolean; retentionDays: number; showStoryTimeline: boolean };
+  /**
+   * Plan média du client : ambiances, musiques et fonds par lieu de
+   * l'application, plus la bascule de fin de partie.
+   *
+   * Optionnel *parce qu'il l'est réellement* : le bloc est publié par la tranche
+   * moteur qui l'introduit, et les instances antérieures n'en portent pas. Le
+   * client ne le crée jamais lui-même — son absence est affichée, pas comblée
+   * (invariant 14).
+   */
+  media?: MediaConfigurationContract;
+}
+
+export const mediaLocations = ["home", "map", "player", "journal", "familiar", "shop"] as const;
+export type MediaLocationContract = (typeof mediaLocations)[number];
+
+export interface MediaLocationConfigurationContract {
+  location: MediaLocationContract;
+  ambienceUrl?: string;
+  musicUrl?: string;
+  backgroundUrl?: string;
+  bpm?: number;
+  loop?: boolean;
+}
+
+export interface MediaConfigurationContract {
+  enabled: boolean;
+  defaultMuted: boolean;
+  locations: MediaLocationConfigurationContract[];
+  gameOver?: Omit<MediaLocationConfigurationContract, "location">;
 }
 
 export interface PublishedExperienceContract { version: number; publishedAt: string; document: ExperienceDocumentContract }

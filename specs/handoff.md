@@ -125,6 +125,43 @@ Les cinq teintes de `ART_DIRECTION` deviennent la source de vérité — encre
 les alias historiques `ink`/`ivory`/`ember`/`verdigris` en dérivent, ce qui fait
 suivre les feuilles existantes sans les réécrire ligne à ligne.
 
+## Studio de configuration
+
+`/studio` n'est plus un atelier d'import : c'est la surface où un client
+configure son jeu. Six sections — le jeu, catégories & parcours, familier,
+libellés, médias, scénarios — écrivent le document du plan de contrôle et le
+renvoient tel quel, en conservant les champs inconnus du client. Chaque section
+est doublée d'un aperçu rendu depuis l'état en cours, sans brouillon
+intermédiaire : ce qui est montré est ce qui sera enregistré.
+
+Le Studio et l'Administration éditent le même document par le même endpoint
+(`/api/admin/configuration`). Le partage est volontaire : le Studio s'adresse à
+la personne qui compose le jeu, l'Administration à celle qui exploite
+l'organisation, l'identité et l'économie. Les deux ne doivent pas être ouverts en
+parallèle sur la même instance : la révision attendue est portée par le document
+chargé, donc le second enregistrement échouerait sur un conflit de révision.
+
+### Médias
+
+Le contrat média est posé côté client — `packId:assetId` ou URL HTTPS, contrat de
+pack dans `src/shared/assets/asset-pack.ts`, plan par lieu dans
+`src/features/studio/model/media-configuration.ts` — mais **deux dépendances
+moteur ne sont pas satisfaites sur les instances actuelles** :
+
+1. Le plan de configuration ne publie pas de bloc `media`. Vérifié sur l'OpenAPI
+   de `GenEngine.Configuration.Api` : `ExperienceDocument` porte vingt propriétés,
+   aucune nommée `media`. La section l'annonce et n'affiche aucun formulaire.
+2. Le schéma narratif refuse les médias de scène et de choix. Vérifié par appel
+   direct : `PUT /scenarios/{id}/draft` répond `200` sur un document intact et
+   `422 invalid_json` sur le même document augmenté d'un `visualUrl` de nœud et
+   d'un `animationCue` de choix. Le Studio nomme cette cause probable quand un
+   enregistrement échoue alors que le brouillon porte des médias.
+
+Les deux capacités s'activeront sans autre changement client dès que le moteur
+publiera ces champs. Le catalogue d'assets suit la même règle : sans
+`/packs/manifest.json`, il est *absent* — pas vide — et seules les URLs HTTPS
+restent assignables.
+
 ## Prochaine unité de travail
 
 La plateforme configurable est raccordée : permissions, rôles custom, Entra ID, Azure AI Foundry, familier, économie/magasin et Studio contextualisé. L’espace « Structures & affectations » consomme maintenant le service Organization pour gérer périodes métier, unités hiérarchiques, participants, encadrants, import CSV prévalidé et affectations avec suppression. Les contrats backend restent autoritatifs : Play résout les parcours au démarrage et la carte filtre les catégories d'un membre selon ses affectations.
@@ -151,6 +188,27 @@ puis réparées, panneau de lieu ouvert au clic et fermé par Échap, aperçu du
 familier vérifié paramètre par paramètre, et absence de la démonstration en état
 connecté sur `/`, `/account`, `/play/demo`, `/library` et `/experience`.
 
+Validation du Studio de configuration : lint sans warning, typecheck, 113 tests
+Vitest (dont 14 sur le contrat de pack d'assets, 8 sur le plan média et 7 sur le
+brouillon narratif) et build Next.js production réussis le 19 juillet 2026.
+
+Revue navigateur contre une pile locale complète des six API (projet Compose
+isolé `genengine-verify`, ports 5301-5306, base vierge, compte administrateur
+bootstrappé) : chargement du plan de configuration réel, édition du nom du jeu
+répercutée en direct dans l'aperçu, enregistrement puis publication vérifiés sur
+`GET /experience/default` (version 1 → 2, nom publié), aperçu de carte avec une
+porte par catégorie visible, réplique du familier recomposée au changement de
+niveau d'aide, aperçu de navigation suivant un libellé modifié, génération d'un
+scénario par le provider hors ligne, assignation d'un visuel de scène et d'un son
+de choix depuis un manifeste de pack, et déclenchement de l'interaction dans
+l'aperçu — son lancé, repère `glow` appliqué, énoncé textuel complet.
+
+Non vérifié : la sortie sonore réelle (le navigateur automatisé confirme que la
+lecture démarre sans erreur, pas qu'un son est audible) ; le plan média sur une
+instance publiant réellement `media` (exercé via une injection locale temporaire
+de la route serveur, retirée depuis) ; le pack d'assets réel de la tranche #45
+(exercé avec un manifeste local temporaire, retiré depuis).
+
 ## Décisions à préserver
 
 - Backend autoritatif et aucune règle Narrative dans le client.
@@ -163,6 +221,9 @@ connecté sur `/`, `/account`, `/play/demo`, `/library` et `/experience`.
 - Le son est optionnel, désactivé par défaut, et ne porte jamais seul une information.
 - Une porte de la carte ouvre toujours une interface réelle ou dit pourquoi elle est vide.
 - L'aperçu du familier est rendu par le composant de production, sans brouillon intermédiaire.
+- Une capacité que le moteur n'expose pas est annoncée absente, jamais simulée : ni bloc média fabriqué localement, ni catalogue d'assets inventé.
+- Un média assigné est toujours auditionnable ou visible dans le Studio même.
+- Un repère d'animation inconnu du client n'est pas joué, et l'aperçu le dit.
 - Conteneur non-root, en lecture seule et observable par healthcheck.
 
 ## Critère de passage de relais réussi
