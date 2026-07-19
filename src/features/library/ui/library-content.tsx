@@ -37,10 +37,13 @@ export function LibraryContent() {
     return () => controller.abort();
   }, []);
 
-  const published = useMemo(
-    () => catalogState === "connected" ? catalog : [featuredStories[0]!],
-    [catalog, catalogState],
-  );
+  // Une fixture n'est jamais affichée pendant le chargement ni à la place d'une
+  // erreur : elle n'apparaît qu'en mode démonstration explicitement annoncé.
+  const published = useMemo(() => {
+    if (catalogState === "connected") return catalog;
+    if (catalogState === "fixtures") return [featuredStories[0]!];
+    return [];
+  }, [catalog, catalogState]);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fr");
     if (!normalized) return published;

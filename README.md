@@ -18,7 +18,9 @@
 
 ## Vision
 
-GenEngine Web fournit une expérience narrative moderne, accessible et adaptable. Le serveur reste l’autorité sur les scénarios, les sessions et les transitions ; le client présente les états reçus et transmet les intentions de l’utilisateur.
+GenEngine Web est le client d’un moteur narratif entièrement paramétrable, vendu avec son interface de configuration aux écoles d’ingénieurs, aux entreprises et aux organismes de formation professionnelle. « Le Diapason » en est la configuration de démonstration de référence. Le serveur reste l’autorité sur les scénarios, les sessions et les transitions ; le client présente les états reçus et transmet les intentions de l’utilisateur.
+
+L’application est immersive : elle occupe le viewport, ne borde jamais la scène d’un bandeau de page, et fait de toute navigation une surcouche HUD. Sous 900 px la scène passe en premier et la navigation devient une barre basse.
 
 Le dépôt conserve deux parcours explicitement séparés :
 
@@ -59,11 +61,11 @@ Le dépôt conserve deux parcours explicitement séparés :
 
 | Route | Intention |
 |---|---|
-| `/` | Découverte éditoriale et sélection de récits |
-| `/account` | Connexion locale/Microsoft, création de compte et accès au mode démo |
+| `/` | Ouverture d’univers puis promesse plateforme, pour une personne qui décide |
+| `/account` | Connexion locale/Microsoft et création de compte — redirige vers `/experience` si une session existe |
 | `/library` | Bibliothèque et reprise de lecture |
 | `/library/[versionId]` | Carte complète du récit et mémoire cumulée, sans session ouverte |
-| `/play/demo` | Player interactif de démonstration hors ligne |
+| `/play/demo` | Player de démonstration hors ligne, réservé aux visiteurs anonymes — redirige vers `/experience` si une session existe |
 | `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
 | `/studio` | Import, validation, analyse, prévisualisation et publication |
 | `/experience` | Carte, tutoriel, journal, familier, magasin, aide et compte joueur |
@@ -133,6 +135,14 @@ Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpO
 
 Le player consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session. Il ne réimplémente aucune règle Narrative.
 
+### Son
+
+Le client lit `/audio/manifest.json` au démarrage. Sans manifeste publié il reste
+silencieux et le réglage sonore de la HUD est désactivé en affichant la raison ;
+aucun son n’est simulé. Le son est désactivé par défaut, ne porte jamais seul une
+information, et l’ambiance continue reste coupée sous `prefers-reduced-motion`.
+Le contrat attendu est décrit dans [`public/audio/README.md`](public/audio/README.md).
+
 ### Packs visuels de familier
 
 L’espace Compagnon accepte un manifeste JSON de schéma `1`. Il déclare un portrait HTTPS ou un asset local sous `/illustrations/`, ainsi qu’une licence et une attribution. Le pack ne modifie que la présentation locale : il ne crée ni propriété, ni achat, ni progression. La sélection du familier reste enregistrée par PlayerExperience.
@@ -150,6 +160,7 @@ src/
 ├── features/             # Capacités utilisateur verticales
 └── shared/
     ├── api/              # Frontière HTTP et contrats
+    ├── audio/            # Contrat sonore, résolution des signaux, fournisseur React
     ├── lib/              # Utilitaires sans dépendance UI
     ├── mocks/            # Fixtures de démonstration isolées
     └── ui/               # Composants transverses

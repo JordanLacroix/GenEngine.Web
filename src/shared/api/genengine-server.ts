@@ -14,6 +14,17 @@ function serviceUrl(service: Service) {
   return process.env.GENENGINE_AUTHORING_URL ?? "http://localhost:5201";
 }
 
+/**
+ * Présence d'une session côté serveur.
+ *
+ * Sert uniquement à adapter la présentation — masquer la démonstration à une
+ * personne déjà connectée. Ce n'est pas un contrôle d'accès : chaque service
+ * reste seul juge de ses autorisations (invariant 10).
+ */
+export async function isAuthenticated(): Promise<boolean> {
+  return Boolean((await cookies()).get(accessCookieName)?.value);
+}
+
 export async function genEngineRequest<T>(
   service: Service,
   path: string,

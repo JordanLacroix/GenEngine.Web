@@ -12,6 +12,10 @@ export interface StorySummary {
   mood: StoryMood;
   accent: string;
   scenarioVersionId?: string;
+  /** Identifiant du scénario, stable d'une version à l'autre. */
+  scenarioId?: string;
+  /** Catégorie déclarée par le catalogue Authoring, quand elle existe. */
+  categoryId?: string;
 }
 
 export interface DemoChoice {

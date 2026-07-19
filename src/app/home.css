@@ -1,0 +1,71 @@
+/* Accueil à deux niveaux : ouverture d'univers puis promesse plateforme.
+   La page est pleine largeur ; aucune gouttière ne borde la scène d'ouverture. */
+
+.home { --gutter: clamp(1.25rem, 6vw, 7rem); }
+.home > section { position: relative; }
+.home-lead { max-width: 62ch; margin: 0; color: #cdd9e1; font: clamp(1rem, 1.35vw, 1.22rem)/1.75 var(--font-story); }
+.home-note { max-width: 70ch; margin: 2.5rem 0 0; padding-left: 1rem; border-left: 2px solid rgb(215 167 70 / 45%); color: var(--ivory-muted); font-size: .78rem; line-height: 1.7; }
+.home-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2.4rem; }
+.home-section-heading { max-width: 46ch; margin-bottom: 3rem; }
+.home-section-heading h2, .home-turn h2, .home-close h2 { margin: 0; font: 400 clamp(2.1rem, 4.4vw, 4rem)/1.02 var(--font-story); letter-spacing: -.04em; text-wrap: balance; }
+.home-turn h2 em, .home-close h2 em { color: var(--or); font-style: normal; }
+
+/* ── Acte d'ouverture ─────────────────────────────────────────────────────── */
+.home-overture { min-height: 100dvh; padding: clamp(7rem, 14vh, 11rem) var(--gutter) clamp(2rem, 6vh, 4rem); display: grid; align-content: center; overflow: hidden; isolation: isolate; }
+.home-overture-art { position: absolute; z-index: -1; inset: 0; background: url(/illustrations/intro-gateway.jpg) center 38% / cover no-repeat; }
+.home-overture-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, rgb(6 15 23 / 97%) 26%, rgb(6 15 23 / 78%) 52%, rgb(23 52 74 / 30%)), linear-gradient(transparent 52%, rgb(6 15 23 / 96%)); }
+.home-overture-copy { width: min(880px, 100%); }
+.home-overture h1 { max-width: 15ch; margin: 1rem 0 1.6rem; font: 400 clamp(2.8rem, 6.6vw, 6.4rem)/.9 var(--font-story); letter-spacing: -.055em; text-wrap: balance; }
+.home-acts { margin: clamp(3rem, 8vh, 5.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; list-style: none; border-top: 1px solid var(--line); }
+.home-acts li { padding: 1.15rem 1.15rem 0 0; }
+.home-acts span { color: var(--or); font-size: .6rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.home-acts strong { display: block; margin: .35rem 0 .45rem; font: 400 1.35rem var(--font-story); }
+.home-acts p { margin: 0; color: var(--ivory-muted); font-size: .74rem; line-height: 1.6; }
+
+/* ── Bascule vers la plateforme ───────────────────────────────────────────── */
+.home-turn { padding: clamp(5rem, 14vh, 9rem) var(--gutter); display: grid; gap: 1.5rem; border-top: 1px solid var(--line); background: linear-gradient(180deg, rgb(23 52 74 / 30%), transparent 60%); }
+.home-turn h2 { max-width: 20ch; font-size: clamp(2.3rem, 5vw, 4.6rem); }
+
+/* ── Postures ─────────────────────────────────────────────────────────────── */
+.home-postures { padding: clamp(3rem, 8vh, 5rem) var(--gutter) clamp(4rem, 10vh, 7rem); }
+.posture-grid { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 1px; list-style: none; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+.posture-grid li { padding: 1.6rem 1.35rem; background: linear-gradient(160deg, rgb(17 40 56 / 92%), rgb(6 15 23 / 92%)); transition: background .3s; }
+.posture-grid li:hover { background: linear-gradient(160deg, rgb(29 64 88 / 95%), rgb(9 22 32 / 95%)); }
+.posture-grid span { color: var(--or); font: italic 1.6rem var(--font-story); }
+.posture-grid strong { display: block; margin: .5rem 0 .5rem; font: 400 1.28rem/1.2 var(--font-story); }
+.posture-grid p { margin: 0; color: var(--ivory-muted); font-size: .76rem; line-height: 1.65; }
+
+/* ── Piliers ──────────────────────────────────────────────────────────────── */
+.home-pillars { padding: 0 var(--gutter) clamp(4rem, 10vh, 7rem); display: grid; gap: 1rem; }
+.home-pillars article { padding: clamp(1.5rem, 3vw, 2.6rem); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(1.2rem, 3vw, 2.6rem); border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(140deg, rgb(17 40 56 / 62%), rgb(6 15 23 / 88%)); }
+.pillar-mark { display: grid; place-items: center; width: 3.4rem; aspect-ratio: 1; border: 1px solid rgb(215 167 70 / 40%); border-radius: 1rem; color: var(--or); background: rgb(215 167 70 / 8%); }
+.pillar-mark svg { width: 1.4rem; height: 1.4rem; }
+.home-pillars h3 { margin: .2rem 0 .8rem; font: 400 clamp(1.5rem, 2.6vw, 2.3rem)/1.15 var(--font-story); letter-spacing: -.025em; }
+.pillar-body { max-width: 68ch; margin: 0; color: #c6d4de; font: 1rem/1.75 var(--font-story); }
+.home-pillars ul { margin: 1.5rem 0 0; padding: 0; display: grid; gap: .55rem; list-style: none; }
+.home-pillars li { display: flex; align-items: start; gap: .6rem; color: var(--ivory-muted); font-size: .8rem; line-height: 1.55; }
+.home-pillars li svg { flex: 0 0 auto; margin-top: .2rem; color: var(--sauge); }
+
+/* ── École ────────────────────────────────────────────────────────────────── */
+.home-school { padding: clamp(4rem, 10vh, 7rem) var(--gutter); border-top: 1px solid var(--line); }
+.school-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.school-grid article { padding: 1.6rem; border: 1px solid var(--line); border-top: 2px solid rgb(122 154 85 / 55%); border-radius: var(--radius-md); background: rgb(255 250 240 / 3%); }
+.school-grid h3 { margin: 0 0 .7rem; font: 400 1.35rem/1.25 var(--font-story); }
+.school-grid p { margin: 0; color: var(--ivory-muted); font-size: .8rem; line-height: 1.7; }
+
+/* ── Clôture ──────────────────────────────────────────────────────────────── */
+.home-close { padding: clamp(4rem, 12vh, 8rem) var(--gutter); display: grid; justify-items: center; text-align: center; border-top: 1px solid var(--line); background: radial-gradient(ellipse at 50% 120%, rgb(215 167 70 / 16%), transparent 60%); }
+.home-close h2 { max-width: 18ch; }
+.home-close p { max-width: 56ch; margin: 1.2rem 0 0; color: var(--ivory-muted); }
+.home-close .home-actions { justify-content: center; }
+
+@media (max-width: 900px) {
+  .home-acts { grid-template-columns: 1fr 1fr; }
+  .home-pillars article { grid-template-columns: 1fr; gap: 1.2rem; }
+  .home-overture-art::after { background: linear-gradient(180deg, rgb(6 15 23 / 82%) 20%, rgb(6 15 23 / 96%) 62%); }
+}
+@media (max-width: 620px) {
+  .home-acts { grid-template-columns: 1fr; }
+  .home-acts li { padding-right: 0; }
+  .home-actions .button { width: 100%; }
+}

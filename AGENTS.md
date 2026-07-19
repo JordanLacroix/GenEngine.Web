@@ -25,7 +25,10 @@ Les contrats du backend et les invariants narratifs de référence vivent dans l
 - Passe par `src/shared/api` pour toute intégration réseau et préfère un client OpenAPI généré lorsque les contrats sont stabilisés.
 - Organise les capacités dans `src/features` ; une feature ne dépend pas directement d’une autre et la composition reste dans `src/app`.
 - Préserve TypeScript strict, l’accessibilité clavier, les contrastes et `prefers-reduced-motion`.
-- Conserve la direction visuelle GenEngine : ink, ivory, ember et verdigris.
+- Conserve la direction visuelle GenEngine. Les cinq teintes de référence sont encre `#17344a`, ivoire `#fffaf0`, sauge `#7a9a55`, or `#d7a746` et azur `#2f7fa0` ; les alias `ink`, `ivory`, `ember` et `verdigris` en dérivent dans `globals.css`.
+- Garde l’application plein écran : toute navigation est une surcouche HUD, jamais un bandeau de page.
+- La démonstration ne s’adresse qu’aux visiteurs anonymes ; aucune sortie vers elle en état connecté.
+- Le son reste optionnel, désactivé par défaut, et ne porte jamais seul une information.
 
 ## Sécurité et configuration
 
@@ -75,4 +78,4 @@ docker compose down
 
 ## Prochaine tâche
 
-Le parcours client actuel couvre catalogue, authentification, Authoring et Play. La prochaine tranche fonctionnelle dépend des contrats du jalon 4 du backend. N’anticipe ni configuration, ni RBAC, ni organisation, ni assistant sans contrat publié et besoin produit validé.
+La refonte immersive est livrée : coque plein écran, accueil produit à deux niveaux, démonstration réservée aux visiteurs anonymes, portes de la carte réparées, configuration du familier complète avec aperçu par paramètre, et abstraction audio prête à recevoir un pack. La suite dépend de deux tranches externes : la publication d’un `/audio/manifest.json` par le pack d’assets, et le rattachement des scénarios à des catégories dans la configuration — sans lui, chaque porte de la carte donne sur l’ensemble du catalogue et l’interface l’annonce.

@@ -9,6 +9,7 @@ interface PublishedScenarioContract {
   estimatedMinutes: number;
   publishedAt: string;
   snapshotHash: string;
+  categoryId?: string | null;
 }
 
 export interface GenEngineClient {
@@ -31,6 +32,8 @@ export class HttpGenEngineClient implements GenEngineClient {
       mood: index % 2 === 0 ? "mystery" : "wonder",
       accent: index % 2 === 0 ? "ember" : "verdigris",
       scenarioVersionId: story.versionId,
+      scenarioId: story.scenarioId,
+      categoryId: story.categoryId ?? undefined,
     }));
   }
 
