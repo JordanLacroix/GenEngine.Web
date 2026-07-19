@@ -78,4 +78,6 @@ docker compose down
 
 ## Prochaine tâche
 
-La refonte immersive est livrée : coque plein écran, accueil produit à deux niveaux, démonstration réservée aux visiteurs anonymes, portes de la carte réparées, configuration du familier complète avec aperçu par paramètre, et abstraction audio prête à recevoir un pack. La suite dépend de deux tranches externes : la publication d’un `/audio/manifest.json` par le pack d’assets, et le rattachement des scénarios à des catégories dans la configuration — sans lui, chaque porte de la carte donne sur l’ensemble du catalogue et l’interface l’annonce.
+Le Studio de configuration est livré : six sections — jeu, catégories & parcours, familier, libellés, médias, scénarios — écrivent le plan de configuration réel, chacune doublée d'un aperçu. Deux dépendances moteur restent ouvertes et sont annoncées comme telles : le bloc `media` du plan de configuration, et les champs média du schéma narratif, refusés aujourd'hui par `422 invalid_json`.
+
+Rappel de la tranche précédente : la refonte immersive est livrée : coque plein écran, accueil produit à deux niveaux, démonstration réservée aux visiteurs anonymes, portes de la carte réparées, configuration du familier complète avec aperçu par paramètre, et abstraction audio prête à recevoir un pack. La suite dépend de deux tranches externes : la publication d’un `/audio/manifest.json` par le pack d’assets, et le rattachement des scénarios à des catégories dans la configuration — sans lui, chaque porte de la carte donne sur l’ensemble du catalogue et l’interface l’annonce.
