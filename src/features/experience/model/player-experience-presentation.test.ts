@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JournalEntryContract, ScenarioMasteryContract } from "@/shared/api/contracts";
-import { doorAnchorsForViewport, familiarOptionLabel, journalTypeLabel, projectMapPoint, uniqueJournalEntries, uniqueMasteries } from "./player-experience-presentation";
+import { doorAnchorForIndex, doorAnchorsForViewport, familiarOptionLabel, journalTypeLabel, projectMapPoint, uniqueJournalEntries, uniqueMasteries } from "./player-experience-presentation";
 
 describe("player experience presentation", () => {
   it("keeps map anchors attached to the cover image", () => {
@@ -9,6 +9,23 @@ describe("player experience presentation", () => {
     expect(lighthouse.x).toBeCloseTo(520); expect(lighthouse.y).toBeCloseTo(222.333);
     expect(doorAnchorsForViewport({ width: 768, height: 1024 })[1]).toEqual({ x: 770, y: 570 });
   });
+  // La configuration de référence publie six postures. Tant qu'il n'y avait que
+  // cinq ancres, la sixième porte retombait au pixel près sur la première et la
+  // rendait inatteignable.
+  it("gives every published category its own door", () => {
+    const wide = { width: 2048, height: 930 };
+    for (const viewport of [wide, { width: 768, height: 1024 }]) {
+      const seen = new Set<string>();
+      for (let index = 0; index < 12; index += 1) {
+        const anchor = doorAnchorForIndex(index, viewport);
+        const key = `${anchor.x}:${anchor.y}`;
+        expect(seen.has(key)).toBe(false);
+        seen.add(key);
+      }
+      expect(doorAnchorsForViewport(viewport).length).toBeGreaterThanOrEqual(6);
+    }
+  });
+
   it("localizes engine values", () => {
     expect(journalTypeLabel("ChoiceSelected")).toBe("Choix effectué");
     expect(familiarOptionLabel("Mysterious")).toBe("Mystérieux");
