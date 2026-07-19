@@ -37,7 +37,7 @@ export function StoryIntro({ experience }: { experience?: PublishedExperienceCon
   if (!current) return null;
   function finish() {
     window.localStorage.setItem(storageKey, "seen");
-    if (new URLSearchParams(window.location.search).get("intro") === "1") window.location.assign("/account");
+    if (new URLSearchParams(window.location.search).get("intro") === "1") window.location.assign("/");
     else setVisible(false);
   }
   function next() { if (scene === ordered.length - 1) finish(); else setScene((value) => value + 1); }

@@ -1,18 +1,18 @@
-import type { PublishedExperienceContract } from "@/shared/api/contracts";
-import { genEngineRequest, isAuthenticated } from "@/shared/api/genengine-server";
-import { HomeExperience } from "@/features/home/ui/home-experience";
-import { StoryIntro } from "@/features/experience/ui/story-intro";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { isAuthenticated } from "@/shared/api/genengine-server";
+import { AccountGate } from "@/features/identity/ui/account-gate";
 
-export default async function DiscoverPage() {
-  const [authenticated, experience] = await Promise.all([
-    isAuthenticated(),
-    genEngineRequest<PublishedExperienceContract>("configuration", "/experience/default", {}, false)
-      .catch(() => undefined),
-  ]);
-  return <>
-    {/* L'introduction narrative reste réservée aux visiteurs : une personne déjà
-        connectée a franchi ce seuil et retrouve directement son univers. */}
-    {!authenticated && <StoryIntro experience={experience} />}
-    <HomeExperience authenticated={authenticated} />
-  </>;
+export const metadata: Metadata = { title: "Connexion" };
+
+/**
+ * L'atterrissage est la connexion.
+ *
+ * La présentation commerciale n'a pas disparu : elle vit sur `/plateforme` et
+ * reste accessible depuis le menu et depuis la marque. Une session ouverte n'a
+ * rien à faire sur un seuil déjà franchi.
+ */
+export default async function EntryPage() {
+  if (await isAuthenticated()) redirect("/experience");
+  return <AccountGate demoEnabled />;
 }
