@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { PublishedExperienceContract, UserContextContract } from "@/shared/api/contracts";
+import { fallbackApplicationName } from "@/shared/ui/branding-theme";
 
 export interface NavigationContext {
   document?: UserContextContract["experience"]["document"];
@@ -44,7 +45,12 @@ export function useNavigationContext(): NavigationContext {
       permissions: new Set(context?.access.permissions ?? []),
       authenticated: Boolean(context),
       userName: context?.access.userName,
-      gameName: document?.game.name ?? "GenEngine",
+      // Le nom de marque publié prime sur le nom du jeu : `branding` existe
+      // précisément pour nommer l'instance. « GenEngine » reste le repli d'une
+      // configuration illisible, et il nomme alors le moteur, pas un jeu.
+      gameName: document?.branding?.applicationName?.trim()
+        || document?.game.name
+        || fallbackApplicationName,
     };
   }, [context, experience]);
 }

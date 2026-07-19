@@ -10,6 +10,7 @@ import {
   serviceDescriptors, type UnitEndpoints,
 } from "@/shared/api/service-endpoints";
 import { useFeedback } from "@/shared/ui/feedback-provider";
+import { useNavigationContext } from "@/shared/ui/use-navigation-context";
 
 type ProbeState = Record<string, EndpointProbeResult | "running">;
 
@@ -26,6 +27,10 @@ type ProbeState = Record<string, EndpointProbeResult | "running">;
  */
 export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigurationContract }) {
   const feedback = useFeedback();
+  // L'écran nomme l'instance, pas le moteur : « GenEngine Web n'est qu'un
+  // client » annonçait un produit que la personne connectée ne voit nulle part
+  // ailleurs. Le repli reste « GenEngine » quand aucune marque n'est publiée.
+  const { gameName } = useNavigationContext();
   const [state, setState] = useState(initial);
   const [mode, setMode] = useState<EndpointMode>(initial.override?.mode ?? "grouped");
   const [grouped, setGrouped] = useState<GroupedEndpoints>(
@@ -106,7 +111,7 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
         <p className="eyebrow eyebrow--accent"><Sliders size={15} aria-hidden="true" /> Paramètres de connexion</p>
         <h1>Où vit votre moteur ?</h1>
         <p>
-          GenEngine Web n’est qu’un client : il appelle six services. Indiquez-les ici si votre
+          {gameName} n’est qu’un client : il appelle six services. Indiquez-les ici si votre
           déploiement ne suit pas la convention locale. La résolution reste faite par le serveur —
           le navigateur ne parle jamais directement au moteur.
         </p>

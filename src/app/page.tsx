@@ -5,8 +5,18 @@ import type { UserAccessContract } from "@/shared/api/contracts";
 import { genEngineRequest, isAuthenticated } from "@/shared/api/genengine-server";
 import { AccountGate } from "@/features/identity/ui/account-gate";
 import { primaryDestination } from "@/shared/ui/navigation-model";
+import { applicationNameOf, fetchClientBootstrap } from "@/shared/api/client-bootstrap";
 
-export const metadata: Metadata = { title: "Connexion" };
+/**
+ * Le gabarit `%s · <instance>` de la coque **ne s'applique pas ici** : dans
+ * l'App Router, `title.template` ne vaut que pour les segments *enfants*, et
+ * `app/page.tsx` partage le segment de `app/layout.tsx`. Sans cette fonction,
+ * l'écran d'entrée — le premier que voit un visiteur — serait le seul à ne
+ * porter aucun nom d'instance.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `Connexion · ${applicationNameOf(await fetchClientBootstrap())}` };
+}
 
 /**
  * L'atterrissage est la connexion.
