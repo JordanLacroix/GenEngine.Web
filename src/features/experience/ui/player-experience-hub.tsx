@@ -212,7 +212,7 @@ export function PlayerExperienceHub() {
       </div>
       <div className="scenario-shelf">{filteredStories.map((story) => {
         const mastery = context.player.masteries.find((item) => item.scenarioVersionId === story.scenarioVersionId);
-        return <article key={story.id}><p className="eyebrow">{story.durationMinutes} min</p><h3>{story.title}</h3><p>{story.synopsis}</p><div className="progress-track"><span style={{ width: `${mastery?.masteryPercent ?? 0}%` }} /></div><Link className="button button--primary" href={`/play/${story.scenarioVersionId}`}>{mastery ? "Reprendre ce chemin" : "Franchir la porte"}</Link></article>;
+        return <article key={story.id}><p className="eyebrow">{story.durationMinutes} min</p><h3>{story.title}</h3><p>{story.synopsis}</p><div className="progress-track"><span style={{ width: `${mastery?.masteryPercent ?? 0}%` }} /></div><Link className="button button--primary" href={`/play/${story.scenarioVersionId}`}>{mastery ? "Reprendre ce chemin" : "Franchir la porte"}</Link><Link className="text-button" href={`/library/${story.scenarioVersionId}`}>Mémoire de mes parcours</Link></article>;
       })}</div>
     </section>}
 
