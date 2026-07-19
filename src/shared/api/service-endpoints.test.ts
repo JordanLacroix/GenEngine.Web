@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  defaultGroupedEndpoints, endpointUrl, endpointUrls, EndpointValidationError,
-  normalizeServiceUrl, parseEndpointOverride, readEndpointOverride,
-  serializeEndpointOverride, serviceDescriptors, serviceIds,
+  assertHostsAllowed, defaultAllowedHosts, defaultGroupedEndpoints, endpointUrl, endpointUrls,
+  EndpointValidationError, isHostAllowed, normalizeServiceUrl, parseAllowedHosts,
+  parseEndpointOverride, readEndpointOverride, serializeEndpointOverride,
+  serviceDescriptors, serviceIds,
 } from "./service-endpoints";
 
 describe("descripteurs de services", () => {
@@ -107,5 +108,53 @@ describe("endpointUrl par défaut", () => {
       playerExperience: "http://localhost:5205",
       organization: "http://localhost:5206",
     });
+  });
+});
+
+describe("liste d’hôtes autorisés", () => {
+  it("retombe sur la convention locale quand rien n’est déclaré", () => {
+    expect(parseAllowedHosts(undefined)).toEqual(defaultAllowedHosts);
+    expect(parseAllowedHosts("   ")).toEqual(defaultAllowedHosts);
+  });
+
+  it("lit une déclaration séparée par des virgules, sans casse ni espaces", () => {
+    expect(parseAllowedHosts(" Moteur.Example , 10.0.0.4 ")).toEqual(["moteur.example", "10.0.0.4"]);
+  });
+
+  it("accepte un hôte déclaré, quelle que soit la casse", () => {
+    expect(isHostAllowed("Localhost", defaultAllowedHosts)).toBe(true);
+    expect(isHostAllowed("127.0.0.1", defaultAllowedHosts)).toBe(true);
+  });
+
+  it("compare une adresse IPv6 sans ses crochets", () => {
+    expect(isHostAllowed("[::1]", defaultAllowedHosts)).toBe(true);
+  });
+
+  it("refuse tout hôte non déclaré", () => {
+    expect(isHostAllowed("attaquant.example", defaultAllowedHosts)).toBe(false);
+    expect(isHostAllowed("169.254.169.254", defaultAllowedHosts)).toBe(false);
+    expect(isHostAllowed("localhost.attaquant.example", defaultAllowedHosts)).toBe(false);
+  });
+
+  it("ne lève la restriction que sur un astérisque explicite", () => {
+    expect(isHostAllowed("attaquant.example", ["*"])).toBe(true);
+  });
+});
+
+describe("assertHostsAllowed", () => {
+  it("laisse passer la convention locale", () => {
+    expect(() => assertHostsAllowed(defaultGroupedEndpoints, defaultAllowedHosts)).not.toThrow();
+  });
+
+  it("refuse dès qu’un seul service sort de la liste", () => {
+    const urls = Object.fromEntries(serviceIds.map((id) => [id, "http://localhost:5201"]));
+    urls.play = "https://169.254.169.254";
+    const override = parseEndpointOverride({ mode: "unit", urls });
+    expect(() => assertHostsAllowed(override, defaultAllowedHosts)).toThrow(EndpointValidationError);
+  });
+
+  it("refuse un hôte groupé non déclaré", () => {
+    const override = parseEndpointOverride({ ...defaultGroupedEndpoints, host: "attaquant.example" });
+    expect(() => assertHostsAllowed(override, defaultAllowedHosts)).toThrow(/n’est pas autorisé/);
   });
 });

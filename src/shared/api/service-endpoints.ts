@@ -79,6 +79,8 @@ export interface EndpointProbeResult {
 /** Réponse de `GET /api/settings/endpoints`. */
 export interface EndpointConfigurationContract {
   readonly overrideEnabled: boolean;
+  /** Hôtes que l'exploitant accepte comme cible ; `*` lève la restriction. */
+  readonly allowedHosts: readonly string[];
   readonly source: "override" | "environment";
   readonly override?: EndpointOverride;
   readonly environment: Record<ServiceId, string>;
@@ -133,6 +135,51 @@ function normalizePort(raw: unknown, service: ServiceId): number {
     throw new EndpointValidationError(`Port invalide pour ${serviceDescriptor(service).label} : « ${String(raw)} ».`);
   }
   return port;
+}
+
+/**
+ * Hôtes vers lesquels une surcharge de session peut pointer.
+ *
+ * Sans cette barrière, l'écran de configuration donnerait à n'importe quel
+ * visiteur le pouvoir de faire émettre au serveur une requête vers l'hôte de
+ * son choix — un contournement de frontière réseau (CWE-918), et un scanner de
+ * ports pour tout ce que le serveur peut joindre et pas lui.
+ *
+ * Défaut : la convention de déploiement local. `*` lève la restriction et doit
+ * rester un choix explicite de l'exploitant.
+ */
+export const defaultAllowedHosts: readonly string[] = [
+  "localhost", "127.0.0.1", "::1", "host.docker.internal",
+];
+
+export function parseAllowedHosts(raw: string | undefined): readonly string[] {
+  const declared = (raw ?? "").split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
+  return declared.length > 0 ? declared : defaultAllowedHosts;
+}
+
+export function isHostAllowed(host: string, allowed: readonly string[]): boolean {
+  if (allowed.includes("*")) return true;
+  // `new URL` conserve les crochets d'une adresse IPv6 littérale.
+  const normalized = host.trim().toLowerCase().replace(/^\[|\]$/g, "");
+  return allowed.some((candidate) => candidate === normalized);
+}
+
+/**
+ * Rejette une surcharge dont un seul hôte sortirait de la liste autorisée.
+ *
+ * Tout ou rien : une configuration à moitié appliquée enverrait une partie des
+ * appels ailleurs que ce que l'écran affiche.
+ */
+export function assertHostsAllowed(override: EndpointOverride, allowed: readonly string[]): void {
+  for (const id of serviceIds) {
+    const host = new URL(endpointUrl(override, id)).hostname;
+    if (!isHostAllowed(host, allowed)) {
+      throw new EndpointValidationError(
+        `L’hôte « ${host} » n’est pas autorisé par l’exploitant. `
+        + `Hôtes acceptés : ${allowed.join(", ")} (GENENGINE_ENDPOINT_ALLOWED_HOSTS).`,
+      );
+    }
+  }
 }
 
 /** L'URL réellement appelée pour un service, quel que soit le mode. */

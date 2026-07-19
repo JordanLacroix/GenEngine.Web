@@ -59,7 +59,12 @@ surcharge propre au navigateur peut la remplacer, transportée par un cookie
 `/api/settings/endpoints`. Le navigateur ne lit jamais cette valeur et aucune
 variable `NEXT_PUBLIC_` n'est créée : l'invariant 9 tient.
 
-`GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne cette capacité — activée hors
+Deux barrières encadrent la capacité. `GENENGINE_ENDPOINT_ALLOWED_HOSTS` borne
+les hôtes visables — défaut `localhost`, `127.0.0.1`, `::1`,
+`host.docker.internal` — et s'applique à l'écriture, à la sonde et à la
+relecture du cookie ; sans elle, le serveur devient un relais vers son propre
+réseau interne (CWE-918). `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne la
+capacité — activée hors
 production, désactivée en production. Désactivée, l'écran reste consultable en
 lecture seule et l'enregistrement répond `403`.
 

@@ -1,8 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
 import {
-  type EndpointOverride, endpointUrl, endpointUrls, readEndpointOverride,
-  type ServiceId, serviceDescriptors, serviceIds,
+  assertHostsAllowed, type EndpointOverride, endpointUrl, endpointUrls, isHostAllowed,
+  parseAllowedHosts, readEndpointOverride, type ServiceId, serviceDescriptors, serviceIds,
 } from "@/shared/api/service-endpoints";
 
 export const accessCookieName = "genengine_access";
@@ -39,6 +39,19 @@ export function isEndpointOverrideEnabled(): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
+/**
+ * Hôtes vers lesquels une surcharge de session peut pointer.
+ *
+ * `GENENGINE_ENDPOINT_ALLOWED_HOSTS`, liste séparée par des virgules. Défaut :
+ * la convention locale — `localhost`, `127.0.0.1`, `::1`,
+ * `host.docker.internal`. `*` lève la restriction, au choix explicite de
+ * l'exploitant. Sans elle, l'écran de configuration ferait du serveur un relais
+ * vers n'importe quel hôte joignable depuis lui (CWE-918).
+ */
+export function allowedEndpointHosts(): readonly string[] {
+  return parseAllowedHosts(process.env.GENENGINE_ENDPOINT_ALLOWED_HOSTS);
+}
+
 /** Les URLs déclarées par l'environnement du serveur : la référence par défaut. */
 export function environmentEndpoints(): EndpointOverride {
   const urls = Object.fromEntries(serviceDescriptors.map((descriptor) => [
@@ -50,12 +63,19 @@ export function environmentEndpoints(): EndpointOverride {
 
 async function sessionOverride(): Promise<EndpointOverride | undefined> {
   if (!isEndpointOverrideEnabled()) return undefined;
-  return readEndpointOverride((await cookies()).get(endpointsCookieName)?.value);
+  const override = readEndpointOverride((await cookies()).get(endpointsCookieName)?.value);
+  if (!override) return undefined;
+  // Le cookie a pu être posé avant un durcissement de la liste : on le
+  // revalide à la lecture, pas seulement à l'écriture.
+  try { assertHostsAllowed(override, allowedEndpointHosts()); }
+  catch { return undefined; }
+  return override;
 }
 
 /** État complet de la résolution, pour l'écran de configuration. */
 export async function endpointConfiguration(): Promise<{
   overrideEnabled: boolean;
+  allowedHosts: readonly string[];
   source: "override" | "environment";
   override?: EndpointOverride;
   environment: Record<ServiceId, string>;
@@ -65,6 +85,7 @@ export async function endpointConfiguration(): Promise<{
   const override = await sessionOverride();
   return {
     overrideEnabled: isEndpointOverrideEnabled(),
+    allowedHosts: allowedEndpointHosts(),
     source: override ? "override" : "environment",
     override,
     environment: endpointUrls(environment),
@@ -72,10 +93,23 @@ export async function endpointConfiguration(): Promise<{
   };
 }
 
-/** L'URL réellement appelée pour un service, surcharge de session comprise. */
+/**
+ * L'URL réellement appelée pour un service, surcharge de session comprise.
+ *
+ * L'hôte est reconstruit à partir des composants validés d'une `URL` analysée,
+ * et refusé s'il sort de la liste autorisée. Une valeur venant du cookie ne
+ * peut donc pas atteindre `fetch` sans être passée par ce point de contrôle.
+ */
 export async function resolveServiceUrl(service: Service): Promise<string> {
   const override = await sessionOverride();
-  return endpointUrl(override ?? environmentEndpoints(), service);
+  if (!override) return endpointUrl(environmentEndpoints(), service);
+  const parsed = new URL(endpointUrl(override, service));
+  if (!isHostAllowed(parsed.hostname, allowedEndpointHosts())) {
+    return endpointUrl(environmentEndpoints(), service);
+  }
+  const port = parsed.port ? `:${parsed.port}` : "";
+  const path = parsed.pathname.replace(/\/+$/, "");
+  return `${parsed.protocol}//${parsed.hostname}${port}${path}`;
 }
 
 /**

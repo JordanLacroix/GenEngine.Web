@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  endpointConfiguration, endpointsCookieName, isEndpointOverrideEnabled,
+  allowedEndpointHosts, endpointConfiguration, endpointsCookieName, isEndpointOverrideEnabled,
 } from "@/shared/api/genengine-server";
 import { sameOriginRejection } from "@/shared/api/route-errors";
-import { EndpointValidationError, parseEndpointOverride, serializeEndpointOverride } from "@/shared/api/service-endpoints";
+import { assertHostsAllowed, EndpointValidationError, parseEndpointOverride, serializeEndpointOverride } from "@/shared/api/service-endpoints";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,9 @@ export async function PUT(request: Request) {
   if (!isEndpointOverrideEnabled()) return disabled();
   try {
     const override = parseEndpointOverride(await request.json() as unknown);
+    // Le serveur n'accepte pas de relayer vers un hôte que l'exploitant n'a pas
+    // déclaré : sans cela, cet écran serait un contournement de frontière réseau.
+    assertHostsAllowed(override, allowedEndpointHosts());
     const response = NextResponse.json({ saved: true, override });
     response.cookies.set(endpointsCookieName, serializeEndpointOverride(override), {
       httpOnly: true,

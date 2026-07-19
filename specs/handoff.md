@@ -27,7 +27,9 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
   **sans session ouverte**, avec un test de joignabilité par service exécuté
   côté serveur. La surcharge voyage dans un cookie `HttpOnly` relu par
   `resolveServiceUrl()` : elle a un effet réel, borné à ce navigateur, et
-  gouverné par `GENENGINE_ALLOW_ENDPOINT_OVERRIDE`.
+  gouverné par `GENENGINE_ALLOW_ENDPOINT_OVERRIDE`. Les hôtes visables sont
+  bornés par `GENENGINE_ENDPOINT_ALLOWED_HOSTS` — la convention locale par
+  défaut — pour que l'écran ne devienne pas un relais vers le réseau interne.
 - Un seul système de navigation est visible à la fois. L'en-tête global ne se
   monte plus sur `/experience`, `/play`, `/studio` ni `/administration`, y
   compris pendant leurs états de chargement. Les barres latérales du Studio et
@@ -149,7 +151,7 @@ Ces affirmations figuraient dans les documents et étaient fausses ou périmées
 Elles sont listées pour éviter qu'elles ne reviennent par copie d'un ancien
 handoff.
 
-- « 113 tests Vitest » — il y en a **157**, répartis en 16 fichiers.
+- « 113 tests Vitest » — il y en a **166**, répartis en 16 fichiers.
 - « la démo comporte treize scènes pour une cible d'environ quinze minutes » — elle en compte **23**, et chaque situation se termine en quelques minutes.
 - « le bloc `media` du plan de configuration est conditionné au moteur » coexistait avec « publié depuis GenEngine #46 et consommé au runtime ». La seconde affirmation est la bonne ; seuls les **médias de scène et de choix** restent refusés.
 - Plusieurs jalons étaient annoncés « implémenté sur `<branche>` » alors que la branche est fusionnée dans `main` depuis longtemps.

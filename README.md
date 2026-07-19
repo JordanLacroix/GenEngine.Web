@@ -249,6 +249,7 @@ GENENGINE_PLAYER_EXPERIENCE_URL=http://localhost:5205
 GENENGINE_ORGANIZATION_URL=http://localhost:5206
 ENTRA_CLIENT_SECRET=
 GENENGINE_ALLOW_ENDPOINT_OVERRIDE=
+GENENGINE_ENDPOINT_ALLOWED_HOSTS=
 ```
 
 Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l’identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration.
@@ -276,6 +277,17 @@ moins que pas d’écran :
 - `POST /api/settings/endpoints/test` teste un service depuis le serveur. Un
   `404` compte comme joignable et le dit : le test prouve qu’un serveur HTTP
   répond, pas qu’il s’agit du bon service.
+
+`GENENGINE_ENDPOINT_ALLOWED_HOSTS` borne les hôtes que le serveur accepte de
+viser, en liste séparée par des virgules. **Défaut : `localhost`, `127.0.0.1`,
+`::1`, `host.docker.internal`** — la convention de déploiement local. Sans cette
+barrière, l’écran ferait du serveur un relais vers tout ce qu’il peut joindre et
+pas le visiteur : contournement de frontière réseau et scanner de ports
+(CWE-918). Elle s’applique à l’enregistrement, au test de joignabilité **et** à
+la relecture du cookie, pour qu’un durcissement ultérieur de la liste invalide
+les surcharges déjà posées. `*` lève la restriction et doit rester un choix
+explicite de l’exploitant. L’écran annonce la liste au lieu de la laisser
+découvrir par un refus.
 
 `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` tranche l’autorisation. **Défaut : activé
 hors production, désactivé en production**, parce qu’une surcharge acceptée en

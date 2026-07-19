@@ -128,6 +128,16 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
       </span>
     </p>}
 
+    {editable && !state.allowedHosts.includes("*") && <p className="settings-locked" role="note">
+      <ShieldAlert size={16} aria-hidden="true" />
+      <span>
+        Le serveur n’accepte de relayer que vers&nbsp;
+        {state.allowedHosts.map((host) => <code key={host}>{host} </code>)}
+        — une adresse hors de cette liste sera refusée. L’exploitant élargit la liste avec
+        <code> GENENGINE_ENDPOINT_ALLOWED_HOSTS</code>.
+      </span>
+    </p>}
+
     <fieldset className="settings-mode" disabled={!editable}>
       <legend>Topologie du déploiement</legend>
       <label>
@@ -241,7 +251,8 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
       <summary>Comment cette configuration agit-elle réellement ?</summary>
       <p>
         Les appels au moteur partent du serveur Next.js, pas du navigateur : c’est lui qui porte le
-        jeton de session. Enregistrer ici pose un cookie <code>HttpOnly</code>, <code>SameSite=Strict</code>,
+        jeton de session. Le serveur n’accepte donc de viser que les hôtes déclarés par l’exploitant :
+        sans cette liste, cet écran ferait de lui un relais vers tout ce qu’il peut joindre. Enregistrer ici pose un cookie <code>HttpOnly</code>, <code>SameSite=Strict</code>,
         que la façade serveur relit à chaque requête pour choisir l’adresse à appeler. Le navigateur ne
         lit jamais ce cookie et aucune URL de service n’est intégrée au bundle.
       </p>

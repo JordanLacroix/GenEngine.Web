@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { environmentEndpoints, isEndpointOverrideEnabled } from "@/shared/api/genengine-server";
+import { allowedEndpointHosts, environmentEndpoints, isEndpointOverrideEnabled } from "@/shared/api/genengine-server";
 import { sameOriginRejection } from "@/shared/api/route-errors";
 import {
-  type EndpointProbeResult, EndpointValidationError, endpointUrl, parseEndpointOverride,
-  type ServiceId, serviceDescriptor, serviceIds,
+  assertHostsAllowed, type EndpointProbeResult, EndpointValidationError, endpointUrl,
+  isHostAllowed, parseEndpointOverride, type ServiceId, serviceDescriptor, serviceIds,
 } from "@/shared/api/service-endpoints";
 
 export const dynamic = "force-dynamic";
@@ -35,10 +35,15 @@ export async function POST(request: Request) {
   try {
     // On teste ce que la personne vient de saisir, pas ce qui est enregistré :
     // sinon il faudrait enregistrer une URL fausse pour découvrir qu'elle l'est.
-    const candidate = body.override !== undefined && isEndpointOverrideEnabled()
-      ? parseEndpointOverride(body.override)
-      : environmentEndpoints();
-    base = endpointUrl(candidate, service as ServiceId);
+    if (body.override !== undefined && isEndpointOverrideEnabled()) {
+      const candidate = parseEndpointOverride(body.override);
+      // Tester une adresse, c'est déjà faire émettre une requête au serveur :
+      // la sonde subit exactement la même barrière que l'enregistrement.
+      assertHostsAllowed(candidate, allowedEndpointHosts());
+      base = endpointUrl(candidate, service as ServiceId);
+    } else {
+      base = endpointUrl(environmentEndpoints(), service as ServiceId);
+    }
   } catch (error) {
     const detail = error instanceof EndpointValidationError ? error.message : "Configuration illisible.";
     return NextResponse.json({ title: "invalid_endpoints", detail }, { status: 422 });
@@ -48,11 +53,15 @@ export async function POST(request: Request) {
 }
 
 async function probe(service: ServiceId, base: string): Promise<EndpointProbeResult> {
+  const parsed = new URL(base);
+  if (!isHostAllowed(parsed.hostname, allowedEndpointHosts())) {
+    return { service, url: base, reachable: false, latencyMs: 0, detail: "Hôte non autorisé par l’exploitant." };
+  }
   const started = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), probeTimeoutMs);
   try {
-    const response = await fetch(new URL("/health", base), {
+    const response = await fetch(new URL("/health", parsed.origin), {
       signal: controller.signal, cache: "no-store", headers: { Accept: "application/json" },
     });
     const latencyMs = Date.now() - started;
