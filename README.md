@@ -124,8 +124,10 @@ inaccessible dès qu’une session existe.
 
 | Route | Intention |
 |---|---|
-| `/` | Ouverture d’univers puis promesse plateforme, pour une personne qui décide |
-| `/account` | Connexion locale/Microsoft et création de compte — redirige vers `/experience` si une session existe |
+| `/` | **Seuil de connexion** : formulaire local/Microsoft, bouton de démonstration sous le formulaire — redirige vers `/experience` si une session existe |
+| `/plateforme` | Ouverture d’univers puis promesse plateforme, pour une personne qui décide |
+| `/parametres` | URLs des six services, en mode groupé ou unitaire, avec test de joignabilité — **accessible sans session** |
+| `/account` | Redirection permanente vers `/`, pour les liens déjà distribués |
 | `/library` | Bibliothèque et reprise de lecture |
 | `/library/[versionId]` | Carte complète du récit et mémoire cumulée, sans session ouverte |
 | `/play/demo` | Démonstration hors ligne « Le Diapason », trois situations au choix, réservée aux visiteurs anonymes — redirige vers `/experience` si une session existe |
@@ -246,11 +248,42 @@ GENENGINE_CONFIGURATION_URL=http://localhost:5204
 GENENGINE_PLAYER_EXPERIENCE_URL=http://localhost:5205
 GENENGINE_ORGANIZATION_URL=http://localhost:5206
 ENTRA_CLIENT_SECRET=
+GENENGINE_ALLOW_ENDPOINT_OVERRIDE=
 ```
 
 Ces variables restent côté serveur. Le JWT est conservé dans un cookie `HttpOnly`, tandis que le navigateur ne stocke que l’identifiant opaque de la dernière session par version publiée. Si Authoring est indisponible, la bibliothèque signale explicitement le mode démonstration.
 
 Le player consomme les statuts et transitions calculés par Play : choix legacy et typés, narration, quiz, texte libre avec confirmation, pause/reprise et arbre de session. Il ne réimplémente aucune règle Narrative.
+
+### Configurer les URLs depuis le navigateur
+
+`/parametres` permet de régler les six adresses **sans être connecté** — c’est
+précisément ce qu’on fait avant de pouvoir s’authentifier. Deux modes : un hôte
+commun avec un port par service, ou une URL complète et indépendante par service
+pour un déploiement réparti sur plusieurs machines.
+
+Ce que l’écran fait réellement, parce qu’un écran qui enregistre sans effet vaut
+moins que pas d’écran :
+
+- l’enregistrement pose un cookie `HttpOnly`, `SameSite=Strict`, via
+  `PUT /api/settings/endpoints` ; le navigateur ne lit jamais sa valeur ;
+- `resolveServiceUrl()` relit ce cookie **à chaque requête serveur**, avant
+  `fetch`. Les appels partent donc bien vers l’adresse saisie ;
+- la portée est **ce navigateur uniquement**. L’environnement du serveur reste
+  le défaut de l’instance et n’est pas modifié ;
+- aucune variable `NEXT_PUBLIC_` n’est créée : l’invariant 9 tient, la
+  résolution reste serveur ;
+- `POST /api/settings/endpoints/test` teste un service depuis le serveur. Un
+  `404` compte comme joignable et le dit : le test prouve qu’un serveur HTTP
+  répond, pas qu’il s’agit du bon service.
+
+`GENENGINE_ALLOW_ENDPOINT_OVERRIDE` tranche l’autorisation. **Défaut : activé
+hors production, désactivé en production**, parce qu’une surcharge acceptée en
+production déplacerait la cible d’appels portant le JWT de la personne
+connectée. Désactivé, l’écran reste consultable, annonce les adresses effectives
+en lecture seule, laisse les tests disponibles, et `PUT` répond `403` — il
+n’enregistre jamais une valeur sans effet. Les mutations exigent en outre une
+requête de même origine (`Sec-Fetch-Site`).
 
 ### Son
 
