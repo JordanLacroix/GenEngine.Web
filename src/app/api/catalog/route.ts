@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { HttpGenEngineClient, maximumVersionLookups, type StoryPage } from "@/shared/api/genengine-client";
+import { resolveServiceUrl } from "@/shared/api/genengine-server";
 import { clampPage, clampPageSize, readPositiveInteger } from "@/shared/api/pagination";
 
 export const dynamic = "force-dynamic";
@@ -21,12 +22,15 @@ export const dynamic = "force-dynamic";
  *   une porte.
  */
 export async function GET(request: Request) {
-  const client = new HttpGenEngineClient(process.env.GENENGINE_AUTHORING_URL ?? "http://localhost:5201");
+  // Une seule résolution d'URL de service dans le dépôt : celle de la façade.
+  // Dupliquer la lecture d'environnement ici avait pour effet qu'une surcharge
+  // de session s'appliquait partout sauf au catalogue.
+  const client = new HttpGenEngineClient(await resolveServiceUrl("authoring"));
   const parameters = new URL(request.url).searchParams;
   try {
-    const versionIds = (parameters.get("versionIds") ?? "")
-      .split(",").map((value) => value.trim()).filter(Boolean).slice(0, maximumVersionLookups);
     if (parameters.has("versionIds")) {
+      const versionIds = (parameters.get("versionIds") ?? "")
+        .split(",").map((value) => value.trim()).filter(Boolean).slice(0, maximumVersionLookups);
       const stories = await client.findStoriesByVersionIds(versionIds, request.signal);
       const resolved: StoryPage = { items: stories, page: 1, pageSize: stories.length, total: stories.length };
       return NextResponse.json(resolved);

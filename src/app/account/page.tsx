@@ -1,15 +1,11 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/shared/api/genengine-server";
-import { AccountGate } from "@/features/identity/ui/account-gate";
-
-export const metadata: Metadata = { title: "Connexion" };
+import { permanentRedirect } from "next/navigation";
 
 /**
- * Seuil de connexion. Une session ouverte n'a rien à faire ici, et la
- * démonstration n'est proposée qu'aux personnes encore anonymes.
+ * Le seuil de connexion a rejoint l'atterrissage `/`.
+ *
+ * La route reste en place pour que les liens déjà distribués — courriels
+ * d'invitation, favoris — continuent d'aboutir.
  */
-export default async function AccountPage() {
-  if (await isAuthenticated()) redirect("/experience");
-  return <AccountGate demoEnabled />;
+export default function AccountPage() {
+  permanentRedirect("/");
 }

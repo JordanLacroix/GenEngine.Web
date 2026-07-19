@@ -1,0 +1,340 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Coque plein écran, navigation unique, confirmations et paramètres.
+
+   Trois choses vivent ici :
+   1. les surfaces plein écran à HUD — lecteur, Studio, Administration ;
+   2. la navigation globale repliée dans les barres latérales de section ;
+   3. le système unifié de confirmation et de retour.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Le pied de page ────────────────────────────────────────────────────────
+   Les règles `body > .site-footer` de globals.css et platform.css ne
+   correspondaient à rien : le pied de page est enfant de `main`, pas de
+   `body`. Le sélecteur descendant les remplace. */
+body:has(.player-shell) .site-footer,
+body:has(.player-universe) .site-footer,
+body:has(.first-familiar) .site-footer,
+body:has(.tutorial-story) .site-footer,
+body:has(.app-fullscreen) .site-footer { display: none; }
+
+body:has(.app-fullscreen) { overflow: hidden; }
+body:has(.app-fullscreen) > main { height: 100dvh; padding-bottom: 0; }
+
+/* ── Lecteur : la scène occupe le viewport, le chrome devient une HUD ────────
+   `/play/demo` et `/play/[versionId]` avaient un chrome en flux, contrairement
+   à `/experience`. Ils suivent désormais le même modèle : en-tête et pied de
+   scène sont des pastilles flottantes posées sur le récit. */
+.player-shell {
+  position: fixed;
+  z-index: var(--z-fullscreen);
+  inset: 0;
+  display: block;
+  min-height: 0;
+  overflow: hidden;
+}
+.player-shell > .player-progress {
+  position: absolute;
+  z-index: 33;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+}
+.player-shell > .player-header,
+.player-shell > .player-footer {
+  position: absolute;
+  z-index: 32;
+  left: 50%;
+  translate: -50%;
+  width: min(1100px, calc(100% - 1.6rem));
+  min-height: 0;
+  padding: .5rem .6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(5 10 12 / 78%);
+  backdrop-filter: blur(18px) saturate(1.25);
+  box-shadow: 0 16px 50px rgb(0 0 0 / 34%);
+}
+.player-shell > .player-header { top: calc(.8rem + env(safe-area-inset-top)); }
+.player-shell > .player-footer { bottom: calc(.8rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+.player-shell > .scene {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 7rem clamp(1rem, 5vw, 3rem) 7rem;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.player-shell > .scene > * { width: min(760px, 100%); margin-inline: auto; }
+.player-shell > .scene > .demo-summary,
+.player-shell > .scene > .engine-summary { width: min(820px, 100%); }
+.player-shell .player-error { top: 6rem; }
+
+@media (max-width: 620px) {
+  .player-shell > .scene { padding: 6rem .8rem 6.5rem; }
+  .player-shell > .player-header,
+  .player-shell > .player-footer { width: calc(100% - 1rem); border-radius: 1.2rem; }
+}
+
+/* ── Surfaces d'exploitation plein écran ────────────────────────────────────
+   Studio et Administration passent en plein écran sans perdre leur densité :
+   la barre latérale et le contenu défilent séparément, et aucun titre
+   décoratif ne mange la hauteur utile. */
+.app-fullscreen {
+  position: fixed;
+  z-index: var(--z-fullscreen);
+  inset: 0;
+  margin: 0;
+  min-height: 0;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+.admin-console.app-fullscreen { grid-template-columns: 264px minmax(0, 1fr); }
+.studio-console.app-fullscreen { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 0; align-items: stretch; }
+.app-fullscreen > .admin-sidebar,
+.app-fullscreen > .studio-sidebar {
+  position: static;
+  height: 100dvh;
+  overflow-y: auto;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  background: rgb(8 14 17 / 92%);
+}
+.app-fullscreen > .admin-content,
+.app-fullscreen > .studio-content {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: clamp(1rem, 2.4vw, 2.2rem);
+  align-content: start;
+}
+
+@media (max-width: 900px) {
+  .admin-console.app-fullscreen,
+  .studio-console.app-fullscreen { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .app-fullscreen > .admin-sidebar,
+  .app-fullscreen > .studio-sidebar {
+    height: auto;
+    max-height: 45dvh;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .app-fullscreen > .admin-content,
+  .app-fullscreen > .studio-content { height: auto; min-height: 0; }
+}
+
+/* ── Navigation globale repliée dans une barre de section ───────────────────
+   Un seul système de navigation reste visible : l'en-tête flottant ne
+   s'affiche plus sur les routes qui portent la leur. */
+.section-nav { margin-bottom: .9rem; padding-bottom: .8rem; display: grid; gap: .5rem; border-bottom: 1px solid var(--line); }
+.section-nav-brand { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.section-nav-brand > a { display: inline-flex; align-items: center; gap: .55rem; font-weight: 680; letter-spacing: -.02em; }
+.section-nav-brand > a > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  aspect-ratio: 1;
+  border: 1px solid rgb(215 167 70 / 55%);
+  border-radius: 50%;
+  color: var(--ember-light);
+  font: italic 1rem var(--font-story);
+}
+.section-nav-name { font-size: .85rem; }
+.section-nav-current { margin: 0; color: var(--or); font-size: .6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.section-nav nav { display: flex; flex-wrap: wrap; gap: .25rem; }
+.section-nav-link {
+  padding: .42rem .6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--ivory-muted);
+  font-size: .68rem;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.section-nav-link:hover { color: var(--ivory); border-color: var(--line); background: rgb(243 237 223 / 6%); }
+
+/* ── Système unifié de confirmation et de retour ────────────────────────────
+   Il remplace cinq `window.confirm`, trois implémentations modales
+   indépendantes et l'absence de retour de succès. */
+.notice-region {
+  position: fixed;
+  z-index: 300;
+  right: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  display: grid;
+  gap: .55rem;
+  width: min(400px, calc(100% - 2rem));
+  pointer-events: none;
+}
+.notice {
+  padding: .8rem .9rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: .7rem;
+  border: 1px solid var(--line);
+  border-radius: .8rem;
+  background: rgb(6 15 23 / 96%);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 45%);
+  pointer-events: auto;
+  animation: notice-in .25s ease both;
+}
+.notice > svg { width: 1.1rem; height: 1.1rem; margin-top: .1rem; }
+.notice strong { display: block; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+.notice p { margin: .2rem 0 0; color: var(--ivory-muted); font-size: .78rem; line-height: 1.55; }
+.notice > button { display: grid; place-items: center; padding: .2rem; border: 0; background: transparent; color: var(--ivory-muted); cursor: pointer; }
+.notice > button:hover { color: var(--ivory); }
+.notice--success { border-color: rgb(122 154 85 / 52%); }
+.notice--success > svg, .notice--success strong { color: #9ec97a; }
+.notice--error { border-color: rgb(221 91 82 / 55%); }
+.notice--error > svg, .notice--error strong { color: #e48a83; }
+.notice--info { border-color: rgb(47 127 160 / 52%); }
+.notice--info > svg, .notice--info strong { color: #74b6d2; }
+@keyframes notice-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.confirm-scrim {
+  position: fixed;
+  z-index: var(--z-dialog);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(.8rem, 4vw, 2rem);
+  background: rgb(3 9 14 / 70%);
+  backdrop-filter: blur(6px);
+}
+.confirm-panel {
+  width: min(520px, 100%);
+  padding: clamp(1.3rem, 3vw, 1.9rem);
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  background: linear-gradient(150deg, rgb(17 40 56 / 98%), rgb(6 15 23 / 99%));
+  box-shadow: 0 40px 120px rgb(0 0 0 / 60%);
+}
+.confirm-panel > header { display: flex; align-items: start; gap: .8rem; }
+.confirm-panel > header > svg { flex: none; width: 1.4rem; height: 1.4rem; margin-top: .15rem; color: var(--azur); }
+.confirm-panel h2 { margin: 0; font: 400 1.6rem/1.15 var(--font-story); }
+.confirm-panel > p { margin: 0; color: var(--ivory-muted); font-size: .85rem; line-height: 1.65; }
+.confirm-panel--destructive { border-color: rgb(221 91 82 / 45%); }
+.confirm-panel--destructive > header > svg { color: #e48a83; }
+.confirm-actions { display: flex; justify-content: end; gap: .6rem; flex-wrap: wrap; }
+.button--danger { border-color: rgb(221 91 82 / 60%); background: rgb(221 91 82 / 16%); color: #f0a9a3; }
+.button--danger:hover { border-color: #e48a83; background: rgb(221 91 82 / 26%); }
+
+/* ── Paramètres de connexion au moteur ──────────────────────────────────────
+   Accessible sans session : régler l'adresse du serveur est ce qu'on fait
+   avant de pouvoir s'y connecter. */
+.settings-page { padding-block: 6.5rem 5rem; display: grid; gap: 1.2rem; }
+.settings-head { display: flex; align-items: end; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+.settings-head h1 { margin: .4rem 0 .8rem; font: 400 clamp(2.4rem, 5vw, 4rem)/.98 var(--font-story); letter-spacing: -.045em; }
+.settings-head p:not(.eyebrow):not(.settings-source) { max-width: 62ch; margin: 0; color: var(--ivory-muted); font-size: .88rem; line-height: 1.7; }
+.settings-source {
+  margin: 0;
+  padding: .5rem .8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ivory-muted);
+  font-size: .68rem;
+}
+.settings-source.is-local { border-color: rgb(215 167 70 / 55%); color: var(--or); }
+.settings-locked {
+  margin: 0;
+  padding: .9rem 1rem;
+  display: flex;
+  align-items: start;
+  gap: .7rem;
+  border: 1px solid rgb(215 167 70 / 45%);
+  border-radius: .8rem;
+  background: rgb(215 167 70 / 8%);
+  color: var(--ivory-muted);
+  font-size: .8rem;
+  line-height: 1.6;
+}
+.settings-locked svg { flex: none; margin-top: .15rem; color: var(--or); }
+.settings-mode, .settings-common {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: .7rem;
+  border: 1px solid var(--line);
+  border-radius: .9rem;
+  background: rgb(243 237 223 / 3%);
+}
+.settings-mode { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.settings-common { grid-template-columns: 160px minmax(0, 1fr); align-items: end; }
+.settings-mode legend, .settings-common legend { padding: 0 .35rem; color: var(--or); font-size: .62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.settings-mode label { display: flex; align-items: start; gap: .6rem; cursor: pointer; }
+.settings-mode label > span { display: grid; gap: .2rem; }
+.settings-mode strong { font-size: .85rem; }
+.settings-mode small, .settings-services small { color: var(--ivory-muted); font-size: .7rem; line-height: 1.5; }
+.settings-common label { display: grid; gap: .35rem; color: var(--ivory-muted); font-size: .68rem; }
+.settings-common input, .settings-common select,
+.settings-services input {
+  width: 100%;
+  min-height: 44px;
+  padding: .6rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: .55rem;
+  outline: 0;
+  background: rgb(243 237 223 / 4%);
+  color: var(--ivory);
+}
+.settings-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: .8rem; }
+.settings-services article { padding: 1rem; display: grid; gap: .6rem; align-content: start; border: 1px solid var(--line); border-radius: .9rem; background: rgb(243 237 223 / 2%); }
+.settings-services article > header { display: flex; align-items: start; gap: .6rem; }
+.settings-services article > header svg { flex: none; margin-top: .2rem; color: var(--azur); }
+.settings-services article > header > div { display: grid; gap: .15rem; }
+.settings-services label { display: grid; gap: .3rem; color: var(--ivory-muted); font-size: .66rem; }
+.settings-resolved { margin: 0; overflow-x: auto; }
+.settings-resolved code { color: var(--ivory); font: .72rem ui-monospace, monospace; word-break: break-all; }
+.settings-effective { margin: 0; color: var(--or); font-size: .66rem; }
+.settings-effective code { font: .66rem ui-monospace, monospace; word-break: break-all; }
+.settings-env { margin: 0; color: var(--ivory-muted); font-size: .62rem; }
+.settings-env code { font: .62rem ui-monospace, monospace; }
+.settings-probe { display: grid; gap: .5rem; }
+.settings-probe .button { width: max-content; min-height: 38px; padding: .45rem .8rem; font-size: .72rem; }
+.probe-result { margin: 0; display: flex; align-items: start; gap: .45rem; font-size: .72rem; line-height: 1.5; }
+.probe-result svg { flex: none; margin-top: .15rem; }
+.probe-result.is-reachable { color: #9ec97a; }
+.probe-result.is-unreachable { color: #e48a83; }
+.probe-result small { color: var(--ivory-muted); }
+.settings-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.settings-explainer { padding: 1rem 1.1rem; border: 1px dashed var(--line); border-radius: .9rem; }
+.settings-explainer summary { cursor: pointer; color: var(--ivory); font-size: .8rem; }
+.settings-explainer p { max-width: 78ch; color: var(--ivory-muted); font-size: .8rem; line-height: 1.7; }
+.settings-explainer code { color: var(--ivory); font: .74rem ui-monospace, monospace; }
+
+@media (max-width: 620px) {
+  .settings-common { grid-template-columns: 1fr; }
+  .settings-actions .button { width: 100%; }
+}
+
+/* ── Bibliothèque : bandeau compact plutôt qu'un titre pleine hauteur ─────── */
+.library-hud {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  margin-bottom: 1.2rem;
+  padding: .9rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: linear-gradient(180deg, rgb(6 15 23 / 96%) 70%, transparent);
+}
+.library-hud h1 { margin: .2rem 0 0; font: 400 clamp(1.8rem, 3.4vw, 2.6rem)/1 var(--font-story); letter-spacing: -.035em; }
+.library-hud p:not(.eyebrow) { margin: .25rem 0 0; max-width: 60ch; color: var(--ivory-muted); font-size: .76rem; }
+.library-page { padding-block: 6rem 5rem; }

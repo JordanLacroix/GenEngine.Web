@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Bookmark, DoorOpen, Gift, MousePointer2, RotateCcw, Route, Sparkles, TriangleAlert, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
+import type { Route as AppRoute } from "next";
 import { useMemo, useState } from "react";
 import type { DemoOutcome } from "@/entities/story/model/story";
 import { demoStory } from "@/shared/mocks/stories";
@@ -48,7 +49,7 @@ export function DemoPlayer() {
   return (
     <div className="player-shell">
       <header className="player-header">
-        <Link href="/" className="icon-button"><ArrowLeft aria-hidden="true" /><span className="sr-only">Quitter le récit</span></Link>
+        <Link href={"/plateforme" as AppRoute} className="icon-button"><ArrowLeft aria-hidden="true" /><span className="sr-only">Quitter le récit</span></Link>
         <div className="player-title"><span>{demoStory.eyebrow}</span><strong>{demoStory.title}</strong></div>
         <div className="player-tools"><button type="button" className="icon-button" onClick={() => setSound((value) => !value)}>{sound ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}<span className="sr-only">{sound ? "Couper l'ambiance" : "Activer l'ambiance"}</span></button><button type="button" className="icon-button"><Bookmark aria-hidden="true" /><span className="sr-only">Ajouter aux favoris</span></button></div>
       </header>
@@ -109,8 +110,8 @@ function DemoSummary({ history, outcome, tree, memory, onRestart }: { history: s
     <QuestGraphView tree={tree} masteryNodeIds={memory.nodeIds} masteryChoiceIds={memory.choiceIds} caption="Le récit complet de la démonstration : ce que vous venez de traverser et ce que vos essais précédents ont déjà révélé, mémorisé sur cet appareil." />
     <div className="summary-actions">
       {isRupture
-        ? <><button className="button button--primary" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Reprendre depuis le début</button><Link className="button button--quiet" href="/account"><DoorOpen aria-hidden="true" /> Créer mon aventure</Link></>
-        : <><Link className="button button--primary" href="/account"><DoorOpen aria-hidden="true" /> Créer mon aventure</Link><button className="button button--quiet" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Essayer une autre situation</button></>}
+        ? <><button className="button button--primary" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Reprendre depuis le début</button><Link className="button button--quiet" href={"/" as AppRoute}><DoorOpen aria-hidden="true" /> Créer mon aventure</Link></>
+        : <><Link className="button button--primary" href={"/" as AppRoute}><DoorOpen aria-hidden="true" /> Créer mon aventure</Link><button className="button button--quiet" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Essayer une autre situation</button></>}
     </div>
   </section>;
 }

@@ -1,6 +1,6 @@
 # Passage de relais
 
-Dernière mise à jour : 19 juillet 2026, sur `main` à la révision `b4edb39`.
+Dernière mise à jour : 19 juillet 2026, sur `feat/ux-entry-navigation`.
 
 Ce document décrit l'état **réel** du client. Il distingue trois catégories et ne
 les mélange pas : ce qui est livré et vérifié, ce qui est cassé, et ce qui est
@@ -16,6 +16,34 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
 - Image Next.js `standalone` multi-stage, conteneur non-root, filesystem en lecture seule, healthcheck.
 - CI qualité : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `docker compose config --quiet`, `docker build`.
 - CI gouvernance : revue de dépendances, CodeQL (JavaScript/TypeScript), qualité documentaire (markdownlint et lychee), politique de titre de PR, sécurité des workflows (actionlint et zizmor), Scorecard OpenSSF. Voir le tableau dans [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+### Entrée, navigation et retours
+
+- L'atterrissage `/` est le **seuil de connexion**. La démonstration y est
+  proposée **deux fois** : un bouton sous le formulaire et une entrée de menu.
+  La présentation commerciale a déménagé sur `/plateforme`, sans perte ;
+  `/account` redirige en permanence vers `/`.
+- `/parametres` règle les six URLs de services, en mode groupé ou unitaire,
+  **sans session ouverte**, avec un test de joignabilité par service exécuté
+  côté serveur. La surcharge voyage dans un cookie `HttpOnly` relu par
+  `resolveServiceUrl()` : elle a un effet réel, borné à ce navigateur, et
+  gouverné par `GENENGINE_ALLOW_ENDPOINT_OVERRIDE`. Les hôtes visables sont
+  bornés par `GENENGINE_ENDPOINT_ALLOWED_HOSTS` — la convention locale par
+  défaut — pour que l'écran ne devienne pas un relais vers le réseau interne.
+- Un seul système de navigation est visible à la fois. L'en-tête global ne se
+  monte plus sur `/experience`, `/play`, `/studio` ni `/administration`, y
+  compris pendant leurs états de chargement. Les barres latérales du Studio et
+  de l'Administration portent les liens globaux.
+- `/play/demo`, `/play/[versionId]`, `/administration` et `/studio` sont en
+  plein écran à HUD flottante, comme `/experience`. La bibliothèque garde un
+  bandeau compact au lieu d'un titre pleine hauteur ; la densité des tableaux
+  d'administration est préservée, la barre latérale et le contenu défilant
+  séparément.
+- Système unifié de confirmation et de retour dans `src/shared/ui/feedback-provider.tsx` :
+  piège de focus, Escape, restitution du focus au déclencheur,
+  `role="alertdialog"` pour les actions destructives, et bandeaux de succès
+  qui n'existaient pas. Les **cinq `window.confirm`** ont disparu ; la
+  déconnexion et la remise à zéro du tutoriel sont désormais confirmées.
 
 ### Parcours
 
@@ -65,6 +93,11 @@ un conflit de révision.
 ## Ce qui est cassé sur `main`
 
 **Rien d'identifié à ce jour.**
+
+Corrigé sur cette branche : les sélecteurs `body > .site-footer` de
+`globals.css` et `platform.css` ne correspondaient à rien — le pied de page est
+enfant de `main`, pas de `body` — et n'ont donc jamais masqué quoi que ce soit.
+Le masquage passe par un sélecteur descendant dans `shell.css`.
 
 Le seul défaut connu au moment de la rédaction — la sixième porte de la carte
 inatteignable — a été corrigé et fusionné entre-temps par
@@ -119,7 +152,7 @@ Ces affirmations figuraient dans les documents et étaient fausses ou périmées
 Elles sont listées pour éviter qu'elles ne reviennent par copie d'un ancien
 handoff.
 
-- « 113 tests Vitest » — il y en a **132**, répartis en 14 fichiers.
+- « 113 tests Vitest » — il y en a **181**, répartis en 16 fichiers.
 - « la démo comporte treize scènes pour une cible d'environ quinze minutes » — elle en compte **23**, et chaque situation se termine en quelques minutes.
 - « le bloc `media` du plan de configuration est conditionné au moteur » coexistait avec « publié depuis GenEngine #46 et consommé au runtime ». La seconde affirmation est la bonne ; seuls les **médias de scène et de choix** restent refusés.
 - Plusieurs jalons étaient annoncés « implémenté sur `<branche>` » alors que la branche est fusionnée dans `main` depuis longtemps.

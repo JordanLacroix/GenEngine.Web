@@ -8,6 +8,7 @@ import type {
   AdminConfigurationContract, ExperienceDocumentContract, ProblemDetailsContract,
   PublishedExperienceContract,
 } from "@/shared/api/contracts";
+import { SectionNav } from "@/shared/ui/section-nav";
 import { mediaSupport } from "../model/media-configuration";
 import { useAssetPack } from "./asset-field";
 import { CatalogSection, type DocumentUpdate, FamiliarSection, GameSection, WordingSection } from "./configuration-sections";
@@ -85,8 +86,9 @@ export function StudioShell() {
     ?? (pack.loading ? undefined : "Aucun pack d’assets n’est publié sur cette instance : seules les URLs HTTPS sont assignables.");
 
   return (
-    <section className="studio-console">
+    <section className="studio-console app-fullscreen">
       <aside className="studio-sidebar">
+        <SectionNav label="Studio" />
         <div className="admin-status">
           <span className="status-dot" />
           <div>
