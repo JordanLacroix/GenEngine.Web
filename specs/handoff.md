@@ -5,7 +5,7 @@ Dernière mise à jour : 19 juillet 2026.
 ## État vérifié
 
 - `main` contient un client Next.js avec TypeScript strict et App Router.
-- La démonstration hors ligne reste isolée dans `src/shared/mocks`.
+- La démonstration hors ligne reste isolée dans `src/shared/mocks` et joue le contenu « Le Diapason ».
 - Le client consomme le catalogue Authoring, Identity et le parcours Play complet.
 - Le JWT reste dans un cookie `HttpOnly` et les références de session sont opaques.
 - Les routes serveur forment une façade vers les trois API.
@@ -173,6 +173,39 @@ d'un `visualUrl` de nœud et d'un `animationCue` de choix. Le Studio nomme cette
 cause probable quand un enregistrement échoue alors que le brouillon porte des
 médias. Le bloc `media` du plan de configuration, lui, est publié depuis
 GenEngine #46 et consommé au runtime.
+
+## Démonstration « Le Diapason »
+
+La démonstration anonyme jouait encore l’histoire que Diapason remplace — « Le
+dernier phare », « Lueur », catégories « Courage / Intuition » — alors que
+l’accueil et le pied de page annonçaient déjà la configuration de référence.
+L’écart est corrigé : la fixture porte désormais 23 scènes tirées de la bible
+d’univers (`specs/domain/diapason` dans le dépôt `GenEngine`).
+
+La démonstration n’est plus une histoire mais un échantillon d’usages, parce que
+c’est l’étendue qui se vend et non un récit. Un nœud d’accueil ouvre sur trois
+situations : **La note de service** (Lucidité, provenance d’un document sans
+auteur), **La réunion où personne ne doute** (Courage, conflit professionnel) et
+**La spécification avant le code** (Transmission, Spec Driven Development).
+Chacune se termine en quelques minutes, et les tonalités de choix n’emploient
+que le vocabulaire des six postures.
+
+Les douze fins suivent la convention du contenu canonique — `fin-accord-*`,
+`fin-partielle-*`, `fin-rupture-*` — et chacune des trois situations mène à au
+moins une rupture. Le moteur ne connaissant que `isEnding`, la nature de la fin
+reste un champ `outcome` **local à la démonstration**, documenté comme tel et
+jamais présenté comme un contrat serveur. Sur une rupture, l’interface retire le
+retour arrière et fait de « Reprendre depuis le début » l’action principale :
+l’obligation de recommencer est portée par le texte et par l’interface, pas par
+un drapeau moteur qui n’existe pas.
+
+La démonstration reste sans appel réseau, cantonnée à `src/shared/mocks`, jamais
+substituée à une erreur distante, et inaccessible dès qu’une session existe.
+
+Non traité ici : le familier nommé « Lueur » servi par le document de
+configuration du backend (`familiars[0].name`) est du contenu serveur, pas du
+code client ; il porte encore le nom du compagnon de l’ancienne histoire. Le
+renommer relève du dépôt `GenEngine`.
 
 ## Prochaine unité de travail
 
