@@ -17,7 +17,7 @@ import {
   type FamiliarAssetPack,
 } from "@/features/experience/model/familiar-assets";
 import {
-  doorAnchorsForViewport, journalTypeLabel, projectMapPoint, uniqueJournalEntries, uniqueMasteries,
+  doorAnchorForIndex, journalTypeLabel, projectMapPoint, uniqueJournalEntries, uniqueMasteries,
   worldMapSize,
 } from "@/features/experience/model/player-experience-presentation";
 import { buildPlaces, isCatalogUnclassified } from "@/features/experience/model/map-places";
@@ -227,8 +227,7 @@ export function PlayerExperienceHub() {
       <header><div><p className="eyebrow">La carte des passages</p><h2>Choisissez une porte</h2><p>{hasKey ? "Votre clé ouvre toutes les catégories." : "Le prologue a été passé : terminez-le depuis votre compte pour gagner la clé."} Chaque histoire reste libre de raconter ses propres règles.</p></div></header>
       <div className="door-map" ref={setMapElement} style={{ backgroundImage: `url(${mapMedia.backgroundUrl ?? "/illustrations/world-map.jpg"})` }}>
         {places.map((place, index) => {
-          const anchors = doorAnchorsForViewport(mapSize);
-          const position = projectMapPoint(anchors[index % anchors.length]!, mapSize);
+          const position = projectMapPoint(doorAnchorForIndex(index, mapSize), mapSize);
           return <button
             key={place.id}
             className={openPlaceId === place.id ? "world-door is-selected" : "world-door"}
