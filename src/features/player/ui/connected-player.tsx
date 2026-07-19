@@ -5,11 +5,18 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CurrentStepContract, NarrativeTreeContract, PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, SessionContract, SessionStateContract } from "@/shared/api/contracts";
 import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
+import { useInstanceMedia } from "@/shared/assets/instance-media";
+import { useAudio } from "@/shared/audio/audio-provider";
 
 interface ConnectedPlayerProps { scenarioVersionId: string }
 type CommandKind = "choice" | "continue" | "answer" | "text" | "confirm" | "pause" | "resume";
 
 export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
+  // Le décor et l'ambiance du lieu « player » viennent de la configuration
+  // publiée : ce que l'opérateur assigne dans le Studio est ce que le
+  // navigateur charge ici, résolu par le même point unique.
+  const playerMedia = useInstanceMedia("player");
+  const { setAmbienceUrl } = useAudio();
   const [state, setState] = useState<SessionStateContract>();
   const [title, setTitle] = useState("Histoire GenEngine");
   const [needsAuthentication, setNeedsAuthentication] = useState(false);
@@ -23,6 +30,11 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   const [error, setError] = useState<string>();
 
   const storageKey = `genengine.session.${scenarioVersionId}`;
+
+  useEffect(() => {
+    setAmbienceUrl(playerMedia.ambienceUrl);
+    return () => setAmbienceUrl(undefined);
+  }, [playerMedia.ambienceUrl, setAmbienceUrl]);
 
   const loadSession = useCallback(async (id: string) => {
     const response = await fetch(`/api/sessions/${encodeURIComponent(id)}`, { cache: "no-store" });
@@ -107,7 +119,12 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   }
 
   return (
-    <div className="player-shell connected-player">
+    <div
+      className="player-shell connected-player"
+      style={playerMedia.backgroundUrl
+        ? { backgroundImage: `linear-gradient(rgb(6 15 23 / 62%), rgb(6 15 23 / 88%)), url(${playerMedia.backgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+        : undefined}
+    >
       <header className="player-header">
         <Link href="/library" className="icon-button"><ArrowLeft aria-hidden="true" /><span className="sr-only">Quitter le récit</span></Link>
         <div className="player-title"><span>Session moteur</span><strong>{title}</strong></div>

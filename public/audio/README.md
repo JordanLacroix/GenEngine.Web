@@ -5,6 +5,13 @@ pas, l’application reste silencieuse et le réglage sonore de la HUD est désa
 avec la mention « aucun pack audio n’est publié pour cette instance ». Aucun son
 n’est simulé et aucune fixture ne remplace un pack manquant.
 
+**Ce manifeste est désormais publié.** Il est **généré**, pas écrit à la main :
+`node scripts/build-pack-manifests.mjs` le dérive du pack livré sous
+`public/packs/diapason-core/`. Six signaux sur onze sont liés ; les cinq
+`ambience.*` restent délibérément absents parce que le pack déclare ne fournir
+aucune boucle d’ambiance. Les lier à un son court serait inventer un contenu que
+le pack annonce ne pas avoir.
+
 Le contrat est défini dans [`src/shared/audio/audio-contract.ts`](../../src/shared/audio/audio-contract.ts).
 
 ```json
@@ -42,7 +49,10 @@ Le contrat est défini dans [`src/shared/audio/audio-contract.ts`](../../src/sha
 | `music.ending` | musique | 0,42 | Fin de récit atteinte |
 
 Les sources sont essayées dans l’ordre : la première dont le type MIME est accepté
-par `canPlayType` est retenue. Prévoir Opus/Ogg puis MP3.
+par `canPlayType` est retenue. Prévoir Opus/Ogg puis MP3. Le pack livré n’expose
+qu’une source `audio/ogg` (Vorbis) par signal : c’est ce que Kenney publie, et
+aucun transcodage n’est fait — les octets restent identiques à l’archive amont,
+ce qui garde la provenance vérifiable par empreinte.
 
 ## Règles
 

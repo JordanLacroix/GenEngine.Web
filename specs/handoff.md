@@ -112,8 +112,11 @@ ce qui sera enregistré.
 `src/shared/audio` prépare la lecture sonore configurable derrière un contrat
 stable : ambiances par lieu, signatures de choix, d'erreur, de récompense et
 d'ouverture, musiques de fin. Le moteur et le pack d'assets sont produits par
-d'autres tranches ; tant qu'aucun `/audio/manifest.json` n'est publié, la source
-reste silencieuse et le réglage de la HUD est désactivé avec la raison affichée.
+d'autres tranches. `/audio/manifest.json` est **désormais publié** : six signaux
+sur onze sont liés au pack `diapason-core`, et le réglage de la HUD est actif. Les
+cinq `ambience.*` restent non liés parce que le pack déclare ne fournir aucune
+boucle d'ambiance ; sans manifeste du tout, la source resterait silencieuse et le
+réglage désactivé avec la raison affichée.
 Le son est désactivé par défaut, ne porte jamais seul une information, et
 l'ambiance continue reste coupée sous `prefers-reduced-motion`. Le contrat attendu
 est documenté dans `public/audio/README.md`.
@@ -145,22 +148,31 @@ chargé, donc le second enregistrement échouerait sur un conflit de révision.
 
 Le contrat média est posé côté client — `packId:assetId` ou URL HTTPS, contrat de
 pack dans `src/shared/assets/asset-pack.ts`, plan par lieu dans
-`src/features/studio/model/media-configuration.ts` — mais **deux dépendances
-moteur ne sont pas satisfaites sur les instances actuelles** :
+`src/features/studio/model/media-configuration.ts`.
 
-1. Le plan de configuration ne publie pas de bloc `media`. Vérifié sur l'OpenAPI
-   de `GenEngine.Configuration.Api` : `ExperienceDocument` porte vingt propriétés,
-   aucune nommée `media`. La section l'annonce et n'affiche aucun formulaire.
-2. Le schéma narratif refuse les médias de scène et de choix. Vérifié par appel
-   direct : `PUT /scenarios/{id}/draft` répond `200` sur un document intact et
-   `422 invalid_json` sur le même document augmenté d'un `visualUrl` de nœud et
-   d'un `animationCue` de choix. Le Studio nomme cette cause probable quand un
-   enregistrement échoue alors que le brouillon porte des médias.
+**Le catalogue d'assets est publié.** `public/packs/diapason-core/` embarque les
+62 fichiers CC0 du pack `diapason-core` et `public/packs/manifest.json` les
+déclare. Les deux manifestes servis sont générés par
+`node scripts/build-pack-manifests.mjs`, qui recalcule chaque empreinte SHA-256
+depuis les octets copiés ; `src/shared/assets/shipped-pack.test.ts` refait ce
+contrôle à chaque `pnpm test`. Le backend sert le même pack
+(`GET /asset-packs/{packId}/files/…` sur `Configuration`) ; le client en garde sa
+copie parce que la démonstration doit rester jouable **sans backend**.
 
-Les deux capacités s'activeront sans autre changement client dès que le moteur
-publiera ces champs. Le catalogue d'assets suit la même règle : sans
-`/packs/manifest.json`, il est *absent* — pas vide — et seules les URLs HTTPS
-restent assignables.
+**La résolution a lieu en un seul point** : `resolveAssetReference`. Le Studio
+l'appelle pour ses aperçus, le runtime via `src/shared/assets/instance-media.ts`
+(`useInstanceMedia`), qui applique le décor et l'ambiance d'un emplacement sur la
+carte et sur le lecteur connecté. Un aperçu d'auteur et le rendu d'un joueur ne
+peuvent donc pas diverger. Une référence non résolue ne fabrique jamais d'URL :
+la surface garde son rendu par défaut.
+
+**Une dépendance moteur reste ouverte** : le schéma narratif refuse les médias de
+scène et de choix. Vérifié par appel direct : `PUT /scenarios/{id}/draft` répond
+`200` sur un document intact et `422 invalid_json` sur le même document augmenté
+d'un `visualUrl` de nœud et d'un `animationCue` de choix. Le Studio nomme cette
+cause probable quand un enregistrement échoue alors que le brouillon porte des
+médias. Le bloc `media` du plan de configuration, lui, est publié depuis
+GenEngine #46 et consommé au runtime.
 
 ## Prochaine unité de travail
 

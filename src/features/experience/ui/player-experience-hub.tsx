@@ -24,7 +24,8 @@ import { buildPlaces, isCatalogUnclassified } from "@/features/experience/model/
 import type { FamiliarSelection } from "@/features/experience/model/familiar-preview";
 import { FamiliarConfigurator, FamiliarPreviewPane } from "@/features/experience/ui/familiar-configurator";
 import { PlaceOverlay } from "@/features/experience/ui/place-overlay";
-import { useAmbience } from "@/shared/audio/audio-provider";
+import { useInstanceMedia } from "@/shared/assets/instance-media";
+import { useAmbience, useAudio } from "@/shared/audio/audio-provider";
 
 type Tab = "map" | "journal" | "companion" | "shop" | "help" | "account";
 type Story = StorySummary;
@@ -33,6 +34,15 @@ type Familiar = Context["experience"]["document"]["familiars"][number];
 
 export function PlayerExperienceHub() {
   useAmbience("ambience.map");
+  const mapMedia = useInstanceMedia("map");
+  const { setAmbienceUrl } = useAudio();
+  // L'ambiance assignée par l'opérateur remplace le signal par défaut tant que
+  // la carte est montée. Elle reste soumise au réglage sonore et à
+  // `prefers-reduced-motion`, appliqués dans le fournisseur.
+  useEffect(() => {
+    setAmbienceUrl(mapMedia.ambienceUrl);
+    return () => setAmbienceUrl(undefined);
+  }, [mapMedia.ambienceUrl, setAmbienceUrl]);
   const [context, setContext] = useState<Context>();
   const [stories, setStories] = useState<Story[]>([]);
   const [journal, setJournal] = useState<JournalContract>();
@@ -215,7 +225,7 @@ export function PlayerExperienceHub() {
 
     {tab === "map" && <section className="universe-panel world-map world-map--illustrated">
       <header><div><p className="eyebrow">La carte des passages</p><h2>Choisissez une porte</h2><p>{hasKey ? "Votre clé ouvre toutes les catégories." : "Le prologue a été passé : terminez-le depuis votre compte pour gagner la clé."} Chaque histoire reste libre de raconter ses propres règles.</p></div></header>
-      <div className="door-map" ref={setMapElement} style={{ backgroundImage: "url(/illustrations/world-map.jpg)" }}>
+      <div className="door-map" ref={setMapElement} style={{ backgroundImage: `url(${mapMedia.backgroundUrl ?? "/illustrations/world-map.jpg"})` }}>
         {places.map((place, index) => {
           const anchors = doorAnchorsForViewport(mapSize);
           const position = projectMapPoint(anchors[index % anchors.length]!, mapSize);

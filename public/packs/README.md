@@ -6,6 +6,40 @@ proposent aucune liste, l’interface affiche « aucun pack d’assets n’est p
 sur cette instance : seules les URLs HTTPS sont assignables », et aucune
 référence `packId:assetId` ne peut être résolue. Aucun catalogue n’est simulé.
 
+## Ce que cette instance publie
+
+`diapason-core`, 62 assets CC0 1.0 de Kenney, servis sous
+`public/packs/diapason-core/`. Le manifeste est **généré** :
+
+```bash
+node scripts/build-pack-manifests.mjs
+```
+
+Le script traduit le manifeste amont (`asset-manifest.json`, copié depuis le
+dépôt GenEngine) vers les deux contrats du client, et **recalcule chaque
+empreinte SHA-256 depuis les octets copiés** : une copie corrompue échoue à la
+génération. `src/shared/assets/shipped-pack.test.ts` refait ce contrôle à chaque
+`pnpm test`, sur le pack réellement servi.
+
+### Pourquoi le client héberge le pack
+
+Le backend le sert aussi (`GET /asset-packs/{packId}/files/…` sur
+`Configuration`). Le client en garde néanmoins sa copie parce que **la
+démonstration doit rester jouable sans backend** : elle s’adresse à un visiteur
+anonyme, et la seule origine qu’elle atteint alors est celle qui sert
+l’application. Pas de CDN, pas d’hôte tiers, fonctionne hors ligne.
+
+Les deux copies sont identiques : mêmes `id`, mêmes empreintes, vérifiées de
+chaque côté par un test.
+
+### Où la résolution a lieu
+
+Un seul point : `resolveAssetReference` dans
+[`src/shared/assets/asset-pack.ts`](../../src/shared/assets/asset-pack.ts). Le
+Studio l’appelle pour ses aperçus, le runtime via
+[`src/shared/assets/instance-media.ts`](../../src/shared/assets/instance-media.ts).
+Un aperçu d’auteur et le rendu d’un joueur ne peuvent donc pas diverger.
+
 Le contrat est défini dans
 [`src/shared/assets/asset-pack.ts`](../../src/shared/assets/asset-pack.ts). Une
 version de manifeste inconnue échoue explicitement au lieu d’être interprétée

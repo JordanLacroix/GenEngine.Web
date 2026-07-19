@@ -4,7 +4,7 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore,
 } from "react";
 import {
-  type AmbienceCue, type AudioCue, layerOf, layerVolume,
+  type AmbienceCue, type AudioCue, type AudioLayer, layerOf, layerVolume,
 } from "@/shared/audio/audio-contract";
 import { type AudioSource, browserCanPlay, loadAudioSource, silentAudioSource } from "@/shared/audio/audio-source";
 
@@ -47,6 +47,15 @@ interface AudioState {
   play(cue: AudioCue): void;
   /** Installe l'ambiance du lieu courant. `undefined` la coupe. */
   setAmbience(cue?: AmbienceCue): void;
+  /**
+   * Installe une ambiance choisie par l'opérateur dans la configuration
+   * publiée, déjà résolue en URL chargeable. Elle prime sur le signal, qui
+   * reste le défaut du produit : une instance qui n'a rien configuré garde le
+   * comportement d'origine.
+   */
+  setAmbienceUrl(url?: string): void;
+  /** Joue une piste longue assignée par l'opérateur, déjà résolue en URL. */
+  playUrl(url: string, layer: AudioLayer): void;
 }
 
 const AudioContext = createContext<AudioState | undefined>(undefined);
@@ -71,6 +80,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const ambienceRef = useRef<HTMLAudioElement>(null);
   const musicRef = useRef<HTMLAudioElement>(null);
   const [ambience, setAmbienceState] = useState<AmbienceCue>();
+  const [ambienceUrl, setAmbienceUrlState] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
@@ -107,20 +117,38 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, [enabled, source]);
 
   const setAmbience = useCallback((cue?: AmbienceCue) => setAmbienceState(cue), []);
+  const setAmbienceUrl = useCallback((url?: string) => setAmbienceUrlState(url), []);
+
+  const playUrl = useCallback((url: string, layer: AudioLayer) => {
+    if (!enabled) return;
+    if (layer === "music") {
+      const element = musicRef.current;
+      if (!element) return;
+      element.src = url;
+      element.volume = layerVolume.music;
+      void element.play().catch(() => undefined);
+      return;
+    }
+    const oneShot = new Audio(url);
+    oneShot.volume = layerVolume[layer];
+    void oneShot.play().catch(() => undefined);
+  }, [enabled]);
 
   useEffect(() => {
     const element = ambienceRef.current;
     if (!element) return;
-    const asset = ambience ? source.resolve(ambience) : undefined;
-    if (!enabled || reducedMotion || !asset) { element.pause(); return; }
-    if (element.getAttribute("src") !== asset.url) element.setAttribute("src", asset.url);
+    // Une URL assignée par l'opérateur prime sur le signal du pack : c'est le
+    // choix explicite d'une instance, pas un défaut de produit.
+    const url = ambienceUrl ?? (ambience ? source.resolve(ambience)?.url : undefined);
+    if (!enabled || reducedMotion || !url) { element.pause(); return; }
+    if (element.getAttribute("src") !== url) element.setAttribute("src", url);
     element.volume = layerVolume.ambience;
     void element.play().catch(() => undefined);
-  }, [ambience, enabled, reducedMotion, source]);
+  }, [ambience, ambienceUrl, enabled, reducedMotion, source]);
 
   const value = useMemo<AudioState>(
-    () => ({ enabled, available, source, error, setEnabled, play, setAmbience }),
-    [available, enabled, error, play, setAmbience, setEnabled, source],
+    () => ({ enabled, available, source, error, setEnabled, play, setAmbience, setAmbienceUrl, playUrl }),
+    [available, enabled, error, play, playUrl, setAmbience, setAmbienceUrl, setEnabled, source],
   );
 
   return <AudioContext.Provider value={value}>
