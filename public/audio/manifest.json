@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "name": "Diapason — pack CC0",
+  "license": "CC0-1.0",
+  "attribution": "UI Pack (2.0) par Kenney — www.kenney.nl — CC0 1.0 · Game Icons par Kenney — www.kenney.nl — CC0 1.0 · Interface Sounds par Kenney — www.kenney.nl — CC0 1.0 · Music Jingles par Kenney — www.kenney.nl — CC0 1.0",
+  "entries": [
+    {
+      "cue": "signature.choice",
+      "sources": [
+        {
+          "url": "/packs/diapason-core/sfx/confirmation_001.ogg",
+          "mimeType": "audio/ogg"
+        }
+      ],
+      "license": "CC0-1.0",
+      "attribution": "Interface Sounds par Kenney — www.kenney.nl — CC0 1.0"
+    },
+    {
+      "cue": "signature.error",
+      "sources": [
+        {
+          "url": "/packs/diapason-core/sfx/error_006.ogg",
+          "mimeType": "audio/ogg"
+        }
+      ],
+      "license": "CC0-1.0",
+      "attribution": "Interface Sounds par Kenney — www.kenney.nl — CC0 1.0"
+    },
+    {
+      "cue": "signature.reward",
+      "sources": [
+        {
+          "url": "/packs/diapason-core/stingers/jingles_STEEL00.ogg",
+          "mimeType": "audio/ogg"
+        }
+      ],
+      "license": "CC0-1.0",
+      "attribution": "Music Jingles par Kenney — www.kenney.nl — CC0 1.0"
+    },
+    {
+      "cue": "signature.door",
+      "sources": [
+        {
+          "url": "/packs/diapason-core/sfx/open_001.ogg",
+          "mimeType": "audio/ogg"
+        }
+      ],
+      "license": "CC0-1.0",
+      "attribution": "Interface Sounds par Kenney — www.kenney.nl — CC0 1.0"
+    },
+    {
+      "cue": "music.ending",
+      "sources": [
+        {
+          "url": "/packs/diapason-core/stingers/jingles_STEEL00.ogg",
+          "mimeType": "audio/ogg"
+        }
+      ],
+      "license": "CC0-1.0",
+      "attribution": "Music Jingles par Kenney — www.kenney.nl — CC0 1.0"
+    },
+    {
+      "cue": "music.gameOver",
+      "sources": [
+        {
+          "url": "/packs/diapason-core/stingers/jingles_STEEL13.ogg",
+          "mimeType": "audio/ogg"
+        }
+      ],
+      "license": "CC0-1.0",
+      "attribution": "Music Jingles par Kenney — www.kenney.nl — CC0 1.0"
+    }
+  ]
+}
