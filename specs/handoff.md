@@ -14,7 +14,8 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
 - Les routes serveur forment une façade vers **six** services : Authoring (5201), Play (5202), Identity (5203), Configuration (5204), PlayerExperience (5205), Organization (5206).
 - Le JWT vit dans le cookie `HttpOnly` `genengine_access` ; le navigateur ne conserve que des références opaques.
 - Image Next.js `standalone` multi-stage, conteneur non-root, filesystem en lecture seule, healthcheck.
-- CI : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `docker compose config --quiet`, `docker build`.
+- CI qualité : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `docker compose config --quiet`, `docker build`.
+- CI gouvernance : revue de dépendances, CodeQL (JavaScript/TypeScript), qualité documentaire (markdownlint et lychee), politique de titre de PR, sécurité des workflows (actionlint et zizmor), Scorecard OpenSSF. Voir le tableau dans [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ### Parcours
 

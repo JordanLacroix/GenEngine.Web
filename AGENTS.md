@@ -78,6 +78,21 @@ docker compose config --quiet
 docker build --tag genengine-web:local .
 ```
 
+Pour un changement touchant la documentation, reproduis les deux contrôles de
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml) :
+
+```bash
+npx markdownlint-cli2 README.md CONTRIBUTING.md SECURITY.md AGENTS.md CLAUDE.md 'specs/**/*.md' '.github/**/*.md'
+docker run --rm -v "$PWD":/input -w /input lycheeverse/lychee:latest --config lychee.toml '**/*.md'
+```
+
+Pour un changement touchant `.github/`, reproduis
+[`.github/workflows/workflow-security.yml`](.github/workflows/workflow-security.yml) :
+
+```bash
+actionlint
+```
+
 Pour un changement affectant le déploiement ou le parcours connecté :
 
 ```bash
@@ -93,7 +108,9 @@ docker compose down
 - Seules les variables `NEXT_PUBLIC_` sont intégrées au bundle navigateur.
 - Le mode démonstration doit rester navigable sans backend et clairement identifiable.
 - Les routes serveur Next.js forment une façade technique, pas un nouveau service métier.
-- Le dépôt **n'a pas de linter Markdown**. La CI ne vérifie que le TypeScript, les tests, le build, Compose et l'image Docker : la justesse de la documentation reste une responsabilité humaine, pas un contrôle automatique.
+- La CI vérifie la **forme** de la documentation (markdownlint via `.markdownlint.json`, liens via `lychee.toml`), jamais sa **justesse** : un paragraphe faux mais bien formé passe. La véracité reste une responsabilité de revue.
+- `lychee.toml` exclut les badges `img.shields.io`. Un délai d'attente compte comme un échec chez le vérificateur de liens, et ces badges décoratifs bloquaient chaque merge dans le dépôt `GenEngine`. N'enlève pas cette exclusion.
+- `lychee.toml` exclut aussi `node_modules` et `.next` via `exclude_path` : sans cela, le glob `**/*.md` balaierait les dépendances installées.
 - Le pack `diapason-core` **déclare ses manques** dans `gaps[]` (`public/packs/manifest.json`). Lis-les avant d'affirmer qu'un média existe : il n'y a ni boucle d'ambiance, ni musique longue, ni illustration peinte.
 - Les illustrations de `public/illustrations/` sont des visuels d'heroic fantasy hérités d'une itération antérieure. Elles ne correspondent pas à la direction artistique Diapason ; ne les décris pas comme telles.
 

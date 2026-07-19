@@ -28,9 +28,20 @@ docker compose config --quiet
 docker build --tag genengine-web:local .
 ```
 
-Il n’existe **pas** de linter Markdown dans ce dépôt : la CI ne vérifie que le
-TypeScript, les tests, le build, Compose et l’image Docker. La justesse de la
-documentation reste donc une responsabilité de revue.
+La documentation a désormais ses propres contrôles, dans
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml) :
+
+```bash
+npx markdownlint-cli2 README.md CONTRIBUTING.md SECURITY.md AGENTS.md CLAUDE.md 'specs/**/*.md' '.github/**/*.md'
+docker run --rm -v "$PWD":/input -w /input lycheeverse/lychee:latest --config lychee.toml '**/*.md'
+```
+
+Ils vérifient la **forme** — style Markdown et liens résolvables — jamais la
+**justesse** du contenu, qui reste une responsabilité de revue.
+
+Si vous modifiez `.github/`, passez aussi `actionlint` en local : c’est ce que
+[`.github/workflows/workflow-security.yml`](.github/workflows/workflow-security.yml)
+exécute, avec un audit `zizmor` par-dessus.
 
 ## Workflow
 
@@ -40,6 +51,23 @@ documentation reste donc une responsabilité de revue.
 4. Utilisez des commits conventionnels : `type(scope): description`.
 5. Ouvrez une pull request et remplissez les sections pertinentes du modèle.
 6. Corrigez les contrôles automatiques et résolvez les conversations de revue.
+
+## Contrôles automatiques
+
+| Workflow | Ce qu’il vérifie | Bloquant sur PR |
+|---|---|---|
+| `ci.yml` | Lint, typecheck, tests, build, Compose, image Docker | Oui |
+| `dependency-review.yml` | Aucune dépendance vulnérable (`moderate` et au-delà) ni licence copyleft ajoutée | Oui |
+| `codeql.yml` | Analyse statique JavaScript/TypeScript, requêtes `security-extended` | Oui |
+| `docs.yml` | markdownlint et vérification des liens | Oui |
+| `pr-policy.yml` | Titre de PR au format Conventional Commits | Oui |
+| `workflow-security.yml` | `actionlint` et `zizmor` sur `.github/` | Oui, si `.github/` est touché |
+| `scorecard.yml` | Score OpenSSF du dépôt | Non — `main` et planifié seulement |
+| `welcome.yml` | Message d’accueil aux nouveaux contributeurs | Non |
+
+Toutes les actions tierces sont épinglées par SHA de commit complet, avec la
+version en commentaire. Ne remplacez jamais un SHA par une étiquette flottante :
+`zizmor` et le Scorecard le signalent tous les deux.
 
 ## Définition de terminé
 

@@ -2,7 +2,7 @@
 
 Ce fichier fait autorité sur la provenance et la licence de **chaque fichier** livré
 sous `assets/diapason/`. Il ne concerne que ces assets : le code source de GenEngine
-n'a pas encore de licence (voir la section « Licence » du [README](../../README.md)).
+n'a pas encore de licence (voir la section « Licence » du [README](../../../README.md)).
 
 ## Résumé
 
