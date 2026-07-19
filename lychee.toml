@@ -1,0 +1,28 @@
+cache = true
+max_cache_age = "1d"
+max_retries = 3
+retry_wait_time = 2
+timeout = 20
+accept = [200, 204, 206, 429]
+# Le glob '**/*.md' balaierait sinon les dépendances installées et le build.
+exclude_path = [
+  "node_modules",
+  ".next",
+]
+exclude = [
+  '^http://localhost',
+  '^http://127\.0\.0\.1',
+  '^http://host\.docker\.internal',
+  # Badges décoratifs : leur disponibilité ne dit rien de la justesse de la
+  # documentation, et leurs délais d'attente rendaient la CI non déterministe
+  # dans le dépôt GenEngine. On applique ici la même exclusion en prévention.
+  '^https://img\.shields\.io',
+  'https://github.com/JordanLacroix/GenEngine.Web/actions/workflows/ci.yml/badge.svg',
+  # Formulaires de signalement privé : accessibles seulement aux mainteneurs,
+  # donc systématiquement refusés à un contrôle anonyme.
+  'https://github.com/JordanLacroix/GenEngine.Web/security/advisories/new',
+  'https://github.com/JordanLacroix/GenEngine/security/advisories/new',
+  # Téléchargements d'assets Kenney : liens lourds et protégés contre
+  # l'automatisation, dont l'indisponibilité ponctuelle n'apprend rien.
+  '^https://kenney\.nl/media/',
+]
