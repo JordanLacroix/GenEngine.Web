@@ -27,6 +27,32 @@ Le dépôt conserve deux parcours explicitement séparés :
 - un mode connecté couvrant Identity, le catalogue Authoring et le parcours Play complet ;
 - une démonstration hors ligne stable, destinée à la revue produit et aux tests d’interface.
 
+### La démonstration hors ligne
+
+`/play/demo` échantillonne la configuration de référence « Le Diapason » telle
+qu’elle est décrite dans la bible d’univers du dépôt `GenEngine`
+(`specs/domain/diapason`). Elle ne raconte pas une histoire mais **trois
+situations**, pour montrer l’étendue des usages qu’une école ou une entreprise
+achète. Un nœud d’accueil laisse le visiteur choisir :
+
+| Situation | Posture | Usage démontré |
+|---|---|---|
+| La note de service | Lucidité | établir la provenance d’un document que personne ne revendique |
+| La réunion où personne ne doute | Courage | conflit professionnel : objecter au bon moment, dans la bonne forme |
+| La spécification avant le code | Transmission | apprentissage d’une matière — Spec Driven Development |
+
+Chaque situation se termine en quelques minutes. Les fins reprennent la
+convention de nommage du contenu canonique : `fin-accord-*` lorsque la posture
+est tenue et comprise, `fin-partielle-*` lorsque le résultat est bon mais le
+raisonnement non consolidé, `fin-rupture-*` lorsque la situation ne peut plus
+être rattrapée. Le moteur n’expose aucun drapeau de type « game over » : une
+rupture est portée par le texte et par l’interface, qui désactive le retour
+arrière et fait de la reprise l’action principale.
+
+La fixture vit dans `src/shared/mocks` et ne dépend d’aucun appel réseau. Elle
+n’est jamais servie à la place d’une erreur distante, et la démonstration reste
+inaccessible dès qu’une session existe.
+
 ## État du projet
 
 | Capacité | État |
@@ -69,7 +95,7 @@ Le dépôt conserve deux parcours explicitement séparés :
 | `/account` | Connexion locale/Microsoft et création de compte — redirige vers `/experience` si une session existe |
 | `/library` | Bibliothèque et reprise de lecture |
 | `/library/[versionId]` | Carte complète du récit et mémoire cumulée, sans session ouverte |
-| `/play/demo` | Player de démonstration hors ligne, réservé aux visiteurs anonymes — redirige vers `/experience` si une session existe |
+| `/play/demo` | Démonstration hors ligne « Le Diapason », trois situations au choix, réservée aux visiteurs anonymes — redirige vers `/experience` si une session existe |
 | `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
 | `/studio` | Configuration du jeu : identité, catégories et parcours, familier, libellés, médias, scénarios — chaque section avec son aperçu |
 | `/experience` | Carte, tutoriel, journal, familier, magasin, aide et compte joueur |
