@@ -22,7 +22,7 @@ import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
 const outOfRunLegend: readonly QuestNodeState[] = ["discoveredBefore", "unseen"];
 
 export function ScenarioMemory({ scenarioVersionId }: { scenarioVersionId: string }) {
-  const [title, setTitle] = useState("Histoire GenEngine");
+  const [title, setTitle] = useState("Histoire");
   const [structure, setStructure] = useState<ScenarioStructureContract>();
   const [mastery, setMastery] = useState<ScenarioMasteryContract>();
   const [busy, setBusy] = useState(true);
@@ -35,7 +35,7 @@ export function ScenarioMemory({ scenarioVersionId }: { scenarioVersionId: strin
       // Un seul titre est nécessaire : il est résolu par identifiant de version,
       // sans rapatrier le catalogue — qui peut compter des milliers d'entrées.
       fetchStoryByVersionId(scenarioVersionId, controller.signal)
-        .then((story) => setTitle(story?.title ?? "Histoire GenEngine"))
+        .then((story) => setTitle(story?.title ?? "Histoire"))
         .catch(() => undefined),
       fetch("/api/me", { cache: "no-store", signal: controller.signal })
         .then((response) => response.ok ? response.json() as Promise<{ player: PlayerExperienceContract }> : undefined)

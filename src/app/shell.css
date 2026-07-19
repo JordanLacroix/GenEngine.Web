@@ -70,6 +70,10 @@ body:has(.app-fullscreen) > main { height: 100dvh; padding-bottom: 0; }
 .player-shell > .scene > * { width: min(760px, 100%); margin-inline: auto; }
 .player-shell > .scene > .demo-summary,
 .player-shell > .scene > .engine-summary { width: min(820px, 100%); }
+/* Un document sort de la colonne de lecture : 760 px est la mesure d'un
+   paragraphe, pas celle d'une table à quatre colonnes dont l'une porte une
+   phrase entière. */
+.player-shell > .scene > .document-stage { width: min(980px, 100%); }
 .player-shell .player-error { top: 6rem; }
 
 @media (max-width: 620px) {
