@@ -5,6 +5,7 @@ import {
   LogOut, Map, ShoppingBag, Sparkles, Upload, UserRound, X,
 } from "lucide-react";
 import Link from "next/link";
+import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
 import type {
   JournalContract, OnboardingStateContract, PlayerBootstrapContract, ProblemDetailsContract,
@@ -26,6 +27,7 @@ import { FamiliarConfigurator, FamiliarPreviewPane } from "@/features/experience
 import { PlaceOverlay } from "@/features/experience/ui/place-overlay";
 import { useInstanceMedia } from "@/shared/assets/instance-media";
 import { useAmbience, useAudio } from "@/shared/audio/audio-provider";
+import { useFeedback } from "@/shared/ui/feedback-provider";
 
 type Tab = "map" | "journal" | "companion" | "shop" | "help" | "account";
 type Story = StorySummary;
@@ -33,6 +35,7 @@ type Context = UserContextContract & { bootstrap: PlayerBootstrapContract };
 type Familiar = Context["experience"]["document"]["familiars"][number];
 
 export function PlayerExperienceHub() {
+  const feedback = useFeedback();
   useAmbience("ambience.map");
   const mapMedia = useInstanceMedia("map");
   const { setAmbienceUrl } = useAudio();
@@ -114,7 +117,7 @@ export function PlayerExperienceHub() {
   async function saveFamiliar() {
     if (!context) return;
     const familiar = context.experience.document.familiars.find((item) => item.id === selection.familiarId);
-    if (!familiar || !selection.customName.trim()) { setMessage("Choisissez un familier et donnez-lui un nom."); return; }
+    if (!familiar || !selection.customName.trim()) { feedback.fail("Choisissez un familier et donnez-lui un nom."); return; }
     await run(async () => {
       // Chaque champ du modèle est envoyé depuis l'état réglé, y compris le style
       // d'écriture et l'accent qui étaient auparavant recopiés de la définition.
@@ -126,7 +129,7 @@ export function PlayerExperienceHub() {
       }));
       const refreshed = await read<Context>(await fetch("/api/me"));
       setContext(refreshed); hydrateFamiliar(refreshed);
-      setMessage(`Les réglages de ${selection.customName.trim()} sont enregistrés.`);
+      feedback.succeed(`Les réglages de ${selection.customName.trim()} sont enregistrés.`);
     });
   }
 
@@ -135,8 +138,8 @@ export function PlayerExperienceHub() {
     try {
       if (file.size > 128_000) throw new Error("Le manifeste dépasse 128 Ko.");
       const pack = parseFamiliarAssetPack(await file.text());
-      saveFamiliarAssetPack(pack); setAssetPack(pack); setMessage(`Pack visuel « ${pack.name} » chargé localement.`);
-    } catch (error) { setMessage(asMessage(error)); }
+      saveFamiliarAssetPack(pack); setAssetPack(pack); feedback.succeed(`Pack visuel « ${pack.name} » chargé localement.`);
+    } catch (error) { feedback.fail(asMessage(error)); }
   }
 
   async function onboarding(action: "complete" | "skip" | "reset", stepId?: string) {
@@ -160,20 +163,38 @@ export function PlayerExperienceHub() {
         body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }),
       }));
       setContext({ ...context, player, bootstrap: { ...context.bootstrap, experience: player } });
-      setMessage("Objet ajouté à votre collection.");
+      feedback.succeed("Objet ajouté à votre collection.");
     });
   }
 
-  async function signOut() { await fetch("/api/auth", { method: "DELETE" }); window.location.assign("/account"); }
+  async function signOut() {
+    const confirmed = await feedback.confirm({
+      title: "Se déconnecter ?",
+      body: "Votre progression reste sur le serveur. Il faudra vous reconnecter pour retrouver votre univers.",
+      confirmLabel: "Se déconnecter",
+    });
+    if (!confirmed) return;
+    await fetch("/api/auth", { method: "DELETE" });
+    window.location.assign("/");
+  }
+  async function resetOnboarding() {
+    const confirmed = await feedback.confirm({
+      title: "Recommencer le tutoriel ?",
+      body: "Le prologue repart à sa première étape. La clé des passages devra être regagnée.",
+      confirmLabel: "Recommencer le prologue",
+      destructive: true,
+    });
+    if (confirmed) await onboarding("reset");
+  }
   async function run(action: () => Promise<void>) {
     setBusy(true); setMessage(undefined);
-    try { await action(); } catch (error) { setMessage(asMessage(error)); }
+    try { await action(); } catch (error) { setMessage(asMessage(error)); feedback.fail(asMessage(error)); }
     finally { setBusy(false); }
   }
 
   // Aucune sortie vers la démonstration ici : cet écran n'est atteint qu'avec une
   // session ouverte, et la démonstration ne s'adresse qu'aux visiteurs anonymes.
-  if (!context) return <div className="experience-loading">{busy && <LoaderCircle className="spin" />}<p>{message ?? "Connexion à votre univers…"}</p>{!busy && <Link className="button button--quiet" href="/account">Retourner au seuil</Link>}</div>;
+  if (!context) return <div className="experience-loading">{busy && <LoaderCircle className="spin" />}<p>{message ?? "Connexion à votre univers…"}</p>{!busy && <Link className="button button--quiet" href={"/" as Route}>Retourner au seuil</Link>}</div>;
 
   const document = context.experience.document;
   const copy = (key: string, fallback: string) => gameCopy(document, key, fallback);
@@ -216,7 +237,7 @@ export function PlayerExperienceHub() {
   ];
 
   return <div className="player-universe">
-    <div className="game-brand-hud"><Link href="/" aria-label="Quitter l’univers et revenir à l’accueil"><span>G</span><strong>{document.game.name}</strong></Link><small>Monde vivant · progression synchronisée</small></div>
+    <div className="game-brand-hud"><Link href={"/plateforme" as Route} aria-label="Quitter l’univers et revenir à la présentation de la plateforme"><span>G</span><strong>{document.game.name}</strong></Link><small>Monde vivant · progression synchronisée</small></div>
     {message && <p className="experience-message" role="status">{message}</p>}
     {showsKeyReward && <KeyReward onClose={() => setShowsKeyReward(false)} />}
     <div className="universe-status"><span><KeyRound /> {hasKey ? "Clé des passages" : "Clé à gagner"}</span><strong>{context.player.balance} {context.player.currencyIcon}</strong></div>
@@ -268,7 +289,7 @@ export function PlayerExperienceHub() {
 
     {tab === "help" && <section className="universe-panel help-center"><header><p className="eyebrow">Centre d’aide</p><h2>Comprendre sans quitter l’aventure</h2></header><div>{document.help.articles.filter((article) => article.published).map((article) => <details key={article.id}><summary><CircleHelp /><span><strong>{article.title}</strong><small>{article.summary}</small></span></summary><p>{article.body}</p></details>)}</div><aside><h3>Glossaire du monde</h3>{document.help.glossary.map((entry) => <p key={entry.term}><strong>{entry.term}</strong>{entry.definition}</p>)}</aside></section>}
 
-    {tab === "account" && <section className="universe-panel account-panel"><UserRound /><p className="eyebrow">Compte joueur</p><h2>{context.access.userName}</h2><p>Vos sessions, votre tutoriel et votre journal sont synchronisés avec votre compte.</p><Link className="button button--quiet" href="/?intro=1">Revoir l’introduction</Link><button className="button button--quiet" onClick={() => onboarding("reset")}>Recommencer le tutoriel</button><button className="button button--primary" onClick={signOut}><LogOut /> Se déconnecter</button></section>}
+    {tab === "account" && <section className="universe-panel account-panel"><UserRound /><p className="eyebrow">Compte joueur</p><h2>{context.access.userName}</h2><p>Vos sessions, votre tutoriel et votre journal sont synchronisés avec votre compte.</p><Link className="button button--quiet" href={"/plateforme?intro=1" as Route}>Revoir l’introduction</Link><button className="button button--quiet" onClick={() => void resetOnboarding()}>Recommencer le tutoriel</button><button className="button button--primary" onClick={signOut}><LogOut /> Se déconnecter</button></section>}
   </div>;
 }
 

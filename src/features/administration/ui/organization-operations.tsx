@@ -2,9 +2,11 @@
 
 import { Building2, CalendarClock, FileUp, Network, Plus, RefreshCw, Trash2, UserRoundCog, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useFeedback } from "@/shared/ui/feedback-provider";
 import type { AdminUserContract, AssignedContentTypeContract, ExperienceDocumentContract, MembershipImportContract, OrganizationOperationsContract, ProblemDetailsContract } from "@/shared/api/contracts";
 
 export function OrganizationOperations({ users, experience }: { users: AdminUserContract[]; experience: ExperienceDocumentContract }) {
+  const feedback = useFeedback();
   const [data, setData] = useState<OrganizationOperationsContract>();
   const [message, setMessage] = useState<string>();
   const [busy, setBusy] = useState(true);
@@ -54,8 +56,13 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
 
   async function mutate(operation: () => Promise<Response>, success: string) {
     setBusy(true); setMessage(undefined);
-    try { await readOptional(await operation()); setMessage(success); await load(); }
-    catch (error) { setMessage(asMessage(error)); setBusy(false); }
+    try { await readOptional(await operation()); feedback.succeed(success); await load(); }
+    catch (error) { feedback.fail(asMessage(error)); setMessage(asMessage(error)); setBusy(false); }
+  }
+
+  /** Une suppression passe toujours par une confirmation explicite. */
+  async function confirmThen(options: { title: string; body: string; confirmLabel: string }, operation: () => Promise<Response>, success: string) {
+    if (await feedback.confirm({ ...options, destructive: true })) await mutate(operation, success);
   }
 
   if (!data) return <div className="admin-loading"><Network /><p>{message ?? "Chargement de la structure opérationnelle…"}</p><button className="button button--quiet" onClick={load}><RefreshCw /> Réessayer</button></div>;
@@ -103,7 +110,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
       <section className="role-builder">
         <h3><UserRoundCog /> Membres et encadrants</h3>
         <p className="scene-copy">Une appartenance active détermine le front, le groupe et les contenus accessibles. Le statut d’encadrant n’accorde aucune permission à lui seul.</p>
-        <div className="membership-list">{data.memberships.items.map((membership) => <article key={membership.id}><div className="user-avatar">{(userById.get(membership.userId) ?? "??").slice(0, 2).toUpperCase()}</div><div><strong>{userById.get(membership.userId) ?? membership.userId}</strong><small>{membership.kind === "Supervisor" ? "Encadrant" : "Participant"} · {unitById.get(membership.unitId) ?? membership.unitId}{membership.periodId ? ` · ${data.periods.find((period) => period.id === membership.periodId)?.name ?? "période"}` : ""}</small></div><button className="icon-danger" aria-label="Supprimer le membership" onClick={() => { if (window.confirm("Retirer cette appartenance ?")) void mutate(() => fetch(`/api/admin/organization/memberships/${membership.id}`, { method: "DELETE" }), "Membership supprimé."); }}><Trash2 /></button></article>)}</div>
+        <div className="membership-list">{data.memberships.items.map((membership) => <article key={membership.id}><div className="user-avatar">{(userById.get(membership.userId) ?? "??").slice(0, 2).toUpperCase()}</div><div><strong>{userById.get(membership.userId) ?? membership.userId}</strong><small>{membership.kind === "Supervisor" ? "Encadrant" : "Participant"} · {unitById.get(membership.unitId) ?? membership.unitId}{membership.periodId ? ` · ${data.periods.find((period) => period.id === membership.periodId)?.name ?? "période"}` : ""}</small></div><button className="icon-danger" aria-label="Supprimer le membership" onClick={() => void confirmThen({ title: "Retirer cette appartenance ?", body: `${userById.get(membership.userId) ?? membership.userId} ne sera plus rattaché à ${unitById.get(membership.unitId) ?? membership.unitId}.`, confirmLabel: "Retirer" }, () => fetch(`/api/admin/organization/memberships/${membership.id}`, { method: "DELETE" }), "Appartenance supprimée.")}><Trash2 /></button></article>)}</div>
         <div className="admin-grid">
           <Field label="Utilisateur"><select value={memberUserId} onChange={(event) => setMemberUserId(event.target.value)}><option value="">Sélectionner…</option>{users.filter((user) => user.isActive).map((user) => <option key={user.id} value={user.id}>{user.userName}</option>)}</select></Field>
           <Field label="Unité"><select value={memberUnitId} onChange={(event) => setMemberUnitId(event.target.value)}><option value="">Sélectionner…</option>{data.units.filter((unit) => unit.isActive).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></Field>
@@ -126,7 +133,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
     <section className="role-builder assignment-builder">
       <h3><CalendarClock /> Contenus affectés</h3>
       <p className="scene-copy">Les fenêtres et échéances sont évaluées côté moteur. Une suppression retire l’accès futur sans modifier les sessions déjà figées.</p>
-      <div className="assignment-board">{data.assignments.items.map((assignment) => <article key={assignment.id}><div><span className="assignment-type">{assignment.contentType}</span><strong>{assignment.name}</strong><small>{unitById.get(assignment.unitId)}{assignment.dueAt ? ` · échéance ${new Intl.DateTimeFormat("fr-FR").format(new Date(assignment.dueAt))}` : ""}</small></div>{assignment.required && <span className="user-state is-active">Obligatoire</span>}<button className="icon-danger" aria-label="Supprimer l’affectation" onClick={() => { if (window.confirm("Supprimer cette affectation ?")) void mutate(() => fetch(`/api/admin/organization/assignments/${assignment.id}`, { method: "DELETE" }), "Affectation supprimée."); }}><Trash2 /></button></article>)}</div>
+      <div className="assignment-board">{data.assignments.items.map((assignment) => <article key={assignment.id}><div><span className="assignment-type">{assignment.contentType}</span><strong>{assignment.name}</strong><small>{unitById.get(assignment.unitId)}{assignment.dueAt ? ` · échéance ${new Intl.DateTimeFormat("fr-FR").format(new Date(assignment.dueAt))}` : ""}</small></div>{assignment.required && <span className="user-state is-active">Obligatoire</span>}<button className="icon-danger" aria-label="Supprimer l’affectation" onClick={() => void confirmThen({ title: "Supprimer cette affectation ?", body: `« ${assignment.name} » ne sera plus attendu de ${unitById.get(assignment.unitId) ?? "cette unité"}.`, confirmLabel: "Supprimer l’affectation" }, () => fetch(`/api/admin/organization/assignments/${assignment.id}`, { method: "DELETE" }), "Affectation supprimée.")}><Trash2 /></button></article>)}</div>
       <div className="admin-grid">
         <Field label="Unité"><select value={assignmentUnitId} onChange={(event) => setAssignmentUnitId(event.target.value)}><option value="">Sélectionner…</option>{data.units.filter((unit) => unit.isActive).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></Field>
         <Field label="Type"><select value={contentType} onChange={(event) => { setContentType(event.target.value as AssignedContentTypeContract); setContentId(""); }}><option value="Journey">Parcours</option><option value="Category">Catégorie</option><option value="Scenario">Scénario</option></select></Field>

@@ -2,6 +2,8 @@
 import { Bot, Building2, Check, Coins, KeyRound, Languages, LibraryBig, LoaderCircle, Plus, Save, Search, ShieldCheck, Sparkles, Trash2, UploadCloud, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { AdminConfigurationContract, AdminUserContract, ExperienceDocumentContract, PagedUsersContract, PermissionContract, ProblemDetailsContract, RoleContract } from "@/shared/api/contracts";
+import { useFeedback } from "@/shared/ui/feedback-provider";
+import { SectionNav } from "@/shared/ui/section-nav";
 import { OrganizationOperations } from "./organization-operations";
 
 type Tab = "game" | "organization" | "player" | "catalog" | "language" | "users" | "access" | "ai" | "auth" | "economy";
@@ -19,6 +21,7 @@ const tabs: Array<{ id: Tab; label: string; group: string; icon: typeof Sparkles
 ];
 
 export function AdministrationConsole() {
+  const feedback = useFeedback();
   const [tab, setTab] = useState<Tab>("game");
   const [configuration, setConfiguration] = useState<AdminConfigurationContract>();
   const [roles, setRoles] = useState<RoleContract[]>([]);
@@ -45,7 +48,7 @@ export function AdministrationConsole() {
       const access = await read<{ roles: RoleContract[]; permissions: PermissionContract[] }>(accessResponse);
       setRoles(access.roles); setPermissions(access.permissions);
       const userPage = await read<PagedUsersContract>(usersResponse); setUsers(userPage.items); setUsersTotal(userPage.total);
-    } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); }
+    } catch (error) { setMessage(asMessage(error)); feedback.fail(asMessage(error)); } finally { setBusy(false); }
   }
   useEffect(() => {
     const controller = new AbortController();
@@ -70,8 +73,8 @@ export function AdministrationConsole() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(publish ? { expectedRevision: configuration.revision } : { expectedRevision: configuration.revision, document: configuration.document }),
       }));
-      setConfiguration(saved); setMessage(publish ? "Configuration publiée pour les clients." : "Brouillon de configuration enregistré.");
-    } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); }
+      setConfiguration(saved); feedback.succeed(publish ? "Configuration publiée pour les clients." : "Brouillon de configuration enregistré.");
+    } catch (error) { setMessage(asMessage(error)); feedback.fail(asMessage(error)); } finally { setBusy(false); }
   }
   async function createRole() {
     setBusy(true); setMessage(undefined);
@@ -80,8 +83,8 @@ export function AdministrationConsole() {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: roleName, description: roleDescription, permissions: rolePermissions }),
       }));
-      setRoles((value) => [...value, role]); setRoleName(""); setRoleDescription(""); setRolePermissions([]); setMessage("Rôle personnalisé créé.");
-    } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); }
+      setRoles((value) => [...value, role]); setRoleName(""); setRoleDescription(""); setRolePermissions([]); feedback.succeed("Rôle personnalisé créé.");
+    } catch (error) { setMessage(asMessage(error)); feedback.fail(asMessage(error)); } finally { setBusy(false); }
   }
   async function assignRole() {
     setBusy(true); setMessage(undefined);
@@ -91,11 +94,16 @@ export function AdministrationConsole() {
         body: JSON.stringify({ userId: assignmentUserId, roleId: assignmentRoleId, scope: assignmentScope || undefined }),
       });
       if (!response.ok) await read<void>(response);
-      setAssignmentUserId(""); setAssignmentScope(""); setMessage("Rôle affecté à l’utilisateur."); await load();
-    } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); }
+      setAssignmentUserId(""); setAssignmentScope(""); feedback.succeed("Rôle affecté à l’utilisateur."); await load();
+    } catch (error) { setMessage(asMessage(error)); feedback.fail(asMessage(error)); } finally { setBusy(false); }
   }
   async function mutateUser(user: AdminUserContract, action: "toggle" | "delete") {
-    if (action === "delete" && !window.confirm(`Supprimer le compte ${user.userName} ? Cette suppression est logique et conserve les traces d’audit.`)) return;
+    if (action === "delete" && !await feedback.confirm({
+      title: `Supprimer le compte ${user.userName} ?`,
+      body: "La suppression est logique : le compte cesse d’être utilisable et les traces d’audit sont conservées.",
+      confirmLabel: "Supprimer le compte",
+      destructive: true,
+    })) return;
     await runMutation(async () => {
       const response = await fetch(`/api/admin/users/${user.id}`, action === "toggle" ? { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: !user.isActive }) } : { method: "DELETE" });
       if (!response.ok) await read<void>(response);
@@ -103,27 +111,37 @@ export function AdministrationConsole() {
     }, action === "delete" ? "Compte supprimé." : user.isActive ? "Compte désactivé." : "Compte réactivé.");
   }
   async function deleteRole(role: RoleContract) {
-    if (!window.confirm(`Supprimer le rôle ${role.name} ?`)) return;
+    if (!await feedback.confirm({
+      title: `Supprimer le rôle ${role.name} ?`,
+      body: "Les personnes qui le portent perdront les permissions qu’il accorde.",
+      confirmLabel: "Supprimer le rôle",
+      destructive: true,
+    })) return;
     await runMutation(async () => { const response = await fetch(`/api/admin/access/roles/${role.id}`, { method: "DELETE" }); if (!response.ok) await read<void>(response); await load(); }, "Rôle supprimé.");
   }
-  async function runMutation(operation: () => Promise<void>, success: string) { setBusy(true); setMessage(undefined); try { await operation(); setMessage(success); } catch (error) { setMessage(asMessage(error)); } finally { setBusy(false); } }
+  async function runMutation(operation: () => Promise<void>, success: string) { setBusy(true); try { await operation(); feedback.succeed(success); } catch (error) { feedback.fail(asMessage(error)); } finally { setBusy(false); } }
   function update(mutator: (current: AdminConfigurationContract) => AdminConfigurationContract) {
     setConfiguration((current) => current ? mutator(current) : current);
   }
 
-  if (!configuration) return <section className="admin-loading">{busy && <LoaderCircle className="spin" />}<p>{message ?? "Chargement du centre de contrôle…"}</p><button className="button button--quiet" onClick={load}>Réessayer</button></section>;
+  // Même en chargement, la surface reste plein écran et porte sa navigation :
+  // sans elle, un échec de chargement laissait la page sans aucune sortie.
+  if (!configuration) return <section className="admin-console app-fullscreen">
+    <aside className="admin-sidebar"><SectionNav label="Administration" /></aside>
+    <div className="admin-content"><div className="admin-loading">{busy && <LoaderCircle className="spin" aria-hidden="true" />}<p role="status">{message ?? "Chargement du centre de contrôle…"}</p><button className="button button--quiet" onClick={load}>Réessayer</button></div></div>
+  </section>;
   const document = configuration.document;
   const foundry = document.aiProviders.find((provider) => provider.type === "AzureAiFoundry");
   const familiar = document.familiars[0];
 
-  return <section className="admin-console">
+  return <section className="admin-console app-fullscreen">
     <aside className="admin-sidebar">
+      <SectionNav label="Administration" />
       <div className="admin-status"><span className="status-dot" /><div><small>Version publiée</small><strong>v{configuration.publishedVersion}</strong></div></div>
       {tabs.map(({ id, label, group, icon: Icon }, index) => <div key={id}>{index === 0 || tabs[index - 1]?.group !== group ? <small className="admin-nav-group">{group}</small> : null}<button className={tab === id ? "is-active" : ""} onClick={() => setTab(id)}><Icon />{label}</button></div>)}
       <div className="admin-actions"><button className="button button--quiet" disabled={busy} onClick={() => save()}><Save /> Enregistrer</button><button className="button button--primary" disabled={busy} onClick={() => save(true)}><UploadCloud /> Publier</button></div>
     </aside>
     <div className="admin-content">
-      {message && <p className="admin-message" role="status">{message}</p>}
       {tab === "game" && <AdminSection icon={Building2} eyebrow="Univers global" title="Jeu, histoire et catégories">
         <div className="admin-grid">
           <Field label="Nom du jeu"><input value={document.game.name} onChange={(event) => update((value) => ({ ...value, document: { ...value.document, game: { ...value.document.game, name: event.target.value } } }))} /></Field>
