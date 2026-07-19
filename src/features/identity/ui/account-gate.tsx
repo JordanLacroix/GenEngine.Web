@@ -2,6 +2,7 @@
 
 import { ArrowRight, BookOpen, LogIn, Play, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
+import type { Route } from "next";
 import { useState } from "react";
 
 export function AccountGate({ demoEnabled }: { demoEnabled: boolean }) {
@@ -37,7 +38,7 @@ export function AccountGate({ demoEnabled }: { demoEnabled: boolean }) {
         <h1>Une porte.<br />Puis toutes les autres.</h1>
         <p>Connectez-vous pour créer votre familier, vivre le prologue et gagner la clé qui ouvre votre première aventure.</p>
         <div><ShieldCheck /><span><strong>Votre progression reste à vous</strong><small>Le serveur garde les sessions ; le navigateur ne conserve aucun état narratif autoritatif.</small></span></div>
-        <Link className="intro-replay-link" href="/?intro=1"><BookOpen /> Revoir l’introduction</Link>
+        <Link className="intro-replay-link" href={"/plateforme?intro=1" as Route}><BookOpen /> Revoir l’introduction</Link>
       </section>
       <section className="account-form">
       <LogIn /><p className="eyebrow">{mode === "login" ? "Bon retour" : "Premier voyage"}</p>
@@ -48,7 +49,7 @@ export function AccountGate({ demoEnabled }: { demoEnabled: boolean }) {
       <button className="button button--primary" disabled={busy || !userName || !password} onClick={authenticate}>{mode === "login" ? "Entrer dans mon univers" : "Commencer mon aventure"}<ArrowRight /></button>
       <button className="text-button" onClick={() => setMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "Je n’ai pas encore de compte" : "J’ai déjà un compte"}</button>
       <a className="button button--quiet microsoft-button" href="/api/auth/entra/start"><span>▦</span> Continuer avec Microsoft</a>
-      {demoEnabled && <div className="demo-launch"><span><Play /><strong>Pas encore prêt ?</strong></span><p>Vivez un scénario complet, voyez votre chemin et vos gains, sans créer de compte.</p><Link className="button button--quiet" href="/play/demo">Lancer la démo illustrée <ArrowRight /></Link></div>}
+      {demoEnabled && <div className="demo-launch"><span><Play /><strong>Pas encore prêt ?</strong></span><p>Vivez un scénario complet, voyez votre chemin et vos gains, sans créer de compte.</p><Link className="button button--quiet" href={"/play/demo" as Route}>Lancer la démo illustrée <ArrowRight /></Link></div>}
       </section>
     </div>
   </div>;

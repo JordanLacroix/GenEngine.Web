@@ -21,16 +21,63 @@ flowchart LR
 ## Frontières
 
 - `src/app` possède les routes, handlers serveur et la composition.
-- `src/features` porte les capacités utilisateur verticales : `home`, `identity`, `library`, `player`, `experience`, `studio`, `administration`.
+- `src/features` porte les capacités utilisateur verticales : `home`, `identity`, `settings`, `library`, `player`, `experience`, `studio`, `administration`.
 - `src/entities` contient les types et représentations côté client, y compris ceux qui sont **locaux à la démonstration** et n'ont pas d'équivalent serveur.
 - `src/shared/api` possède les échanges réseau et adaptations de contrats.
 - `src/shared/assets` possède le contrat de pack d'assets et **l'unique point de résolution** d'une référence `packId:assetId` (`resolveAssetReference`), utilisé aussi bien par les aperçus du Studio que par le runtime (`useInstanceMedia`). Un aperçu d'auteur et le rendu d'un joueur ne peuvent donc pas diverger.
 - `src/shared/audio` porte le contrat sonore, la résolution des signaux et le fournisseur React. C'est un bloc technique : il ne décide d'aucune règle de jeu et reste neutre lorsqu'un signal n'est pas lié.
 - `src/shared/mocks` possède exclusivement les fixtures hors ligne.
 - `src/shared/lib` contient les utilitaires sans dépendance UI.
-- `src/shared/ui` contient les composants transverses sans logique métier.
+- `src/shared/ui` contient les composants transverses sans logique métier, dont
+  le **système unifié de confirmation et de retour** (`feedback-provider`) et le
+  **modèle de navigation** (`navigation-model`), qui décide seul quelles routes
+  portent l'en-tête global.
 
 Une feature ne dépend pas directement d'une autre. Les règles narratives, validations d'histoires et calculs de transition appartiennent au backend.
+
+## Entrée et navigation
+
+L'atterrissage `/` est le **seuil de connexion** ; la présentation commerciale
+vit sur `/plateforme` et reste atteignable depuis le menu et depuis la marque.
+`/account` est une redirection permanente vers `/`.
+
+Un seul système de navigation est visible à la fois. `navigation-model`
+déclare les routes qui portent la leur — `/experience`, `/play`, `/studio`,
+`/administration` — et l'en-tête global ne s'y monte pas. Le masquage est
+décidé par le composant, pas par une règle CSS `:has()` : la précédente ne
+couvrait pas l'état de chargement de `/experience`, où l'en-tête restait
+visible par-dessus le rail de l'univers. Les barres latérales du Studio et de
+l'Administration restent — c'est une navigation *intra-section* légitime — et
+accueillent désormais les liens globaux via `SectionNav`.
+
+## Résolution des URLs de services
+
+Les six URLs sont résolues **côté serveur**, à chaque requête, par
+`resolveServiceUrl()`. La valeur par défaut vient de l'environnement ; une
+surcharge propre au navigateur peut la remplacer, transportée par un cookie
+`HttpOnly` `SameSite=Strict` que `/parametres` écrit via
+`/api/settings/endpoints`. Le navigateur ne lit jamais cette valeur et aucune
+variable `NEXT_PUBLIC_` n'est créée : l'invariant 9 tient.
+
+Deux barrières encadrent la capacité. `GENENGINE_ENDPOINT_ALLOWED_HOSTS` borne
+les hôtes visables — défaut `localhost`, `127.0.0.1`, `::1`,
+`host.docker.internal` — et s'applique à l'écriture, à la sonde et à la
+relecture du cookie ; sans elle, le serveur devient un relais vers son propre
+réseau interne (CWE-918). Aucun joker n'existe, et l'URL appelée est recomposée
+à partir de l'hôte déclaré et d'un port entier borné : une chaîne venant du
+cookie n'atteint jamais `fetch`. Une adresse est une **origine** : un chemin de
+base est refusé à la saisie, parce que `new URL(path, base)` le perdrait
+silencieusement. L'état rendu à l'écran est calculé par `resolveServiceUrl`
+elle-même, pour qu'un écran de diagnostic ne puisse pas afficher autre chose que
+ce qui est appelé. `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne la
+capacité — activée hors
+production, désactivée en production. Désactivée, l'écran reste consultable en
+lecture seule et l'enregistrement répond `403`.
+
+`src/shared/api/service-endpoints.ts` est le seul endroit qui connaît les six
+services, leurs ports de convention et la validation d'une URL. `/api/catalog`
+dupliquait cette résolution et échappait donc à toute surcharge ; il passe
+maintenant par la façade.
 
 ## Coque immersive
 

@@ -12,6 +12,7 @@ import type {
 import type { AssetPackManifest } from "@/shared/assets/asset-pack";
 import { resolveAssetReference } from "@/shared/assets/asset-pack";
 import { gameCopy } from "@/shared/lib/game-copy";
+import { useFeedback } from "@/shared/ui/feedback-provider";
 import {
   type DraftChoice, type DraftNode, draftMediaCoverage, isKnownAnimationCue, knownAnimationCues,
   narrativeDraft, type NarrativeDraft, serializeDraft, updateChoice, updateNode,
@@ -37,6 +38,7 @@ export function ScenarioSection({ document, manifest, packAbsentReason }: {
   manifest?: AssetPackManifest;
   packAbsentReason?: string;
 }) {
+  const feedback = useFeedback();
   const [source, setSource] = useState("");
   const [scenario, setScenario] = useState<ScenarioContract>();
   const [scenarios, setScenarios] = useState<ScenarioContract[]>([]);
@@ -87,7 +89,7 @@ export function ScenarioSection({ document, manifest, packAbsentReason }: {
   function write(next: NarrativeDraft) { setSource(serializeDraft(next)); }
   async function run(operation: () => Promise<void>) {
     setBusy(true); setError(undefined);
-    try { await operation(); } catch (reason) { setError(asMessage(reason)); } finally { setBusy(false); }
+    try { await operation(); } catch (reason) { setError(asMessage(reason)); feedback.fail(asMessage(reason)); } finally { setBusy(false); }
   }
   async function importScenario() {
     await run(async () => {
@@ -135,11 +137,20 @@ export function ScenarioSection({ document, manifest, packAbsentReason }: {
     });
   }
   async function archive() {
-    if (!scenario || !window.confirm(`Archiver ${scenario.title} ?`)) return;
+    if (!scenario) return;
+    const confirmed = await feedback.confirm({
+      title: `Archiver « ${scenario.title} » ?`,
+      body: "Le scénario quittera la bibliothèque du Studio. Les versions déjà publiées restent jouables.",
+      confirmLabel: "Archiver le scénario",
+      destructive: true,
+    });
+    if (!confirmed) return;
+    const title = scenario.title;
     await run(async () => {
       const response = await fetch(`/api/scenarios/${scenario.id}?expectedRevision=${scenario.revision}`, { method: "DELETE" });
       if (!response.ok) await read<void>(response);
       setScenario(undefined); setSource(""); setSelectedNodeId(""); await loadScenarios();
+      feedback.succeed(`« ${title} » est archivé.`);
     });
   }
 
