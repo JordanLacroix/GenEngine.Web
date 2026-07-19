@@ -151,7 +151,7 @@ Ces affirmations figuraient dans les documents et étaient fausses ou périmées
 Elles sont listées pour éviter qu'elles ne reviennent par copie d'un ancien
 handoff.
 
-- « 113 tests Vitest » — il y en a **166**, répartis en 16 fichiers.
+- « 113 tests Vitest » — il y en a **181**, répartis en 16 fichiers.
 - « la démo comporte treize scènes pour une cible d'environ quinze minutes » — elle en compte **23**, et chaque situation se termine en quelques minutes.
 - « le bloc `media` du plan de configuration est conditionné au moteur » coexistait avec « publié depuis GenEngine #46 et consommé au runtime ». La seconde affirmation est la bonne ; seuls les **médias de scène et de choix** restent refusés.
 - Plusieurs jalons étaient annoncés « implémenté sur `<branche>` » alors que la branche est fusionnée dans `main` depuis longtemps.

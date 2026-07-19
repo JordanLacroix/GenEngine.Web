@@ -299,6 +299,8 @@ body:has(.app-fullscreen) > main { height: 100dvh; padding-bottom: 0; }
 .settings-services label { display: grid; gap: .3rem; color: var(--ivory-muted); font-size: .66rem; }
 .settings-resolved { margin: 0; overflow-x: auto; }
 .settings-resolved code { color: var(--ivory); font: .72rem ui-monospace, monospace; word-break: break-all; }
+.settings-effective { margin: 0; color: var(--or); font-size: .66rem; }
+.settings-effective code { font: .66rem ui-monospace, monospace; word-break: break-all; }
 .settings-env { margin: 0; color: var(--ivory-muted); font-size: .62rem; }
 .settings-env code { font: .62rem ui-monospace, monospace; }
 .settings-probe { display: grid; gap: .5rem; }

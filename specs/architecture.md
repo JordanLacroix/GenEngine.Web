@@ -65,7 +65,11 @@ les hôtes visables — défaut `localhost`, `127.0.0.1`, `::1`,
 relecture du cookie ; sans elle, le serveur devient un relais vers son propre
 réseau interne (CWE-918). Aucun joker n'existe, et l'URL appelée est recomposée
 à partir de l'hôte déclaré et d'un port entier borné : une chaîne venant du
-cookie n'atteint jamais `fetch`. `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne la
+cookie n'atteint jamais `fetch`. Une adresse est une **origine** : un chemin de
+base est refusé à la saisie, parce que `new URL(path, base)` le perdrait
+silencieusement. L'état rendu à l'écran est calculé par `resolveServiceUrl`
+elle-même, pour qu'un écran de diagnostic ne puisse pas afficher autre chose que
+ce qui est appelé. `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` gouverne la
 capacité — activée hors
 production, désactivée en production. Désactivée, l'écran reste consultable en
 lecture seule et l'enregistrement répond `403`.

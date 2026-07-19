@@ -151,7 +151,7 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
         <input type="radio" name="endpoint-mode" checked={mode === "unit"} onChange={() => setMode("unit")} />
         <span>
           <strong>Unitaire</strong>
-          <small>Une URL complète et indépendante par service, pour un déploiement réparti sur plusieurs machines.</small>
+          <small>Une adresse complète et indépendante par service, pour un déploiement réparti sur plusieurs machines. Schéma, hôte et port seulement — pas de chemin.</small>
         </span>
       </label>
     </fieldset>
@@ -215,6 +215,13 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
                 />
               </label>}
           <p className="settings-resolved"><code>{url}</code></p>
+          {/* Ce que le serveur appelle réellement, calculé par la même fonction
+              que les vrais appels. S'il diffère de la saisie, c'est que celle-ci
+              n'est pas encore enregistrée — le dire vaut mieux qu'un écran de
+              diagnostic qui affiche une valeur qu'il n'utilise pas. */}
+          {state.effective[descriptor.id] !== url && <p className="settings-effective">
+            Actuellement appelée : <code>{state.effective[descriptor.id]}</code>
+          </p>}
           <div className="settings-probe">
             <button type="button" className="button button--quiet" disabled={probe === "running"} onClick={() => void test(descriptor.id)}>
               {probe === "running" ? <LoaderCircle className="spin" aria-hidden="true" /> : <Network size={15} aria-hidden="true" />}
@@ -264,6 +271,12 @@ export function ServiceEndpointsScreen({ initial }: { initial: EndpointConfigura
       <p>
         Un test réussi prouve qu’un serveur HTTP répond à cette adresse, pas qu’il s’agit du bon service :
         une réponse <code>404</code> est signalée comme joignable, avec la réserve écrite.
+      </p>
+      <p>
+        Une adresse ne porte pas de chemin de base. La façade appelle
+        <code> new URL(&quot;/auth/login&quot;, base)</code>, et un chemin absolu remplace celui de la base :
+        un préfixe saisi ici serait accepté, affiché, sondé avec succès, puis absent des vrais appels.
+        Un déploiement derrière un reverse-proxy avec préfixe se configure côté serveur.
       </p>
     </details>
   </div>;

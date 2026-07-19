@@ -294,6 +294,25 @@ La surcharge ne fournit d’ailleurs jamais la chaîne appelée : elle *sélecti
 un hôte parmi ceux déclarés et un port entier borné, et l’URL est recomposée à
 partir de ces valeurs de confiance.
 
+**Une adresse est une origine, pas un préfixe.** Un chemin de base est refusé à
+la saisie, avec un message qui le dit. Ce n’est pas une limitation arbitraire :
+la façade appelle `new URL("/auth/login", base)`, et un chemin absolu remplace
+celui de la base. Un préfixe saisi serait accepté, affiché, sondé avec succès —
+puis absent des vrais appels. Un déploiement derrière un reverse-proxy avec
+préfixe se configure côté serveur.
+
+**Ce que l’écran affiche est ce que le serveur appelle.** La ligne « actuellement
+appelée » est calculée par `resolveServiceUrl`, la fonction qui décide réellement
+de l’adresse, et non par une seconde dérivation qui pourrait diverger.
+
+**Risque assumé : la sonde est un oracle de découverte.** `/parametres` est
+accessible sans session, et le test renvoie un statut et une latence. Quelqu’un
+d’anonyme peut donc découvrir quels ports répondent sur les hôtes déjà autorisés.
+En production le risque ne se matérialise pas : la surcharge y est désactivée par
+défaut, la sonde ignore alors l’adresse proposée et ne teste que les services
+déjà configurés par l’exploitant. Activer `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` en
+production, c’est accepter cet oracle en même temps que la capacité.
+
 `GENENGINE_ALLOW_ENDPOINT_OVERRIDE` tranche l’autorisation. **Défaut : activé
 hors production, désactivé en production**, parce qu’une surcharge acceptée en
 production déplacerait la cible d’appels portant le JWT de la personne
