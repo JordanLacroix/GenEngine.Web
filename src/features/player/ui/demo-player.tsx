@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowLeft, Bookmark, DoorOpen, Gift, MousePointer2, RotateCcw, Route, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Bookmark, DoorOpen, Gift, MousePointer2, RotateCcw, Route, Sparkles, TriangleAlert, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import type { DemoOutcome } from "@/entities/story/model/story";
 import { demoStory } from "@/shared/mocks/stories";
 import { demoQuestTree, readDemoQuestMemory, rememberDemoQuestSteps, type DemoQuestMemory } from "@/features/player/model/demo-quest-tree";
 import type { QuestTreeInput } from "@/features/player/model/quest-graph";
@@ -16,9 +17,8 @@ export function DemoPlayer() {
   const [choiceHistory, setChoiceHistory] = useState<string[]>([]);
   const [memory, setMemory] = useState<DemoQuestMemory>({ nodeIds: [], choiceIds: [] });
   const scene = useMemo(() => demoStory.scenes.find((candidate) => candidate.id === sceneId) ?? demoStory.scenes[0]!, [sceneId]);
-  const progress = scene.chapter.startsWith("Épilogue") ? 100 : Math.min(92, ((history.length + 1) / 7) * 100);
-
   const completed = scene.choices.length === 0;
+  const progress = completed ? 100 : Math.min(92, ((history.length + 1) / 5) * 100);
   const tree = useMemo(() => demoQuestTree(demoStory, scene.id, history), [scene.id, history]);
 
   function choose(nextSceneId: string) {
@@ -64,14 +64,53 @@ export function DemoPlayer() {
           <p>Que faites-vous ?</p>
           {scene.choices.map((choice, index) => <button type="button" key={choice.id} disabled={Boolean(scene.interaction && !interactionDone)} onClick={() => choose(choice.nextSceneId)}><span className="choice-index">{String(index + 1).padStart(2, "0")}</span><span><small>{choice.tone}</small>{choice.label}</span><span className="choice-arrow" aria-hidden="true">→</span></button>)}
         </div>}
-        {completed && <DemoSummary history={[...history, scene.id]} ending={scene.id} tree={tree} memory={memory} onRestart={restart} />}
+        {completed && <DemoSummary history={[...history, scene.id]} outcome={scene.outcome ?? "accord"} tree={tree} memory={memory} onRestart={restart} />}
       </main>
-      <footer className="player-footer"><button type="button" className="text-button" onClick={goBack} disabled={history.length === 0}><ArrowLeft size={14} aria-hidden="true" /> Choix précédent</button><span>Progression enregistrée localement · Démo visuelle</span><button type="button" className="text-button" onClick={restart}><RotateCcw size={14} aria-hidden="true" /> Recommencer</button></footer>
+      {/* Une rupture ferme la situation : revenir en arrière la contredirait. */}
+      <footer className="player-footer"><button type="button" className="text-button" onClick={goBack} disabled={history.length === 0 || scene.outcome === "rupture"}><ArrowLeft size={14} aria-hidden="true" /> Choix précédent</button><span>Démonstration hors ligne · Configuration de référence « Le Diapason »</span><button type="button" className="text-button" onClick={restart}><RotateCcw size={14} aria-hidden="true" /> Recommencer</button></footer>
     </div>
   );
 }
 
-function DemoSummary({ history, ending, tree, memory, onRestart }: { history: string[]; ending: string; tree: QuestTreeInput; memory: DemoQuestMemory; onRestart(): void }) {
-  const path = history.map((id) => demoStory.scenes.find((scene) => scene.id === id)).filter(Boolean);
-  return <section className="demo-summary" aria-label="Bilan de la démo"><div className="summary-heading"><Sparkles aria-hidden="true" /><div><p className="eyebrow">Chemin accompli</p><h2>{ending === "dawn" ? "Vous avez rendu la mémoire à la cité." : "Vous êtes devenu gardien du récit."}</h2></div></div><div className="summary-grid"><article><Route aria-hidden="true" /><strong>{path.length} étapes traversées</strong><ol>{path.map((step) => <li key={step!.id}>{step!.title}</li>)}</ol></article><article><Gift aria-hidden="true" /><strong>Souvenirs gagnés</strong><ul><li>Le sceau du Dernier Phare</li><li>Une page pour votre journal</li><li>La confiance de Lueur</li></ul></article></div><QuestGraphView tree={tree} masteryNodeIds={memory.nodeIds} masteryChoiceIds={memory.choiceIds} caption="Le récit complet de la démonstration : ce que vous venez de traverser et ce que vos essais précédents ont déjà révélé, mémorisé sur cet appareil." /><div className="summary-actions"><Link className="button button--primary" href="/account"><DoorOpen aria-hidden="true" /> Créer mon aventure</Link><button className="button button--quiet" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Explorer un autre chemin</button></div></section>;
+const outcomeCopy: Record<DemoOutcome, { eyebrow: string; heading: string; note: string }> = {
+  accord: {
+    eyebrow: "Accord",
+    heading: "Vous avez tenu la posture, et vous savez pourquoi.",
+    note: "Le résultat est bon et le raisonnement est consolidé : ce que vous avez avancé était vérifiable par quelqu'un d'autre que vous.",
+  },
+  partielle: {
+    eyebrow: "Fin partielle",
+    heading: "Le résultat est là ; le raisonnement ne l'est pas.",
+    note: "Vous avez eu raison sans rendre votre raison opposable. Une reprise sur le même chemin change l'issue à moindre coût.",
+  },
+  rupture: {
+    eyebrow: "Rupture",
+    heading: "La situation ne peut plus être rattrapée.",
+    note: "Le moteur ne connaît pas d'échec : c'est la conséquence, dans le monde, qui ferme la porte. Il n'y a pas de reprise en cours de route — la scène se rejoue depuis le début.",
+  },
+};
+
+/** Postures traversées, lues sur les chapitres du chemin réellement parcouru. */
+function posturesOf(path: readonly { chapter: string }[]): string[] {
+  return [...new Set(path.map((scene) => scene.chapter.split(" · ")[0]!).filter((posture) => ["Lucidité", "Discernement", "Arbitrage", "Courage", "Transmission", "Autonomie"].includes(posture)))];
+}
+
+function DemoSummary({ history, outcome, tree, memory, onRestart }: { history: string[]; outcome: DemoOutcome; tree: QuestTreeInput; memory: DemoQuestMemory; onRestart(): void }) {
+  const path = history.map((id) => demoStory.scenes.find((scene) => scene.id === id)).filter((scene): scene is NonNullable<typeof scene> => Boolean(scene));
+  const copy = outcomeCopy[outcome];
+  const postures = posturesOf(path);
+  const isRupture = outcome === "rupture";
+  return <section className={`demo-summary demo-summary--${outcome}`} aria-label="Bilan de la démo">
+    <div className="summary-heading">{isRupture ? <TriangleAlert aria-hidden="true" /> : <Sparkles aria-hidden="true" />}<div><p className="eyebrow">{copy.eyebrow}</p><h2>{copy.heading}</h2><p>{copy.note}</p></div></div>
+    <div className="summary-grid">
+      <article><Route aria-hidden="true" /><strong>{path.length} étapes traversées</strong><ol>{path.map((step) => <li key={step.id}>{step.title}</li>)}</ol></article>
+      <article><Gift aria-hidden="true" /><strong>{isRupture ? "Ce que la situation a coûté" : "Ce que vous emportez"}</strong><ul>{postures.map((posture) => <li key={posture}>Posture exercée : {posture}</li>)}<li>{isRupture ? "Aucune fréquence : la démarche n'a pas été rendue explicite." : outcome === "accord" ? "Fréquence du doute : vous avez suspendu une conclusion trop fluide." : "Fréquence du doute, non consolidée : le fait manquait à l'intuition."}</li><li>Une page pour votre journal</li></ul></article>
+    </div>
+    <QuestGraphView tree={tree} masteryNodeIds={memory.nodeIds} masteryChoiceIds={memory.choiceIds} caption="Le récit complet de la démonstration : ce que vous venez de traverser et ce que vos essais précédents ont déjà révélé, mémorisé sur cet appareil." />
+    <div className="summary-actions">
+      {isRupture
+        ? <><button className="button button--primary" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Reprendre depuis le début</button><Link className="button button--quiet" href="/account"><DoorOpen aria-hidden="true" /> Créer mon aventure</Link></>
+        : <><Link className="button button--primary" href="/account"><DoorOpen aria-hidden="true" /> Créer mon aventure</Link><button className="button button--quiet" type="button" onClick={onRestart}><RotateCcw aria-hidden="true" /> Essayer une autre situation</button></>}
+    </div>
+  </section>;
 }

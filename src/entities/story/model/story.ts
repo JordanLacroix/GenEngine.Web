@@ -25,6 +25,13 @@ export interface DemoChoice {
   tone: string;
 }
 
+/**
+ * Nature d'une fin, dans la convention du contenu canonique « Le Diapason ».
+ * Le moteur ne connaît qu'`isEnding` : cette distinction reste locale à la
+ * démonstration et n'est jamais présentée comme un contrat serveur.
+ */
+export type DemoOutcome = "accord" | "partielle" | "rupture";
+
 export interface DemoScene {
   id: string;
   chapter: string;
@@ -32,6 +39,8 @@ export interface DemoScene {
   body: string[];
   atmosphere: string;
   choices: DemoChoice[];
+  /** Renseigné uniquement sur une scène terminale (`choices` vide). */
+  outcome?: DemoOutcome;
   interaction?: { kind: "signal" | "object" | "gesture"; label: string; hint: string };
 }
 
