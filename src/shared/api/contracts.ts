@@ -335,7 +335,70 @@ export interface PlayerExperienceContract {
   ownedOfferIds: string[];
   recentEntries: Array<{ id: string; amount: number; reason: string; balanceAfter: number; createdAt: string }>;
   recentJournal: JournalEntryContract[];
+  /**
+   * Statistiques joueur publiées par l'instance. Facultatif : absent ou vide
+   * lorsque l'instance n'a pas déclaré de `playerStats` — l'écran profil reste
+   * lisible sans elles.
+   */
+  stats?: PlayerStatViewContract[];
+  /**
+   * Récompenses conditionnelles publiées par l'instance, obtenues et à venir.
+   * Facultatif, pour la même raison que `stats`.
+   */
+  rewards?: ConditionalRewardViewContract[];
 }
+/**
+ * Une statistique joueur telle que le moteur la sert sur `GET /me/experience`
+ * (`PlayerStatView`). Libellé, description, valeur et plafond voyagent ensemble
+ * pour qu'un écran profil dessine une jauge sans jamais joindre le contrat
+ * joueur au document de configuration.
+ *
+ * Bloc **facultatif** : une instance sans `playerStats` publié renvoie une liste
+ * vide ou absente. Le client l'affiche vide, il ne la fabrique pas.
+ */
+export interface PlayerStatViewContract { id: string; key: string; label: string; description: string; value: number; maximum: number }
+
+/**
+ * Progression d'une condition, servie à l'identique par la fin de jeu et les
+ * récompenses conditionnelles (`ProgressConditionProgress`). `current`/`target`
+ * portent la barre ; `satisfied` dit si le jalon est franchi. `kind` est décodé
+ * en union tolérante : un moteur plus récent peut nommer un type que ce client
+ * ne connaît pas encore, et il doit être porté tel quel plutôt que rejeté.
+ */
+export interface ProgressConditionProgressContract { id: string; kind: string; description: string; satisfied: boolean; current: number; target: number }
+
+/**
+ * Ce qu'une récompense **accorde réellement** (`RewardGrantPlan`). `type` est la
+ * nature de l'octroi — `Achievement`, `Title` ou `Currency` — décodée en union
+ * `X | string`, cohérente avec `nature`/`marker` des documents : le client
+ * distingue les natures connues sans jamais échouer sur une inconnue. `amount`
+ * n'est lu que pour `Currency`, `reference` pour les deux autres.
+ */
+export const rewardGrantTypes = ["Achievement", "Title", "Currency"] as const;
+export type RewardGrantTypeContract = (typeof rewardGrantTypes)[number];
+export interface RewardGrantPlanContract { type: RewardGrantTypeContract | string; label: string; reference?: string | null; amount?: number | null }
+
+/**
+ * Une récompense conditionnelle telle que le client la rend
+ * (`ConditionalRewardView`) : ce qu'elle est, si elle est obtenue et — sinon —
+ * exactement où en est le joueur sur chacune de ses conditions. La progression
+ * par condition est servie pour les obtenues comme pour les restantes : pas de
+ * porte fermée sans indication de ce qui manque. `mode` (`All`/`Any`) est décodé
+ * en union tolérante.
+ */
+export interface ConditionalRewardViewContract {
+  id: string;
+  label: string;
+  description: string;
+  earned: boolean;
+  earnedAt?: string | null;
+  mode: "All" | "Any" | string;
+  conditions: ProgressConditionProgressContract[];
+  grants: RewardGrantPlanContract[];
+  visualUrl?: string | null;
+  labelKey?: string | null;
+}
+
 export interface OnboardingStateContract { tutorialId: string; version: number; status: "NotStarted" | "InProgress" | "Completed" | "Skipped"; completedStepIds: string[]; completedAt?: string; skippedAt?: string; revision: number }
 export interface ScenarioMasteryContract { scenarioId: string; scenarioVersionId: string; choiceIds: string[]; nodeIds: string[]; endingIds: string[]; discoveredObjectives: number; totalObjectives: number; masteryPercent: number; updatedAt: string }
 export interface JournalEntryContract { id: string; type: string; title: string; summary: string; journeyId?: string; categoryId?: string; scenarioId?: string; scenarioVersionId?: string; sessionId?: string; referenceId?: string; occurredAt: string }

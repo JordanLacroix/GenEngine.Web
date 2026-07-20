@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  BookHeart, CircleHelp, Coins, DoorOpen, Gem, KeyRound, LoaderCircle,
-  LogOut, Map, ShoppingBag, Sparkles, Upload, UserRound, X,
+  Award, BookHeart, CircleCheck, CircleHelp, Coins, DoorOpen, Gauge, Gem, KeyRound, LoaderCircle,
+  LogOut, Map, ShoppingBag, Sparkles, Trophy, Upload, UserRound, X,
 } from "lucide-react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -22,6 +22,9 @@ import {
   doorAnchorForIndex, journalTypeLabel, projectMapPoint, uniqueJournalEntries, uniqueMasteries,
   worldMapSize,
 } from "@/features/experience/model/player-experience-presentation";
+import {
+  buildRewardsBoard, describeStats, type RewardCard, type StatGauge,
+} from "@/features/experience/model/profile-progress";
 import { buildPlaces, isCatalogUnclassified } from "@/features/experience/model/map-places";
 import type { FamiliarSelection } from "@/features/experience/model/familiar-preview";
 import { FamiliarConfigurator, FamiliarPreviewPane } from "@/features/experience/ui/familiar-configurator";
@@ -213,6 +216,10 @@ export function PlayerExperienceHub() {
   const hasKey = context.player.onboarding.status === "Completed";
   const journalEntries = uniqueJournalEntries(journal?.items ?? context.player.recentJournal);
   const masteries = uniqueMasteries(context.player.masteries);
+  // Statistiques et récompenses sont facultatives : une instance qui n'en publie
+  // pas renvoie vide ou absent, et le profil reste lisible sans elles.
+  const stats = describeStats(context.player.stats);
+  const rewards = buildRewardsBoard(context.player.rewards);
 
   if (context.bootstrap.nextAction === "ConfigureFamiliar") {
     return <FirstFamiliar
@@ -309,7 +316,16 @@ export function PlayerExperienceHub() {
 
     {tab === "help" && <section className="universe-panel help-center"><header><p className="eyebrow">Centre d’aide</p><h2>Comprendre sans quitter l’aventure</h2></header><div>{document.help.articles.filter((article) => article.published).map((article) => <details key={article.id}><summary><CircleHelp /><span><strong>{article.title}</strong><small>{article.summary}</small></span></summary><p>{article.body}</p></details>)}</div><aside><h3>Glossaire du monde</h3>{document.help.glossary.map((entry) => <p key={entry.term}><strong>{entry.term}</strong>{entry.definition}</p>)}</aside></section>}
 
-    {tab === "account" && <section className="universe-panel account-panel"><UserRound /><p className="eyebrow">Compte joueur</p><h2>{context.access.userName}</h2><p>Vos sessions, votre tutoriel et votre journal sont synchronisés avec votre compte.</p><Link className="button button--quiet" href={"/plateforme?intro=1" as Route}>Revoir l’introduction</Link><button className="button button--quiet" onClick={() => void resetOnboarding()}>Recommencer le tutoriel</button><button className="button button--primary" onClick={signOut}><LogOut /> Se déconnecter</button></section>}
+    {tab === "account" && <section className="universe-panel account-panel"><OverlayClose onClose={() => setTab("map")} />
+      <header className="account-identity"><UserRound /><div><p className="eyebrow">Compte joueur</p><h2>{context.access.userName}</h2><p>Vos sessions, votre tutoriel et votre journal sont synchronisés avec votre compte.</p></div></header>
+      <PlayerStatsPanel stats={stats} />
+      <PlayerRewardsPanel board={rewards} currencyIcon={context.player.currencyIcon} />
+      <div className="account-actions">
+        <Link className="button button--quiet" href={"/plateforme?intro=1" as Route}>Revoir l’introduction</Link>
+        <button className="button button--quiet" onClick={() => void resetOnboarding()}>Recommencer le tutoriel</button>
+        <button className="button button--primary" onClick={signOut}><LogOut /> Se déconnecter</button>
+      </div>
+    </section>}
   </div>;
 }
 
@@ -332,6 +348,62 @@ function FirstFamiliar(props: {
       <button className="button button--primary" disabled={props.busy || !props.selection.customName.trim()} onClick={props.onSave}>Commencer notre histoire <DoorOpen aria-hidden="true" /></button>
     </div>
   </section>;
+}
+
+function PlayerStatsPanel({ stats }: { stats: StatGauge[] }) {
+  return <section className="account-block player-stats" aria-labelledby="player-stats-title">
+    <header><Gauge aria-hidden="true" /><div><p className="eyebrow">Vos aptitudes</p><h3 id="player-stats-title">Statistiques</h3></div></header>
+    {stats.length === 0
+      ? <p className="account-empty">Cette expérience ne publie pas encore de statistiques. Elles apparaîtront ici dès qu’un scénario les fera monter.</p>
+      : <ul className="stat-list">{stats.map((stat) => <li key={stat.id} className="stat-row">
+          <div className="stat-head"><strong>{stat.label}</strong><b>{stat.valueText}</b></div>
+          {/* La jauge est doublée du texte `stat.valueText` : la couleur ne porte
+              jamais seule l'information. Le meter ARIA rend la même valeur. */}
+          <div className="progress-track" role="meter" aria-label={stat.label} aria-valuemin={0} aria-valuemax={stat.maximum} aria-valuenow={stat.value} aria-valuetext={stat.valueText}><span style={{ width: `${stat.percent}%` }} /></div>
+          {stat.description && <small>{stat.description}</small>}
+        </li>)}</ul>}
+  </section>;
+}
+
+function PlayerRewardsPanel({ board, currencyIcon }: { board: { earned: RewardCard[]; upcoming: RewardCard[] }; currencyIcon: string }) {
+  const total = board.earned.length + board.upcoming.length;
+  return <section className="account-block player-rewards" aria-labelledby="player-rewards-title">
+    <header><Trophy aria-hidden="true" /><div><p className="eyebrow">Vos récompenses</p><h3 id="player-rewards-title">Hauts faits, titres et monnaie</h3></div></header>
+    {total === 0
+      ? <p className="account-empty">Aucune récompense n’est publiée pour cette expérience. Celles qui restent à obtenir montreront toujours ce qu’il manque, jamais une porte fermée.</p>
+      : <>
+          {board.earned.length > 0 && <div className="reward-group">
+            <p className="reward-group-title"><CircleCheck aria-hidden="true" /> Obtenues ({board.earned.length})</p>
+            {board.earned.map((reward) => <RewardArticle key={reward.id} reward={reward} currencyIcon={currencyIcon} />)}
+          </div>}
+          {board.upcoming.length > 0 && <div className="reward-group">
+            <p className="reward-group-title"><Award aria-hidden="true" /> À venir ({board.upcoming.length})</p>
+            {board.upcoming.map((reward) => <RewardArticle key={reward.id} reward={reward} currencyIcon={currencyIcon} />)}
+          </div>}
+        </>}
+  </section>;
+}
+
+function RewardArticle({ reward, currencyIcon }: { reward: RewardCard; currencyIcon: string }) {
+  const earnedDate = reward.earnedAt ? new Date(reward.earnedAt) : undefined;
+  const dateLabel = earnedDate && !Number.isNaN(earnedDate.getTime()) ? earnedDate.toLocaleDateString("fr-FR") : undefined;
+  return <article className={reward.earned ? "reward-card is-earned" : "reward-card"}>
+    <div className="reward-head">
+      <div><strong>{reward.label}</strong><small>{reward.description}</small></div>
+      {reward.earned
+        // Le statut est écrit, pas seulement teinté : l'icône double le texte.
+        ? <span className="reward-status is-earned"><CircleCheck aria-hidden="true" /> {dateLabel ? `Obtenue le ${dateLabel}` : "Obtenue"}</span>
+        : <span className="reward-status">{reward.satisfiedCount}/{reward.conditionCount} · {reward.modeLabel}</span>}
+    </div>
+    <ul className="reward-grants">{reward.grants.map((grant, index) => <li key={index}>
+      <span className="reward-nature">{grant.natureLabel}</span>
+      <span>{grant.label}{typeof grant.amount === "number" ? ` · ${grant.amount} ${currencyIcon}` : ""}</span>
+    </li>)}</ul>
+    {!reward.earned && reward.conditions.length > 0 && <ul className="reward-conditions">{reward.conditions.map((condition) => <li key={condition.id} className={condition.satisfied ? "is-satisfied" : ""}>
+      <div className="stat-head"><span>{condition.satisfied ? <CircleCheck aria-hidden="true" /> : null}{condition.description}</span><b>{condition.progressText}</b></div>
+      <div className="progress-track" role="meter" aria-label={condition.description} aria-valuemin={0} aria-valuemax={condition.target} aria-valuenow={condition.current} aria-valuetext={`${condition.progressText}${condition.satisfied ? " · satisfaite" : ""}`}><span style={{ width: `${condition.percent}%` }} /></div>
+    </li>)}</ul>}
+  </article>;
 }
 
 function OverlayClose({ onClose }: { onClose(): void }) {
