@@ -2,7 +2,7 @@
 
 import { ArrowLeft, BookOpen, GitBranch, LogIn, MousePointer2, Pause, Play, RotateCcw, Route, Send, Trophy } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CurrentStepContract, NarrativeTreeContract, PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, SessionContract, SessionStateContract, VisibleChoiceContract } from "@/shared/api/contracts";
 import { fetchStoryByVersionId } from "@/shared/api/catalog-browser";
 import { sessionStorageKey } from "@/shared/lib/local-sessions";
@@ -10,16 +10,17 @@ import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
 import { DocumentView } from "@/features/player/ui/document-view";
 import { useInstanceMedia } from "@/shared/assets/instance-media";
 import { useAudio } from "@/shared/audio/audio-provider";
+import { cueForPlayerCommand, cueForSessionStatus, type PlayerCommandKind } from "@/shared/audio/audio-signals";
 
 interface ConnectedPlayerProps { scenarioVersionId: string }
-type CommandKind = "choice" | "continue" | "consult" | "answer" | "text" | "confirm" | "pause" | "resume";
+type CommandKind = PlayerCommandKind;
 
 export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   // Le décor et l'ambiance du lieu « player » viennent de la configuration
   // publiée : ce que l'opérateur assigne dans le Studio est ce que le
   // navigateur charge ici, résolu par le même point unique.
   const playerMedia = useInstanceMedia("player");
-  const { setAmbienceUrl } = useAudio();
+  const { setAmbienceUrl, play } = useAudio();
   const [state, setState] = useState<SessionStateContract>();
   const [title, setTitle] = useState("Histoire");
   const [needsAuthentication, setNeedsAuthentication] = useState(false);
@@ -66,6 +67,20 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
 
   const scenarioVersion = state?.session.scenarioVersionId;
   const isCompleted = state?.session.status === "Completed";
+
+  // Piste longue sur la **transition** vers un état terminal, jamais sur chaque
+  // rechargement de la même session : sans cette comparaison, revenir sur une
+  // partie terminée relancerait l'épilogue à chaque aller-retour réseau.
+  const sessionStatus = state?.session.status;
+  const previousStatus = useRef<string>(undefined);
+  useEffect(() => {
+    const before = previousStatus.current;
+    previousStatus.current = sessionStatus;
+    if (!sessionStatus || before === undefined || before === sessionStatus) return;
+    const cue = cueForSessionStatus(sessionStatus);
+    if (cue) play(cue);
+  }, [play, sessionStatus]);
+
   useEffect(() => {
     if (!isCompleted || !scenarioVersion) return;
     const controller = new AbortController();
@@ -108,6 +123,10 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
         body: JSON.stringify({ kind, commandId: kind === "pause" || kind === "resume" ? undefined : crypto.randomUUID(), expectedRevision: state.session.revision, value }),
       });
       if (!response.ok) throw await responseError(response);
+      // Le signal suit l'acceptation par le moteur, pas le clic : un refus ne
+      // doit pas sonner comme une avancée. Il double la scène qui se redessine.
+      const cue = cueForPlayerCommand(kind);
+      if (cue) play(cue);
       await loadSession(state.session.id);
       if (kind === "confirm") setText("");
     });
@@ -121,7 +140,9 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
 
   async function run(action: () => Promise<void>) {
     setBusy(true); setError(undefined);
-    try { await action(); } catch (reason) { setError(message(reason)); }
+    // Cet écran affiche ses erreurs en ligne (`player-error`, `role="alert"`)
+    // et ne passe pas par les notices : le signal se déclenche donc ici.
+    try { await action(); } catch (reason) { setError(message(reason)); play("signature.error"); }
     finally { setBusy(false); }
   }
 

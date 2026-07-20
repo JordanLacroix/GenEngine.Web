@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Bookmark, DoorOpen, Gift, MousePointer2, RotateCcw, Route, Sparkles, TriangleAlert, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Bookmark, DoorOpen, Gift, MousePointer2, RotateCcw, Route, Sparkles, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import type { Route as AppRoute } from "next";
 import { useMemo, useState } from "react";
@@ -9,11 +9,14 @@ import { demoStory } from "@/shared/mocks/stories";
 import { demoQuestTree, readDemoQuestMemory, rememberDemoQuestSteps, type DemoQuestMemory } from "@/features/player/model/demo-quest-tree";
 import type { QuestTreeInput } from "@/features/player/model/quest-graph";
 import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
+import { useAudio } from "@/shared/audio/audio-provider";
+import { cueForDemoOutcome } from "@/shared/audio/audio-signals";
+import { AudioToggle } from "@/shared/ui/audio-toggle";
 
 export function DemoPlayer() {
+  const { play } = useAudio();
   const [sceneId, setSceneId] = useState(demoStory.openingSceneId);
   const [history, setHistory] = useState<string[]>([]);
-  const [sound, setSound] = useState(false);
   const [interactionDone, setInteractionDone] = useState(false);
   const [choiceHistory, setChoiceHistory] = useState<string[]>([]);
   const [memory, setMemory] = useState<DemoQuestMemory>({ nodeIds: [], choiceIds: [] });
@@ -32,7 +35,13 @@ export function DemoPlayer() {
     setInteractionDone(false);
     // Reaching an ending closes the run: merge it into the memory kept on this device.
     const next = demoStory.scenes.find((candidate) => candidate.id === nextSceneId);
-    if (next && next.choices.length === 0) setMemory(rememberDemoQuestSteps(readDemoQuestMemory(), [...path, nextSceneId], choices));
+    if (next && next.choices.length === 0) {
+      setMemory(rememberDemoQuestSteps(readDemoQuestMemory(), [...path, nextSceneId], choices));
+      // Le bilan de fin s'affiche dans la foulée : la piste le double.
+      play(cueForDemoOutcome(next.outcome ?? "accord"));
+    } else {
+      play("signature.choice");
+    }
   }
 
   function goBack() {
@@ -51,7 +60,10 @@ export function DemoPlayer() {
       <header className="player-header">
         <Link href={"/plateforme" as AppRoute} className="icon-button"><ArrowLeft aria-hidden="true" /><span className="sr-only">Quitter le récit</span></Link>
         <div className="player-title"><span>{demoStory.eyebrow}</span><strong>{demoStory.title}</strong></div>
-        <div className="player-tools"><button type="button" className="icon-button" onClick={() => setSound((value) => !value)}>{sound ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}<span className="sr-only">{sound ? "Couper l'ambiance" : "Activer l'ambiance"}</span></button><button type="button" className="icon-button"><Bookmark aria-hidden="true" /><span className="sr-only">Ajouter aux favoris</span></button></div>
+        {/* Ce bouton pilotait un état local sans effet : il affichait un
+            réglage sonore qui ne réglait rien. Il cède la place au réglage
+            réel de la HUD, qui se désactive quand aucun son n'est jouable. */}
+        <div className="player-tools"><AudioToggle /><button type="button" className="icon-button"><Bookmark aria-hidden="true" /><span className="sr-only">Ajouter aux favoris</span></button></div>
       </header>
       <div className="player-progress" aria-label={`Progression estimée ${Math.round(progress)} %`}><span style={{ width: `${progress}%` }} /></div>
       <main className="scene" key={scene.id}>

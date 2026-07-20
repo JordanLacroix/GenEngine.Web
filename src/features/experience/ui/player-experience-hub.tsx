@@ -41,7 +41,7 @@ export function PlayerExperienceHub() {
   const feedback = useFeedback();
   useAmbience("ambience.map");
   const mapMedia = useInstanceMedia("map");
-  const { setAmbienceUrl } = useAudio();
+  const { setAmbienceUrl, play } = useAudio();
   // L'ambiance assignée par l'opérateur remplace le signal par défaut tant que
   // la carte est montée. Elle reste soumise au réglage sonore et à
   // `prefers-reduced-motion`, appliqués dans le fournisseur.
@@ -158,7 +158,8 @@ export function PlayerExperienceHub() {
       }));
       const refreshed = await read<Context>(await fetch("/api/me"));
       setContext(refreshed);
-      if (state.status === "Completed") setShowsKeyReward(true);
+      // La clé apparaît à l'écran dans `KeyReward` : le signal la double.
+      if (state.status === "Completed") { setShowsKeyReward(true); play("signature.reward"); }
     });
   }
 
@@ -272,7 +273,9 @@ export function PlayerExperienceHub() {
             style={{ left: `${position.x}px`, top: `${position.y}px`, ["--door-accent" as string]: accentValue(place.accent, "var(--or)") }}
             aria-haspopup="dialog"
             aria-expanded={openPlaceId === place.id}
-            onClick={() => setOpenPlaceId(place.id)}
+            // La porte s'ouvre visiblement sur `PlaceOverlay` : le signal
+            // accompagne l'ouverture, il ne l'annonce pas seul.
+            onClick={() => { setOpenPlaceId(place.id); play("signature.door"); }}
           >
             <span className="door-arch"><DoorOpen aria-hidden="true" /></span>
             <strong>{place.name}</strong>
