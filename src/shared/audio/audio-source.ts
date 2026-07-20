@@ -15,6 +15,13 @@ export interface AudioSource {
   readonly name: string;
   readonly license: string;
   readonly attribution: string;
+  /**
+   * Signaux qui se résolvent **réellement** vers un fichier que ce navigateur
+   * sait décoder. Un manifeste chargé ne suffit pas : un pack qui ne publie que
+   * de l'Ogg laisse cette liste vide sur Safari, et l'interface doit alors
+   * annoncer le son indisponible au lieu d'afficher un réglage inopérant.
+   */
+  readonly playableCues: readonly AudioCue[];
   /** `undefined` quand aucun asset n'est publié pour ce signal. */
   resolve(cue: AudioCue): AudioAssetContract | undefined;
 }
@@ -38,6 +45,7 @@ export function manifestAudioSource(manifest: AudioManifestContract, canPlay: Ca
     name: manifest.name,
     license: manifest.license,
     attribution: manifest.attribution,
+    playableCues: [...byCue].filter(([, asset]) => asset).map(([cue]) => cue as AudioCue),
     resolve: (cue) => byCue.get(cue),
   };
 }
@@ -51,8 +59,32 @@ export const silentAudioSource: AudioSource = {
   name: "Aucun pack audio",
   license: "—",
   attribution: "Le pack sonore n’est pas encore publié pour cette instance.",
+  playableCues: [],
   resolve: () => undefined,
 };
+
+/**
+ * Pourquoi le son ne peut pas être proposé. `undefined` quand il le peut.
+ *
+ * Les deux cas appellent des réponses différentes : publier un pack relève de
+ * l'exploitant, changer de navigateur relève de la personne devant l'écran.
+ */
+export type AudioUnavailableReason = "no-pack" | "unsupported-format";
+
+/**
+ * Le son est-il **réellement** jouable ?
+ *
+ * Un manifeste chargé ne suffit pas : le pack livré ne publie que de l'Ogg, que
+ * Safari refuse. Faire dépendre la disponibilité du seul chargement affichait
+ * un réglage sonore actif dans un état où rien ne pouvait sortir — l'interface
+ * mentait. La question est donc « au moins un signal se résout-il ? ».
+ */
+export function audioAvailability(
+  source: AudioSource,
+): { available: boolean; reason?: AudioUnavailableReason } {
+  if (source.playableCues.length > 0) return { available: true };
+  return { available: false, reason: source === silentAudioSource ? "no-pack" : "unsupported-format" };
+}
 
 /**
  * Charge le manifeste servi par le client. L'absence de manifeste est un état

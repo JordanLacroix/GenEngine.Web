@@ -5,6 +5,8 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from "react";
 import { randomId } from "@/shared/lib/random-id";
+import { useAudio } from "@/shared/audio/audio-provider";
+import { cueForFeedbackTone } from "@/shared/audio/audio-signals";
 
 /**
  * Système unique de confirmation et de retour.
@@ -75,14 +77,22 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     setNotices((current) => current.filter((notice) => notice.id !== id));
   }, []);
 
+  // Chaque notice est déjà affichée avec son icône et son texte : le signal
+  // sonore ne fait que la souligner, et n'apporte donc aucune information que
+  // l'écran ne porte pas. C'est le point unique où « erreur » et « réussite »
+  // passent, ce qui évite d'éparpiller des appels à `play()` dans les écrans.
+  const { play } = useAudio();
+
   const notify = useCallback((notice: { tone: FeedbackTone; message: string; title?: string }) => {
     const id = randomId();
+    const cue = cueForFeedbackTone(notice.tone);
+    if (cue) play(cue);
     setNotices((current) => [...current.slice(-3), { ...notice, id }]);
     // Une erreur reste affichée : elle demande une décision, pas un coup d'œil.
     if (notice.tone !== "error") {
       setTimeout(() => setNotices((current) => current.filter((item) => item.id !== id)), noticeLifetimeMs);
     }
-  }, []);
+  }, [play]);
 
   const confirm = useCallback((options: ConfirmOptions) => new Promise<boolean>((resolve) => {
     // Une seconde demande remplace la première, mais ne l'abandonne pas : sans

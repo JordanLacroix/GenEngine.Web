@@ -141,7 +141,28 @@ un conflit de révision.
 
 ## Ce qui est cassé sur `main`
 
-**Rien d'identifié à ce jour.**
+**Le son ne produit rien, pour cinq causes cumulées.** Corrigé sur la branche
+`fix/web-audio-wiring` ; l'état décrit ici est celui de `main` avant elle.
+
+1. **Aucun déclencheur.** `play()` et `playUrl()` n'avaient **aucun appelant**
+   dans `src/`. Les six signaux liés au pack étaient morts par construction : le
+   manifeste les publiait, rien ne les jouait. Aucun test ne couvrait
+   `AudioProvider`, ce qui explique la longévité du défaut.
+2. **Aucune ambiance publiée.** Les vues demandent `ambience.map` et
+   `ambience.home` ; le manifeste ne déclare que quatre `signature.*` et deux
+   `music.*`. La résolution rendait `undefined`, et le silence était
+   indistinguable d'une panne.
+3. **`available` mesurait le mauvais fait.** Il valait « un manifeste est
+   chargé », pas « un fichier est lisible ». Le pack ne publiant que de l'Ogg,
+   Safari affichait un réglage sonore actif dans un état où rien ne pouvait
+   sortir : l'interface mentait.
+4. **`prefers-reduced-motion` coupait l'ambiance sans le dire.** Le bouton
+   restait affiché comme actif.
+5. La démonstration hors ligne portait **un second bouton son**, purement local,
+   branché sur un état sans aucun effet.
+
+Ce qui **n'était pas** en cause : le son coupé par défaut est une décision
+délibérée du produit, conservée.
 
 Corrigé sur cette branche : les sélecteurs `body > .site-footer` de
 `globals.css` et `platform.css` ne correspondaient à rien — le pied de page est
@@ -171,7 +192,8 @@ n'est un oubli.
 
 | Manque | Cause | Conséquence visible |
 |---|---|---|
-| Aucune boucle d'ambiance | Le catalogue CC0 de Kenney n'en publie pas. Aucune source non CC0 n'a été substituée. | Les 5 signaux `ambience.*` restent non liés. 6 signaux sur 11 sont liés au pack. |
+| Aucune boucle d'ambiance | Le catalogue CC0 de Kenney n'en publie pas. Aucune source non CC0 n'a été substituée. | Les 5 signaux `ambience.*` restent non liés. 6 signaux sur 11 sont liés au pack, et **tous les six sont désormais déclenchés**. Le manque est annoncé : `ambienceStatus` vaut `missing`, le réglage sonore le dit dans son libellé accessible, et une trace `console.info` nomme le signal demandé. |
+| Aucune source MP3 | Le pack Kenney publie de l'Ogg, et transcoder romprait la provenance vérifiable par empreinte. | Sur un navigateur qui refuse l'Ogg — Safari —, aucun signal ne se résout : le réglage sonore est alors **désactivé** et annonce « ce navigateur ne sait lire aucun des formats publiés », au lieu de se laisser activer en vain. |
 | Aucune musique longue | Idem : seulement des stingers courts. Les pistes de 48 s par acte restent à produire. | `music.ending` et `music.gameOver` jouent un jingle, pas une piste. |
 | Aucune illustration peinte dans le pack | Kenney ne publie pas de 2D compatible avec la direction artistique Diapason. | Le pack ne contient que de l'UI, des icônes, des sfx et des stingers. Aucun décor de scène. |
 | Aucun portrait de personnage dans le pack | Idem. | Le seul portrait livré est `public/illustrations/familiar-aster.jpg`, un asset projet, pas un asset du pack. |
@@ -239,7 +261,8 @@ docker compose down
 
 ## Ce qui n'a jamais été vérifié
 
-- La sortie sonore **réelle** : le navigateur automatisé confirme que la lecture démarre sans erreur, pas qu'un son est audible.
+- La sortie sonore **réelle** : personne n'a entendu ces signaux. Le câblage est vérifié par les tests et par la lecture du code ; qu'un son sorte effectivement des haut-parleurs, au bon volume et au bon moment, reste à confirmer à l'oreille sur un navigateur de bureau, son activé depuis la HUD.
+- Le comportement sur Safari : le cas « aucun format lisible » est vérifié par un test qui injecte `canPlay` faux, jamais sur un Safari réel.
 - Le pack `diapason-core` servi par le backend (`GET /asset-packs/{packId}/files/…`). Les deux copies sont réputées identiques ; seule celle du client est testée.
 - Les états de refus de `/library/[versionId]` — 401, `422 content_not_assigned`, 404 — sur une instance Play réelle.
 - La sortie sonore d'une instance dont le `branding` publie une police : `--brand-font-story` est appliquée, mais aucune configuration servie n'en déclare encore une différente de la nôtre.
@@ -274,7 +297,9 @@ part entière, et les empiler dans une seule PR aurait rendu la revue impossible
 - Un écran qui affiche un nombre de récits affiche le `total` du serveur, jamais le nombre d'éléments chargés ; une recherche sur une liste paginée est exécutée par le serveur, jamais sur la page.
 - Masquer une action dans l'interface ne remplace jamais l'autorisation serveur.
 - Accessibilité clavier, contrastes et `prefers-reduced-motion`.
-- Le son est optionnel, désactivé par défaut, et ne porte jamais seul une information.
+- Le son est optionnel, désactivé par défaut, et ne porte jamais seul une information. Chaque signal est câblé à un évènement **déjà visible** ; la correspondance vit dans `src/shared/audio/audio-signals.ts`, en fonctions pures et testées.
+- Le réglage sonore n'est proposé actif que si un signal au moins se résout vers un fichier lisible par ce navigateur. Un réglage qui ne règle rien est un mensonge de l'interface.
+- `prefers-reduced-motion` gouverne l'animation, **pas le son** : le son a son propre réglage explicite, et une préférence de mouvement n'a pas à le contredire en silence.
 - Une porte de la carte ouvre toujours une interface réelle ou dit pourquoi elle est vide.
 - Une capacité que le moteur n'expose pas est annoncée absente, jamais simulée.
 - Un média assigné est toujours auditionnable ou visible dans le Studio même.

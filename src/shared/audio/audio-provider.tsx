@@ -6,7 +6,12 @@ import {
 import {
   type AmbienceCue, type AudioCue, type AudioLayer, layerOf, layerVolume,
 } from "@/shared/audio/audio-contract";
-import { type AudioSource, browserCanPlay, loadAudioSource, silentAudioSource } from "@/shared/audio/audio-source";
+import {
+  type AudioSource, type AudioUnavailableReason, audioAvailability, browserCanPlay, loadAudioSource,
+  silentAudioSource,
+} from "@/shared/audio/audio-source";
+
+export type { AudioUnavailableReason };
 
 const storageKey = "genengine.audio.enabled";
 const manifestUrl = "/audio/manifest.json";
@@ -27,19 +32,29 @@ function writeEnabled(value: boolean) {
   for (const listener of enabledListeners) listener();
 }
 
-const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
-function subscribeReducedMotion(listener: () => void) {
-  const query = window.matchMedia(reducedMotionQuery);
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
-}
-function readReducedMotion() { return window.matchMedia(reducedMotionQuery).matches; }
+/** État de l'ambiance du lieu courant, annoncé plutôt que deviné. */
+export type AmbienceStatus =
+  /** Aucun lieu ne demande d'ambiance. */
+  | "idle"
+  /** Une ambiance est demandée et joue. */
+  | "playing"
+  /** Une ambiance est demandée mais le réglage sonore est coupé. */
+  | "muted"
+  /** Une ambiance est demandée et **aucun asset ne la fournit**. */
+  | "missing";
 
 interface AudioState {
   /** Le son est explicitement activé par la personne qui joue. */
   enabled: boolean;
-  /** Un pack est publié : sans lui, proposer un réglage sonore serait mentir. */
+  /**
+   * Le son peut réellement être joué : un pack est publié **et** ce navigateur
+   * sait décoder au moins un de ses fichiers. Un manifeste chargé dont aucune
+   * source n'est lisible ne rend pas le son disponible.
+   */
   available: boolean;
+  unavailableReason?: AudioUnavailableReason;
+  /** Ambiance du lieu courant, pour que l'interface puisse annoncer un manque. */
+  ambienceStatus: AmbienceStatus;
   source: AudioSource;
   error?: string;
   setEnabled(value: boolean): void;
@@ -68,13 +83,19 @@ export function useAudio(): AudioState {
 
 /**
  * Le son n'est jamais le seul porteur d'une information : chaque signal double
- * une indication déjà visible. Il est désactivé par défaut, se règle depuis la
- * HUD, et l'ambiance continue reste coupée quand la personne demande moins
- * d'animations.
+ * une indication déjà visible. Il est désactivé par défaut et se règle depuis
+ * la HUD.
+ *
+ * `prefers-reduced-motion` ne coupe **pas** l'ambiance. Ce réglage exprime une
+ * demande sur le mouvement — vestibulaire —, pas sur le son ; le confondre
+ * avec une préférence sonore rendait l'application muette pour ces personnes
+ * alors que le bouton de la HUD s'affichait actif, c'est-à-dire mensonger. Le
+ * son a déjà son propre réglage, explicite et coupé par défaut : activer le son
+ * est un acte délibéré qu'une préférence d'animation n'a pas à contredire en
+ * silence.
  */
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const enabled = useSyncExternalStore(subscribeEnabled, readEnabled, () => false);
-  const reducedMotion = useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => false);
   const [source, setSource] = useState<AudioSource>(silentAudioSource);
   const [error, setError] = useState<string>();
   const ambienceRef = useRef<HTMLAudioElement>(null);
@@ -92,7 +113,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  const available = source !== silentAudioSource;
+  const { available, reason: unavailableReason } = audioAvailability(source);
+
+  const resolvedAmbienceUrl = ambienceUrl ?? (ambience ? source.resolve(ambience)?.url : undefined);
+  const ambienceStatus: AmbienceStatus = !ambience && !ambienceUrl ? "idle"
+    : !resolvedAmbienceUrl ? "missing"
+      : enabled ? "playing" : "muted";
 
   const setEnabled = useCallback((value: boolean) => writeEnabled(value), []);
 
@@ -139,16 +165,29 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (!element) return;
     // Une URL assignée par l'opérateur prime sur le signal du pack : c'est le
     // choix explicite d'une instance, pas un défaut de produit.
-    const url = ambienceUrl ?? (ambience ? source.resolve(ambience)?.url : undefined);
-    if (!enabled || reducedMotion || !url) { element.pause(); return; }
-    if (element.getAttribute("src") !== url) element.setAttribute("src", url);
+    if (!enabled || !resolvedAmbienceUrl) { element.pause(); return; }
+    if (element.getAttribute("src") !== resolvedAmbienceUrl) element.setAttribute("src", resolvedAmbienceUrl);
     element.volume = layerVolume.ambience;
     void element.play().catch(() => undefined);
-  }, [ambience, ambienceUrl, enabled, reducedMotion, source]);
+  }, [enabled, resolvedAmbienceUrl]);
+
+  useEffect(() => {
+    // Un lieu qui réclame une ambiance qu'aucun asset ne fournit produit un
+    // silence indistinguable d'une panne. Le pack livré n'en publie aucune : le
+    // manque est donc tracé, plutôt que subi.
+    if (ambienceStatus !== "missing" || !ambience) return;
+    console.info(`[audio] Ambiance « ${ambience} » demandée mais absente du pack publié : ce lieu reste silencieux.`);
+  }, [ambience, ambienceStatus]);
 
   const value = useMemo<AudioState>(
-    () => ({ enabled, available, source, error, setEnabled, play, setAmbience, setAmbienceUrl, playUrl }),
-    [available, enabled, error, play, playUrl, setAmbience, setAmbienceUrl, setEnabled, source],
+    () => ({
+      enabled, available, unavailableReason, ambienceStatus, source, error,
+      setEnabled, play, setAmbience, setAmbienceUrl, playUrl,
+    }),
+    [
+      ambienceStatus, available, enabled, error, play, playUrl, setAmbience, setAmbienceUrl,
+      setEnabled, source, unavailableReason,
+    ],
   );
 
   return <AudioContext.Provider value={value}>

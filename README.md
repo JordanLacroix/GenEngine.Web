@@ -415,16 +415,28 @@ requête de même origine (`Sec-Fetch-Site`).
 ### Son
 
 Le client lit `/audio/manifest.json` au démarrage. Ce manifeste **est publié** :
-**6 des 11 signaux** du contrat sont liés au pack `diapason-core`, et le réglage
-sonore de la HUD est actif. Les **5 signaux `ambience.*` restent muets** parce que
-le pack déclare ne fournir aucune boucle d’ambiance ; les deux signaux `music.*`
-jouent un stinger court, faute de piste longue. Sans manifeste du tout, la source
-resterait silencieuse et le réglage désactivé en affichant la raison — aucun son
-n’est jamais simulé.
+**6 des 11 signaux** du contrat sont liés au pack `diapason-core`, et **chacun
+des six est déclenché** par un évènement de l’interface : choix accepté par le
+moteur, erreur affichée, récompense obtenue, ouverture d’un lieu ou d’un
+document, fin de récit, fin de partie. La correspondance vit dans
+[`src/shared/audio/audio-signals.ts`](src/shared/audio/audio-signals.ts), en
+fonctions pures et testées.
 
-Le son est désactivé par défaut, ne porte jamais seul une information, et
-l’ambiance continue reste coupée sous `prefers-reduced-motion`. Le contrat attendu
-est décrit dans [`public/audio/README.md`](public/audio/README.md).
+Les **5 signaux `ambience.*` restent muets** parce que le pack déclare ne fournir
+aucune boucle d’ambiance ; le manque est **annoncé** — le réglage sonore le dit
+dans son libellé accessible — plutôt que laissé à un silence qu’on confondrait
+avec une panne. Les deux signaux `music.*` jouent un stinger court, faute de
+piste longue. Aucun son n’est jamais simulé.
+
+Le réglage de la HUD n’est actif que si un signal au moins se résout vers un
+fichier que **ce navigateur** sait décoder. Le pack ne publiant que de l’Ogg, un
+navigateur qui le refuse voit un bouton désactivé qui en donne la raison, plutôt
+qu’un réglage qui ne réglerait rien.
+
+Le son est désactivé par défaut et ne porte jamais seul une information.
+`prefers-reduced-motion` gouverne l’animation, **pas le son** : ce réglage porte
+sur le mouvement, le son a déjà le sien, explicite et coupé par défaut. Le
+contrat attendu est décrit dans [`public/audio/README.md`](public/audio/README.md).
 
 ### Packs visuels de familier
 
