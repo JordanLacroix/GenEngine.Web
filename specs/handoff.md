@@ -1,6 +1,6 @@
 # Passage de relais
 
-Dernière mise à jour : 20 juillet 2026, sur `feat/render-documents-and-branding`.
+Dernière mise à jour : 21 juillet 2026, sur `feat/web-profile-stats-rewards`.
 
 Ce document décrit l'état **réel** du client. Il distingue trois catégories et ne
 les mélange pas : ce qui est livré et vérifié, ce qui est cassé, et ce qui est
@@ -57,6 +57,7 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
 - Graphe de quête complet avec mémoire cumulée de toutes les parties, en fin de quête comme sur `/library/[versionId]`, qui lit `GET /scenario-versions/{versionId}/tree` sur Play. Une seule implémentation de disposition : la structure sans état passe par l'adaptateur `questTreeFromStructure`.
 - Administration : RBAC, rôles custom, Entra ID, Azure AI Foundry, économie, périodes métier, unités, memberships, import CSV prévalidé et affectations.
 - Carte à portes : une ancre par posture sur les deux illustrations, projection tenant le ratio du viewport, et décalage en spirale au-delà des clairières dessinées (`doorAnchorForIndex`) pour qu'aucune porte ne se superpose. Franchir une porte ouvre un `dialog` modal listant les scénarios du lieu ; un lieu sans contenu le dit.
+- Profil joueur (onglet Compte) : les **statistiques joueur** (`stats`) sont rendues en jauges libellé/valeur/plafond doublées d'un texte, et les **récompenses conditionnelles** (`rewards`) en obtenues (avec date) et à venir (progression par condition), sans porte fermée. Les deux blocs sont **facultatifs** : sur une instance qui ne les publie pas, `/me/experience` les renvoie vides ou absents et l'écran l'affiche sans rien fabriquer. La logique de présentation et le décodage tolérant (`mode` et nature d'octroi en union `X | string`) vivent dans `src/features/experience/model/profile-progress.ts`, testés. Non vérifié visuellement : l'instance locale sert les deux blocs **vides** et le compte de test reste bloqué avant la carte, donc seuls les états vides seraient rendus ; la forme des données a été confrontée aux records du moteur (`PlayerStatView`, `ConditionalRewardView`, `ProgressConditionProgress`, `RewardGrantPlan`) et au flux `/api/me`.
 
 ### Documents consultables (schéma de scénario v6)
 
