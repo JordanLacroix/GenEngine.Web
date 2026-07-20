@@ -112,7 +112,7 @@ docker compose down
 - `lychee.toml` exclut les badges `img.shields.io`. Un délai d'attente compte comme un échec chez le vérificateur de liens, et ces badges décoratifs bloquaient chaque merge dans le dépôt `GenEngine`. N'enlève pas cette exclusion.
 - `lychee.toml` exclut aussi `node_modules` et `.next` via `exclude_path` : sans cela, le glob `**/*.md` balaierait les dépendances installées.
 - Le pack `diapason-core` **déclare ses manques** dans `gaps[]` (`public/packs/manifest.json`). Lis-les avant d'affirmer qu'un média existe : il n'y a ni boucle d'ambiance, ni musique longue, ni illustration peinte.
-- Les illustrations **JPEG** de `public/illustrations/` sont des visuels d'heroic fantasy hérités d'une itération antérieure. Elles ne correspondent pas à la direction artistique Diapason ; ne les décris pas comme telles. `diapason-resonance.svg` est l'exception : composition abstraite produite pour cette configuration, et seul visuel de l'accueil.
+- Les illustrations **JPEG** restantes de `public/illustrations/` (dont `tutorial-key.jpg`) sont des visuels d'heroic fantasy hérités d'une itération antérieure. Elles ne correspondent pas à la direction artistique Diapason ; ne les décris pas comme telles. Les compositions **SVG** — `diapason-resonance.svg` (accueil), `diapason-domains.svg` (carte de l'expérience) et `familiar-tierce.svg` (portrait du familier) — sont, elles, produites pour cette configuration.
 - Ne réintroduis jamais d'image distante par URL. Un hotlink Unsplash a déjà été retiré deux fois de ce produit ; un visuel se livre dans `public/`.
 
 ## Prochaine tâche
@@ -132,7 +132,7 @@ client** :
    servent l'univers Diapason. C'est une production d'assets.
 
 Réserve mineure sur la carte : au-delà de six catégories publiées, une porte est
-décalée en spirale et tombe hors clairière dessinée (`doorAnchorForIndex`). Jamais
+décalée en spirale et tombe hors champ dessiné (`doorAnchorForIndex`). Jamais
 superposée, mais pas placée à la main.
 
 N'implémente rien au-delà sans besoin utilisateur validé.

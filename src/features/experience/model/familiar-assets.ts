@@ -11,22 +11,22 @@ export interface FamiliarAssetPack {
 
 const storageKey = "genengine.familiar.asset-pack";
 
-export const bundledAsterPack: FamiliarAssetPack = {
+export const bundledTiercePack: FamiliarAssetPack = {
   schemaVersion: 1,
-  id: "genengine.aster.original",
-  name: "Aster — constellation",
-  portraitUrl: "/illustrations/familiar-aster.jpg",
+  id: "genengine.tierce.original",
+  name: "Tierce — intervalle",
+  portraitUrl: "/illustrations/familiar-tierce.svg",
   backgroundUrl: "/illustrations/diapason-resonance.svg",
   license: "GenEngine project asset — no external trademark or ownership metadata",
-  attribution: "Illustration originale générée pour GenEngine",
+  attribution: "Composition SVG originale produite pour GenEngine",
 };
 
 export function readFamiliarAssetPack(): FamiliarAssetPack {
-  if (typeof window === "undefined") return bundledAsterPack;
+  if (typeof window === "undefined") return bundledTiercePack;
   const stored = window.localStorage.getItem(storageKey);
-  if (!stored) return bundledAsterPack;
+  if (!stored) return bundledTiercePack;
   try { return parseFamiliarAssetPack(stored); }
-  catch { return bundledAsterPack; }
+  catch { return bundledTiercePack; }
 }
 
 export function saveFamiliarAssetPack(pack: FamiliarAssetPack) {

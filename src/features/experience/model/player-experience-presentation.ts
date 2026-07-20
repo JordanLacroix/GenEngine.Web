@@ -1,15 +1,29 @@
 import type { JournalEntryContract, ScenarioMasteryContract } from "@/shared/api/contracts";
 
 export const worldMapSize = { width: 1536, height: 1024 } as const;
-// Une ancre par clairière de l'illustration. Il en faut au moins autant que de
-// catégories publiées : la configuration de référence en compte six.
+// Une ancre par domaine du plan. Il en faut au moins autant que de catégories
+// publiées : la configuration de référence en compte six.
+//
+// Ces six coordonnées ne sont pas choisies après coup sur une image existante :
+// elles sont les centres des six champs dessinés dans `diapason-domains.svg`, et
+// les deux fichiers se modifient ensemble. L'anneau évite délibérément le coin
+// supérieur gauche, occupé par le titre de la carte.
 export const worldDoorAnchors = [
-  { x: 850, y: 280 }, { x: 1230, y: 400 }, { x: 390, y: 330 },
-  { x: 380, y: 680 }, { x: 1070, y: 760 }, { x: 776, y: 560 },
+  { x: 768, y: 268 }, { x: 1200, y: 360 }, { x: 1240, y: 700 },
+  { x: 830, y: 800 }, { x: 420, y: 716 }, { x: 392, y: 430 },
 ] as const;
+// En portrait, `projectMapPoint` recadre en `cover` sur la largeur : seule une
+// bande centrale du plan reste visible, en pratique `x` entre 530 et 1005 sur un
+// téléphone courant. Les ancres larges tomberaient hors champ — d'où deux
+// colonnes resserrées, qui restent dans cette bande à toutes les tailles.
+//
+// La grille est aussi décalée vers le bas : sur mobile le titre de la carte
+// occupe le premier tiers de l'écran et la barre d'onglets le dernier huitième.
+// Trois rangées placées naïvement au centre de l'image passaient sous le texte
+// du titre, où elles restaient cliquables mais illisibles.
 export const compactWorldDoorAnchors = [
-  { x: 850, y: 280 }, { x: 770, y: 570 }, { x: 1070, y: 760 },
-  { x: 620, y: 410 }, { x: 930, y: 440 }, { x: 390, y: 330 },
+  { x: 658, y: 416 }, { x: 879, y: 416 }, { x: 658, y: 618 },
+  { x: 879, y: 618 }, { x: 658, y: 820 }, { x: 879, y: 820 },
 ] as const;
 
 export function doorAnchorsForViewport(viewport: { width: number; height: number }) {
@@ -17,13 +31,13 @@ export function doorAnchorsForViewport(viewport: { width: number; height: number
 }
 
 /**
- * Position d'une porte, y compris au-delà des clairières dessinées.
+ * Position d'une porte, y compris au-delà des six domaines dessinés.
  *
  * Un simple `anchors[index % anchors.length]` empilait deux portes au pixel près
  * dès qu'une catégorie de plus était publiée : la sixième retombait exactement
  * sur la première et la rendait inatteignable. Au-delà des ancres dessinées, on
- * décale donc chaque tour supplémentaire en spirale — moins joli qu'une
- * clairière choisie à la main, mais jamais superposé.
+ * décale donc chaque tour supplémentaire en spirale — moins juste qu'un champ
+ * dessiné pour elle, mais jamais superposé.
  */
 export function doorAnchorForIndex(index: number, viewport: { width: number; height: number }) {
   const anchors = doorAnchorsForViewport(viewport);
