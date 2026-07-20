@@ -1,6 +1,6 @@
 # Passage de relais
 
-Dernière mise à jour : 19 juillet 2026, sur `feat/ux-entry-navigation`.
+Dernière mise à jour : 20 juillet 2026, sur `feat/render-documents-and-branding`.
 
 Ce document décrit l'état **réel** du client. Il distingue trois catégories et ne
 les mélange pas : ce qui est livré et vérifié, ce qui est cassé, et ce qui est
@@ -15,6 +15,7 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
 - Le JWT vit dans le cookie `HttpOnly` `genengine_access` ; le navigateur ne conserve que des références opaques.
 - Image Next.js `standalone` multi-stage, conteneur non-root, filesystem en lecture seule, healthcheck.
 - CI qualité : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `docker compose config --quiet`, `docker build`.
+- La coque lit `GET /client-bootstrap/default` à chaque rendu, ce qui rend `/account`, `/administration`, `/experience` et `/library` **dynamiques** alors qu'elles étaient statiques. C'est assumé : ces quatre pages sont des coques qui appellent `/api/me` dès le montage, leur HTML statique ne portait rien, et le rendu serveur est ce qui évite d'afficher « GenEngine » puis « Le Diapason » à la première peinture.
 - CI gouvernance : revue de dépendances, CodeQL (JavaScript/TypeScript), qualité documentaire (markdownlint et lychee), politique de titre de PR, sécurité des workflows (actionlint et zizmor), Scorecard OpenSSF. Voir le tableau dans [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ### Entrée, navigation et retours
@@ -56,6 +57,54 @@ délibérément absent. Une intention n'y est jamais écrite au présent de l'in
 - Graphe de quête complet avec mémoire cumulée de toutes les parties, en fin de quête comme sur `/library/[versionId]`, qui lit `GET /scenario-versions/{versionId}/tree` sur Play. Une seule implémentation de disposition : la structure sans état passe par l'adaptateur `questTreeFromStructure`.
 - Administration : RBAC, rôles custom, Entra ID, Azure AI Foundry, économie, périodes métier, unités, memberships, import CSV prévalidé et affectations.
 - Carte à portes : une ancre par posture sur les deux illustrations, projection tenant le ratio du viewport, et décalage en spirale au-delà des clairières dessinées (`doorAnchorForIndex`) pour qu'aucune porte ne se superpose. Franchir une porte ouvre un `dialog` modal listant les scénarios du lieu ; un lieu sans contenu le dit.
+
+### Documents consultables (schéma de scénario v6)
+
+Vérifié en conditions réelles contre la pile locale. **Les dix scénarios** de la
+configuration de référence portent un document facultatif dont la consultation
+ouvre un choix conditionné, sur **six natures** distinctes. Les six ont été
+ouvertes à l'écran :
+
+| Nature | Scénario témoin | Ce qui est rendu |
+|---|---|---|
+| `Table` | *Le tri des candidatures* | Une vraie `<table>` de 4 colonnes, en-tête `Source`, paragraphe de commentaire, « 6 lignes affichées sur 412 ». |
+| `Diff` | *La revue automatique* | Lignes `Context` / `Removed` / `Added`, numérotées par leur `label`, gouttière `+` / `−` et couleur. **Aucun `excerpt` déclaré, donc aucune mention affichée.** |
+| `Log` | *Identité non reconnue* | Journal aligné en chasse fixe, horodatage en `label`, `Error` en rouge et `Warning` en ambre, « 9 entrées affichées sur 1 348 ». |
+| `Code` | *Le signalement* | Bloc `lines` numéroté **et** bloc `table` dans le même document — les deux formes cohabitent sans réglage particulier. |
+| `Memo` | *La note de service* | Quatre en-têtes (`Objet`, `De`, `Date`, `Signataire`), prose en typographie de lecture, « 4 paragraphes affichés sur 27 ». |
+| `Report` | *La réunion où personne ne doute* | `lines` étiquetées `POINT n`, table, paragraphe, « 4 paragraphes affichés sur 96 ». |
+
+Marqueurs réellement servis par le contenu : `Added`, `Removed`, `Context`,
+`Warning`, `Error`. Unités réellement servies : `Lines`, `Rows`, `Entries`,
+`Paragraphs`. `Info` et `Messages` sont gérés sans être exercés.
+
+- `kind: "Document"`, `document`, `isOptional` et `exitChoices` sont décrits dans `src/shared/api/contracts.ts`.
+- Le rendu vit dans `src/features/player/ui/document-view.tsx` ; les décisions de présentation testables — nature, forme, marqueurs, phrase d'échantillon — dans `src/features/player/model/document-presentation.ts` (16 tests, fixtures relevées sur la pile réelle).
+- **La consultation n'est jamais imposée** : les `exitChoices` sont rendus à côté du document, sous « Sans ouvrir le document ». Le composant `ExitChoices` les affiche pour toute interaction facultative, pas seulement pour un document.
+- `POST /sessions/{id}/document-consultations` passe par `/api/sessions/[id]` sous le verbe `consult`, avec `commandId` et `expectedRevision` comme toute commande joueur.
+- **Vérifié à l'écran, sur deux scénarios distincts** : le document présente **trois** choix de sortie ; après consultation, l'étape suivante en présente **quatre**. Sur *Le tri des candidatures* le quatrième est « Le 380e est pénalisé pour une interruption de parcours : demander ce que l'outil en sait vraiment » ; sur *La réunion où personne ne doute*, « Lire le point 3 mot pour mot, puis demander à quelle date les sources ont été indexées ». Aucun des deux n'existe pour qui n'a pas lu.
+
+L'échantillon s'annonce toujours en toutes lettres. `excerptSentence` est la
+seule fonction qui compose cette phrase, et un test fige « 6 lignes affichées
+sur 412 » : un échantillon présenté comme un tout serait un mensonge
+d'interface, et le jeu porte précisément sur la lucidité face à l'information.
+
+### Marque et palette de l'instance
+
+`GET /client-bootstrap/{frontId}` — anonyme — est lu **côté serveur** par la
+coque (`src/shared/api/client-bootstrap.ts`). Une configuration illisible
+retombe sur « GenEngine », qui nomme alors le moteur et non un jeu.
+
+- Le titre du document porte le nom de l'instance : `Le Diapason — …` en défaut, `%s · Le Diapason` en gabarit.
+- La pastille de marque **dérive son initiale du nom** (`brandInitial`) aux trois endroits qui la portent : en-tête global, `SectionNav`, et le HUD de `/experience`. Le « G » codé en dur a disparu. « Le Diapason » donne « D » — l'article initial est écarté.
+- `/parametres` dit « Le Diapason n'est qu'un client », plus « GenEngine Web ».
+- Le pied de page nomme l'instance, et crédite le moteur en seconde ligne.
+- `branding.theme.colors` et `branding.accentPalette` sont projetés en variables CSS sur `:root` **au rendu serveur** (`brandingStyleSheet`), donc sans bascule de couleur à la première peinture. Chaque teinte de `globals.css` les lit avec son littéral en repli : une instance sans bloc `branding` rend exactement comme avant.
+- Conséquence directe : `categories[].accent` est **enfin rendu**. Les portes de la carte portaient toutes le même or alors que `place.accent` était calculé puis jeté ; elles portent maintenant leur jeton (`--door-accent`), avec repli neutre pour un jeton absent de la palette.
+
+Une couleur qui n'est pas un hexadécimal strict est **écartée**, pas réécrite :
+le moteur n'en publie pas d'autre forme, et le repli littéral vaut mieux qu'une
+couleur devinée.
 
 ### Studio de configuration
 
@@ -130,21 +179,28 @@ n'est un oubli.
 | Game over de première classe | Le moteur ne publie que `isEnding` sur un nœud ; aucun drapeau d'échec dans `ScenarioStructureContract` ni `NarrativeTreeContract`. | L'échec est **narratif seulement**. Le champ `outcome` (`accord` / `partielle` / `rupture`) est un type **local à la démonstration** (`src/entities/story/model/story.ts`), jamais présenté comme un contrat serveur. Sur une rupture, l'interface désactive le retour arrière et promeut « Reprendre depuis le début » ; elle ne le supprime pas. |
 | Médias de scène et de choix | Le schéma narratif du moteur les refuse : `PUT /scenarios/{id}/draft` répond `200` sur un document intact et `422 invalid_json` sur le même document augmenté d'un `visualUrl` de nœud et d'un `animationCue` de choix. | Le Studio édite et prévisualise, puis nomme cette cause probable quand l'enregistrement échoue. Dépendance `GenEngine`. |
 
-### Les illustrations ne servent pas Diapason
+### Les illustrations restent partiellement hors sujet
 
-`public/illustrations/` contient quatre visuels d'**heroic fantasy** hérités d'une
-itération antérieure : `intro-gateway.jpg` (figure encapuchonnée devant un portail
-doré, cité elfique), `world-map.jpg` (îles flottantes isométriques avec phare,
-forêt enchantée, ruine gothique, forteresse de lave), `familiar-aster.jpg` (renard
-céleste à oreilles de cristal) et `tutorial-key.jpg`.
+`public/illustrations/` contenait quatre visuels d'**heroic fantasy** hérités
+d'une itération antérieure. Trois demeurent : `world-map.jpg` (îles flottantes
+isométriques avec phare, forêt enchantée, ruine gothique, forteresse de lave),
+`familiar-aster.jpg` (renard céleste à oreilles de cristal) et
+`tutorial-key.jpg`. Ils contredisent la configuration de référence — 2026, notre
+monde, IA partout, un apprenti d'école d'ingénieur.
 
-Ils contredisent la configuration de référence — 2026, notre monde, IA partout,
-un apprenti d'école d'ingénieur. La copie qui les entoure suit la même veine
-(« Chaque monde commence par une porte », « une clé », « un familier »).
+`intro-gateway.jpg` — figure encapuchonnée devant un portail doré, cité elfique —
+**a été retiré**. C'était le seul visuel de l'accueil, et il jurait avec un texte
+qui parle d'alternance et d'outils de présélection. Il est remplacé par
+`diapason-resonance.svg` : une composition **abstraite**, sans lieu ni
+personnage — un diapason stylisé, ses ondes concentriques, une trame de points
+régulière au centre et dispersée en périphérie. Le motif figure l'objet du jeu
+plutôt qu'un décor : une information qui paraît ordonnée. Le fichier est local et
+vectoriel ; **aucun hotlink externe**, un lien Unsplash ayant déjà été retiré
+deux fois de ce produit.
 
-Précision utile : l'accueil n'utilise qu'**un seul** de ces visuels,
-`intro-gateway.jpg`, en fond décoratif `aria-hidden`. Les trois autres
-appartiennent aux features `experience` et `player`.
+La copie qui entoure les trois visuels restants suit encore la veine héritée
+(« Chaque monde commence par une porte », « une clé », « un familier »). C'est
+une production d'assets et une passe de copie, pas du code client.
 
 ## Écarts de documentation corrigés le 19 juillet 2026
 
@@ -186,7 +242,28 @@ docker compose down
 - La sortie sonore **réelle** : le navigateur automatisé confirme que la lecture démarre sans erreur, pas qu'un son est audible.
 - Le pack `diapason-core` servi par le backend (`GET /asset-packs/{packId}/files/…`). Les deux copies sont réputées identiques ; seule celle du client est testée.
 - Les états de refus de `/library/[versionId]` — 401, `422 content_not_assigned`, 404 — sur une instance Play réelle.
-- **Le catalogue paginé contre le moteur réel.** La rupture de contrat vient de la PR backend `GenEngine` #55, non fusionnée : aucun moteur déployé ne renvoie encore l'enveloppe. Les tests sont écrits contre le contrat documenté et contre un backend simulé en mémoire ; ils prouvent le décodage et le parcours de pages de ce client, pas que le moteur les produise. Les deux PR doivent être fusionnées ensemble.
+- La sortie sonore d'une instance dont le `branding` publie une police : `--brand-font-story` est appliquée, mais aucune configuration servie n'en déclare encore une différente de la nôtre.
+
+Le catalogue paginé, lui, **a été exercé contre le moteur réel** : `GenEngine` #55
+est fusionnée (`ad6293e`) et l'enveloppe est renvoyée. Attention à un piège
+d'instance et non de code : le script d'installation Diapason n'est pas
+idempotent, et l'avoir rejoué a laissé **20 entrées pour 10 titres distincts**
+dans le catalogue local. Les doublons viennent des données, pas de la
+pagination du client.
+
+## Ce que le moteur sert et que le client ne consomme toujours pas
+
+Ces capacités sont **publiées et vérifiées par API**, mais aucun écran ne les
+lit. Elles sont listées ici pour qu'elles ne soient pas redécouvertes une
+troisième fois, et laissées de côté volontairement : chacune est une tranche à
+part entière, et les empiler dans une seule PR aurait rendu la revue impossible.
+
+| Capacité | Route | Pourquoi c'est laissé |
+|---|---|---|
+| Parcours, verrouillage et progression | `GET /me/experience/journeys` (5205) | Demande un écran de parcours qui n'existe pas : déblocage avec le **nom** du parcours bloquant, progression par parcours et par catégorie, parcours par défaut modifiable. La carte n'a aujourd'hui aucune notion de parcours. |
+| **202 descripteurs de champs** | `GET /admin/configuration/field-descriptors` (5204) | C'est le plus gros manque restant, et le besoin est explicite : « à chaque fois qu'il y a un champ dans les paramètres ou dans l'administration on doit savoir de quoi il s'agit ». Le composant `Field` n'a **structurellement pas de prop de description** ; il faut la lui ajouter, puis câbler les formulaires du Studio et de l'Administration par chemin de champ. Le motif de rendu existe déjà : `.field-effect` du configurateur de familier. |
+| Bloc `finale` | `GET /experience/{frontId}` | Scénario de fin avec conditions. Atteindre la fin **ne verrouille rien** ; il faut donc un écran qui montre la progression vers la fin sans se comporter comme un game over. Les libellés `finale.*` sont déjà publiés dans `language.labels`. |
+| Axes de familier étendus | `GET /experience/{frontId}` | Neuf axes catalogués, chacun avec libellé, description d'effet et jeton d'accent. Le configurateur en expose cinq, en dur. La palette d'accents étant désormais projetée en CSS, les jetons d'axe sont enfin rendables. |
 
 ## Décisions à préserver
 

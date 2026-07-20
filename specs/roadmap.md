@@ -60,7 +60,9 @@ Introduction rejouable depuis la connexion, démo sous l'authentification, créa
 
 Réserve : les illustrations utilisées par ce jalon relèvent d'une direction
 artistique d'heroic fantasy et ne correspondent pas à la configuration de
-référence « Le Diapason ». Voir [`handoff.md`](handoff.md).
+référence « Le Diapason ». Le visuel d'accueil a depuis été remplacé par une
+composition abstraite ; les trois autres restent à produire. Voir
+[`handoff.md`](handoff.md).
 
 ## Jalon 4.5 — carte du récit hors partie
 
@@ -100,13 +102,30 @@ Restent : l'export et les autres opérations en masse, le reporting collectif, l
 
 **Statut : en cours.**
 
+## Jalon 5.1 — rendre visible ce que le moteur sert déjà
+
+Documents consultables du schéma de scénario v6 rendus pour ce qu'ils sont —
+table en table, correctif en diff — avec l'aveu d'échantillonnage en toutes
+lettres et les choix de sortie présentés à côté, jamais après. Marque de
+l'instance lue depuis `GET /client-bootstrap/{frontId}` et palette d'accents
+publiée projetée en variables CSS, ce qui rend enfin `categories[].accent`.
+Visuel d'accueil abstrait à la place du portail médiéval.
+
+**Statut : terminé** (branche `feat/render-documents-and-branding`).
+
+Réserve : quatre capacités servies par le moteur restent non consommées —
+parcours (`GET /me/experience/journeys`), 202 descripteurs de champs, bloc
+`finale`, axes de familier étendus. Elles sont détaillées dans
+[`handoff.md`](handoff.md) avec la raison de leur report.
+
 ## Non planifié
 
 Aucune tranche n'est engagée au-delà du jalon 5. Trois chantiers sont identifiés
 et documentés dans [`handoff.md`](handoff.md) :
 
 1. Les médias de scène et de choix — dépendance du dépôt `GenEngine`.
-2. Une direction artistique servant réellement Diapason — production d'assets, pas de code.
+2. Une direction artistique servant réellement Diapason — production d'assets, pas de code. L'accueil est traité ; `world-map.jpg`, `familiar-aster.jpg` et `tutorial-key.jpg` restent des visuels d'heroic fantasy.
+3. Les quatre capacités moteur non consommées, listées dans [`handoff.md`](handoff.md). La plus attendue est l'aide intégrée par champ : le composant `Field` n'a structurellement pas de prop de description.
 
 Le placement des portes de la carte est corrigé et fusionné (#20). Il reste une
 réserve mineure : au-delà de six catégories, une porte est décalée en spirale et

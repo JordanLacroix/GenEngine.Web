@@ -131,10 +131,73 @@ inaccessible dès qu’une session existe.
 | `/library` | Bibliothèque et reprise de lecture |
 | `/library/[versionId]` | Carte complète du récit et mémoire cumulée, sans session ouverte |
 | `/play/demo` | Démonstration hors ligne « Le Diapason », trois situations au choix, réservée aux visiteurs anonymes — redirige vers `/experience` si une session existe |
-| `/play/[versionId]` | Session moteur : interactions, pause et arbre explicable |
+| `/play/[versionId]` | Session moteur : interactions, **documents consultables**, pause et arbre explicable |
 | `/studio` | Configuration du jeu : identité, catégories et parcours, familier, libellés, médias, scénarios — chaque section avec son aperçu |
 | `/experience` | Carte, tutoriel, journal, familier, magasin, aide et compte joueur |
 | `/administration` | Configuration plateforme et RBAC, distincts du Studio |
+
+## Documents consultables
+
+Le moteur présente des documents dans les scénarios (schéma de scénario v6), et
+le client les rend **pour ce qu'ils sont** : une table en table, un correctif en
+diff, un journal applicatif en journal.
+
+`GET /sessions/{id}/current-step` renvoie `kind: "Document"` et un objet
+`document` portant `title`, `nature`, `headers`, `excerpt` et `blocks`. Le
+vocabulaire de blocs est arrêté à trois formes — `paragraph`, `lines` (chacune
+avec un `marker` et un `label` facultatifs), `table` (`columns` + `rows`).
+
+Deux garanties tiennent l'écran :
+
+- **L'échantillon s'annonce.** Quand `excerpt` est présent, le document affiche
+  « 6 lignes affichées sur 412 ». Le moteur impose `shownUnits < totalUnits`, la
+  phrase retranche donc toujours quelque chose. Un échantillon présenté comme un
+  tout serait un mensonge d'interface, et le jeu porte précisément sur la
+  lucidité face à l'information. Un document montré intégralement ne déclare pas
+  d'`excerpt` et n'affiche aucune mention.
+- **Lire n'est jamais imposé.** Un document `isOptional` est présenté **à côté**
+  de ses `exitChoices`, sous « Sans ouvrir le document ». Consulter appelle
+  `POST /sessions/{id}/document-consultations` — une commande joueur idempotente
+  comme une autre, avec `commandId` et `expectedRevision`. Ignorer quitte le
+  nœud par un choix de sortie et ne laisse aucune trace.
+
+La conséquence est le sel de la mécanique : sur *Le tri des candidatures*, qui a
+lu le classement se voit proposer un quatrième choix — interroger le rang 380 —
+que celui qui ne l'a pas lu n'a pas.
+
+| Fichier | Rôle |
+|---|---|
+| `src/features/player/ui/document-view.tsx` | Rendu : table, lignes marquées, en-têtes, aveu d'échantillon |
+| `src/features/player/model/document-presentation.ts` | Décisions testables : nature, forme, marqueurs, phrase d'échantillon |
+
+Le marqueur d'une ligne est **aussi énoncé en texte** pour les lecteurs d'écran :
+la couleur et la gouttière (`+`, `−`, `!`) ne portent jamais seules
+l'information.
+
+## Marque et palette de l'instance
+
+`GET /client-bootstrap/{frontId}` sur Configuration (5204) est **anonyme** : un
+client doit pouvoir peindre son premier écran avant de détenir le moindre jeton.
+La coque la lit côté serveur et en tire le nom d'application, le nom court,
+l'accroche, le favicon et le thème.
+
+- Le titre du document, le pied de page, la pastille de marque et l'écran
+  `/parametres` nomment l'**instance**. L'initiale de la pastille dérive du nom
+  (« Le Diapason » → « D »), elle n'est plus un « G » codé en dur.
+- `branding.theme.colors` (huit jetons obligatoires) et `branding.accentPalette`
+  (jetons nommés `or`, `azur`, `encre`, `sauge`… → vraies couleurs) sont posés en
+  variables CSS sur `:root` au rendu serveur, avant la première peinture.
+- Chaque teinte de `globals.css` lit la variable **avec son littéral en repli** :
+  une instance sans bloc `branding` rend exactement comme avant, et le client
+  n'invente jamais une palette absente.
+- Conséquence : `categories[].accent` est enfin rendu. Les portes de la carte
+  portaient toutes le même or alors que l'accent était calculé puis jeté au
+  rendu.
+
+Une valeur de couleur qui n'est pas un hexadécimal strict `#RRGGBB` ou
+`#RRGGBBAA` est **écartée**, pas réécrite : le moteur n'en publie pas d'autre
+forme. Une configuration illisible fait retomber toute l'interface sur
+« GenEngine », qui nomme le moteur et non un jeu.
 
 ## Studio
 
@@ -413,10 +476,17 @@ Aucune source non CC0 n’a été substituée pour les combler.
 
 ### Direction artistique
 
-Les visuels de `public/illustrations/` relèvent de l’**heroic fantasy** — portail
-elfique, îles flottantes avec phare, renard céleste — et **ne correspondent pas**
-à l’univers Diapason (2026, notre monde, IA partout). Ils sont hérités d’une
-itération antérieure. L’accueil n’en utilise qu’un, en fond décoratif.
+Trois visuels de `public/illustrations/` relèvent encore de l’**heroic
+fantasy** — îles flottantes avec phare, renard céleste, clé de tutoriel — et **ne
+correspondent pas** à l’univers Diapason (2026, notre monde, IA partout). Ils
+sont hérités d’une itération antérieure et appartiennent aux features
+`experience` et `player`.
+
+L’accueil, lui, ne les utilise plus. Son fond est `diapason-resonance.svg`, une
+composition **abstraite** locale — un diapason stylisé, ses ondes concentriques
+et une trame de points régulière au centre, dispersée en périphérie. Elle figure
+l’objet du jeu, une information qui paraît ordonnée, plutôt qu’un décor. Aucun
+hotlink externe : l’image est vectorielle et servie par le client.
 
 ### Dépendances moteur
 

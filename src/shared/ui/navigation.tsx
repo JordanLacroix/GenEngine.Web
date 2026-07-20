@@ -8,6 +8,7 @@ import { useState } from "react";
 import { AudioToggle } from "@/shared/ui/audio-toggle";
 import { buildNavigationLinks, hasOwnNavigation, isActiveLink, primaryDestination } from "@/shared/ui/navigation-model";
 import { initialsOf, useNavigationContext } from "@/shared/ui/use-navigation-context";
+import { brandInitial } from "@/shared/ui/branding-theme";
 
 /**
  * En-tête global — pastille HUD flottante, barre basse sous 900 px.
@@ -17,20 +18,28 @@ import { initialsOf, useNavigationContext } from "@/shared/ui/use-navigation-con
  * `/administration` venait de ce cumul. Le masquage est décidé ici, pas par
  * une règle CSS `:has()` qui ne couvrait pas les états de chargement.
  */
-export function Navigation() {
+export function Navigation({ applicationName }: { applicationName?: string }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const { document, permissions, authenticated, userName, gameName } = useNavigationContext();
 
   if (hasOwnNavigation(path)) return null;
 
+  // Le nom vient du `branding` publié, résolu côté serveur par la coque : il
+  // est donc juste dès la première peinture, avant même que le contexte joueur
+  // ne soit chargé. Le contexte ne sert que de second recours.
+  const brandName = applicationName?.trim() || gameName;
+
   const links = buildNavigationLinks({ document, permissions, authenticated });
 
   return (
     <header className="site-header">
-      <Link className="brand" href={"/plateforme" as Route} aria-label={`${gameName}, présentation de la plateforme`}>
-        <span className="brand-mark" aria-hidden="true">G</span>
-        <span>{gameName}</span>
+      <Link className="brand" href={"/plateforme" as Route} aria-label={`${brandName}, présentation de la plateforme`}>
+        {/* L'initiale **dérive du nom de l'instance**. Un « G » figé à côté de
+            « Le Diapason » annonçait le moteur là où l'utilisateur lit le nom
+            de son jeu. */}
+        <span className="brand-mark" aria-hidden="true">{brandInitial(brandName)}</span>
+        <span>{brandName}</span>
       </Link>
       <button className="menu-button" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="main-navigation">
         <span className="sr-only">{open ? "Fermer le menu" : "Ouvrir le menu"}</span>

@@ -3,15 +3,16 @@
 import { ArrowLeft, BookOpen, GitBranch, LogIn, MousePointer2, Pause, Play, RotateCcw, Route, Send, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { CurrentStepContract, NarrativeTreeContract, PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, SessionContract, SessionStateContract } from "@/shared/api/contracts";
+import type { CurrentStepContract, NarrativeTreeContract, PlayerExperienceContract, ProblemDetailsContract, ScenarioMasteryContract, SessionContract, SessionStateContract, VisibleChoiceContract } from "@/shared/api/contracts";
 import { fetchStoryByVersionId } from "@/shared/api/catalog-browser";
 import { sessionStorageKey } from "@/shared/lib/local-sessions";
 import { QuestGraphView } from "@/features/player/ui/quest-graph-view";
+import { DocumentView } from "@/features/player/ui/document-view";
 import { useInstanceMedia } from "@/shared/assets/instance-media";
 import { useAudio } from "@/shared/audio/audio-provider";
 
 interface ConnectedPlayerProps { scenarioVersionId: string }
-type CommandKind = "choice" | "continue" | "answer" | "text" | "confirm" | "pause" | "resume";
+type CommandKind = "choice" | "continue" | "consult" | "answer" | "text" | "confirm" | "pause" | "resume";
 
 export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   // Le décor et l'ambiance du lieu « player » viennent de la configuration
@@ -20,7 +21,7 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
   const playerMedia = useInstanceMedia("player");
   const { setAmbienceUrl } = useAudio();
   const [state, setState] = useState<SessionStateContract>();
-  const [title, setTitle] = useState("Histoire GenEngine");
+  const [title, setTitle] = useState("Histoire");
   const [needsAuthentication, setNeedsAuthentication] = useState(false);
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
@@ -52,7 +53,7 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
     // Seul le titre de cette version est nécessaire : il est résolu par
     // identifiant, sans télécharger le catalogue paginé.
     fetchStoryByVersionId(scenarioVersionId)
-      .then((story) => setTitle(story?.title ?? "Histoire GenEngine"))
+      .then((story) => setTitle(story?.title ?? "Histoire"))
       .catch(() => undefined);
     const saved = window.localStorage.getItem(storageKey);
     async function restore() {
@@ -153,12 +154,16 @@ export function ConnectedPlayer({ scenarioVersionId }: ConnectedPlayerProps) {
 }
 
 function AuthenticationPanel(props: { userName: string; password: string; seed: string; busy: boolean; onUserName(value: string): void; onPassword(value: string): void; onSeed(value: string): void; onAuthenticate(mode: "login" | "register"): void; onStart(): void }) {
-  return <main className="scene auth-panel"><LogIn size={36} aria-hidden="true" /><p className="eyebrow">Compte GenEngine</p><h1>Retrouvez vos chemins.</h1><p className="scene-copy">Le moteur associe chaque session à votre identité. Le jeton reste proté dans un cookie inaccessible au navigateur.</p><div className="auth-fields"><label>Identifiant<input autoComplete="username" value={props.userName} onChange={(event) => props.onUserName(event.target.value)} /></label><label>Mot de passe<input type="password" autoComplete="current-password" value={props.password} onChange={(event) => props.onPassword(event.target.value)} /></label><label>Graine déterministe<input inputMode="numeric" value={props.seed} onChange={(event) => props.onSeed(event.target.value)} /></label><div><button className="button button--primary" type="button" disabled={props.busy || !props.userName || !props.password} onClick={() => props.onAuthenticate("login")}>Se connecter</button><button className="button button--quiet" type="button" disabled={props.busy || !props.userName || !props.password} onClick={() => props.onAuthenticate("register")}>Créer un compte</button></div></div><button type="button" className="text-button" disabled={props.busy} onClick={props.onStart}>J&apos;ai déjà une session authentifiée</button></main>;
+  return <main className="scene auth-panel"><LogIn size={36} aria-hidden="true" /><p className="eyebrow">Votre compte</p><h1>Retrouvez vos chemins.</h1><p className="scene-copy">Le moteur associe chaque session à votre identité. Le jeton reste proté dans un cookie inaccessible au navigateur.</p><div className="auth-fields"><label>Identifiant<input autoComplete="username" value={props.userName} onChange={(event) => props.onUserName(event.target.value)} /></label><label>Mot de passe<input type="password" autoComplete="current-password" value={props.password} onChange={(event) => props.onPassword(event.target.value)} /></label><label>Graine déterministe<input inputMode="numeric" value={props.seed} onChange={(event) => props.onSeed(event.target.value)} /></label><div><button className="button button--primary" type="button" disabled={props.busy || !props.userName || !props.password} onClick={() => props.onAuthenticate("login")}>Se connecter</button><button className="button button--quiet" type="button" disabled={props.busy || !props.userName || !props.password} onClick={() => props.onAuthenticate("register")}>Créer un compte</button></div></div><button type="button" className="text-button" disabled={props.busy} onClick={props.onStart}>J&apos;ai déjà une session authentifiée</button></main>;
 }
 
 function SessionScene({ state, mastery, text, busy, onText, onCommand }: { state: SessionStateContract; mastery?: ScenarioMasteryContract; text: string; busy: boolean; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {
   const step = state.currentStep;
-  return <main className="scene" key={`${step.nodeId}-${step.interactionId ?? "legacy"}-${state.session.revision}`}><div className="scene-ornament" aria-hidden="true"><span /><i /></div><p className="eyebrow">Tour {step.turn + 1} · {kindLabel(step.kind)}</p><h1>{step.kind === "Completed" ? "Épilogue" : step.nodeId}</h1><div className="scene-copy"><p>{step.text}</p></div>{step.kind !== "Completed" && <EngineInteractionMaterial step={step} />}<Interaction step={step} busy={busy} text={text} onText={onText} onCommand={onCommand} />{step.kind === "Completed" && <EngineSummary state={state} mastery={mastery} />}</main>;
+  // Un document porte déjà son propre cadre, sa nature et son aveu
+  // d'échantillonnage : l'encart générique « interaction fournie par le
+  // scénario » n'y ajouterait que du bruit au-dessus du contenu à lire.
+  const showsMaterial = step.kind !== "Completed" && step.kind !== "Document";
+  return <main className="scene" key={`${step.nodeId}-${step.interactionId ?? "legacy"}-${state.session.revision}`}><div className="scene-ornament" aria-hidden="true"><span /><i /></div><p className="eyebrow">Tour {step.turn + 1} · {kindLabel(step.kind)}</p><h1>{step.kind === "Completed" ? "Épilogue" : step.nodeId}</h1><div className="scene-copy"><p>{step.text}</p></div>{showsMaterial && <EngineInteractionMaterial step={step} />}<Interaction step={step} busy={busy} text={text} onText={onText} onCommand={onCommand} />{step.kind === "Completed" && <EngineSummary state={state} mastery={mastery} />}</main>;
 }
 
 function EngineInteractionMaterial({ step }: { step: CurrentStepContract }) {
@@ -174,10 +179,61 @@ function EngineSummary({ state, mastery }: { state: SessionStateContract; master
 function Interaction({ step, busy, text, onText, onCommand }: { step: CurrentStepContract; busy: boolean; text: string; onText(value: string): void; onCommand(kind: CommandKind, value?: string | boolean): void }) {
   if (step.status === "Paused") return <div className="interaction-panel"><p>Cette histoire est en pause.</p><button className="button button--primary" type="button" onClick={() => onCommand("resume")}>Reprendre</button></div>;
   if (step.status === "Completed" || step.status === "Abandoned") return null;
-  if (step.kind === "Narration") return <button className="button button--primary scene-action" type="button" disabled={busy} onClick={() => onCommand("continue")}>Continuer <Send size={16} aria-hidden="true" /></button>;
-  if (step.kind === "FreeText" && step.status === "AwaitingExternalInput") return <div className="free-text"><label htmlFor="player-text">Votre réponse</label><textarea id="player-text" rows={5} value={text} onChange={(event) => onText(event.target.value)} /><button className="button button--primary" type="button" disabled={busy || !text.trim()} onClick={() => onCommand("text", text)}>Analyser ma réponse</button></div>;
+
+  // Un document se présente **avec** ses choix de sortie, côte à côte : la
+  // consultation reste une option, et celui qui n'ouvre pas le document part
+  // par la même porte, sans détour ni confirmation.
+  if (step.kind === "Document" && step.document) {
+    return <div className="document-stage">
+      <DocumentView document={step.document} busy={busy} onConsult={() => onCommand("consult")} />
+      <ExitChoices choices={step.exitChoices ?? []} busy={busy} onCommand={onCommand}
+        legend="Sans ouvrir le document" hint="Ces choix restent accessibles : lire n’est jamais obligatoire." />
+    </div>;
+  }
+
+  if (step.kind === "Narration") return <>
+    <button className="button button--primary scene-action" type="button" disabled={busy} onClick={() => onCommand("continue")}>Continuer <Send size={16} aria-hidden="true" /></button>
+    <ExitChoices choices={step.exitChoices ?? []} busy={busy} onCommand={onCommand} legend="Ou passer directement" />
+  </>;
+  if (step.kind === "FreeText" && step.status === "AwaitingExternalInput") return <>
+    <div className="free-text"><label htmlFor="player-text">Votre réponse</label><textarea id="player-text" rows={5} value={text} onChange={(event) => onText(event.target.value)} /><button className="button button--primary" type="button" disabled={busy || !text.trim()} onClick={() => onCommand("text", text)}>Analyser ma réponse</button></div>
+    {/* Un choix de sortie se soumet aussi depuis `AwaitingExternalInput` :
+        le moteur l'accepte, donc une saisie libre facultative se saute. */}
+    <ExitChoices choices={step.exitChoices ?? []} busy={busy} onCommand={onCommand} legend="Ou répondre autrement" />
+  </>;
   if (step.kind === "FreeText" && step.status === "AwaitingValidation" && step.pendingTextAnalysis) return <div className="analysis-card"><p className="eyebrow">{step.pendingTextAnalysis.isAccepted ? "Réponse reconnue" : "Réponse partielle"}</p><strong>{step.pendingTextAnalysis.explanation}</strong>{step.pendingTextAnalysis.matchedTerms.length > 0 && <small>Termes reconnus : {step.pendingTextAnalysis.matchedTerms.join(", ")}</small>}<div><button className="button button--quiet" type="button" disabled={busy} onClick={() => onCommand("confirm", false)}>Modifier</button><button className="button button--primary" type="button" disabled={busy} onClick={() => onCommand("confirm", true)}>Confirmer</button></div></div>;
-  return <div className="choices" aria-label={step.kind === "Quiz" ? "Choisissez une réponse" : "Que faites-vous ?"}><p>{step.kind === "Quiz" ? "Votre réponse" : "Que faites-vous ?"}</p>{step.choices.map((choice, index) => <button type="button" disabled={busy} key={choice.id} onClick={() => onCommand(step.kind === "Quiz" ? "answer" : "choice", choice.id)}><span className="choice-index">{String(index + 1).padStart(2, "0")}</span><span>{choice.text}</span><span className="choice-arrow" aria-hidden="true">→</span></button>)}</div>;
+  return <>
+    <div className="choices" aria-label={step.kind === "Quiz" ? "Choisissez une réponse" : "Que faites-vous ?"}><p>{step.kind === "Quiz" ? "Votre réponse" : "Que faites-vous ?"}</p>{step.choices.map((choice, index) => <button type="button" disabled={busy} key={choice.id} onClick={() => onCommand(step.kind === "Quiz" ? "answer" : "choice", choice.id)}><span className="choice-index">{String(index + 1).padStart(2, "0")}</span><span>{choice.text}</span><span className="choice-arrow" aria-hidden="true">→</span></button>)}</div>
+    <ExitChoices choices={step.exitChoices ?? []} busy={busy} onCommand={onCommand} legend="Ou quitter cette interaction" />
+  </>;
+}
+
+/**
+ * Choix de sortie d'un nœud, présentés **à côté** de l'interaction.
+ *
+ * Le moteur garantit que la liste est vide lorsque l'interaction est
+ * obligatoire, et lorsque l'interaction courante est déjà le `choiceSet` de
+ * sortie. Le client n'a donc aucune condition à recalculer : la seule
+ * question est « la liste est-elle vide ? ». Ils se soumettent par la même
+ * commande `choice` que n'importe quel choix.
+ */
+function ExitChoices({ choices, busy, onCommand, legend, hint }: {
+  choices: VisibleChoiceContract[];
+  busy: boolean;
+  onCommand(kind: CommandKind, value?: string | boolean): void;
+  legend: string;
+  hint?: string;
+}) {
+  if (choices.length === 0) return null;
+  return <div className="choices choices--exit" aria-label={legend}>
+    <p>{legend}</p>
+    {hint && <small className="exit-hint">{hint}</small>}
+    {choices.map((choice, index) => <button type="button" disabled={busy} key={choice.id} onClick={() => onCommand("choice", choice.id)}>
+      <span className="choice-index">{String(index + 1).padStart(2, "0")}</span>
+      <span>{choice.text}</span>
+      <span className="choice-arrow" aria-hidden="true">→</span>
+    </button>)}
+  </div>;
 }
 
 function TreePanel({ tree, onClose }: { tree: NarrativeTreeContract; onClose(): void }) {
@@ -186,6 +242,6 @@ function TreePanel({ tree, onClose }: { tree: NarrativeTreeContract; onClose(): 
 
 function active(status: SessionContract["status"]) { return ["AwaitingInput", "AwaitingExternalInput", "AwaitingValidation", "Paused"].includes(status); }
 function statusLabel(status: SessionContract["status"]) { return ({ AwaitingInput: "En cours", Paused: "En pause", Completed: "Terminé", Abandoned: "Abandonné", AwaitingExternalInput: "Saisie attendue", AwaitingValidation: "Validation attendue" })[status]; }
-function kindLabel(kind: CurrentStepContract["kind"]) { return ({ LegacyChoice: "Choix", Narration: "Narration", ChoiceSet: "Choix", Quiz: "Question", CharacteristicGate: "Trait", FreeText: "Expression libre", Completed: "Fin" })[kind]; }
+function kindLabel(kind: CurrentStepContract["kind"]) { return ({ LegacyChoice: "Choix", Narration: "Narration", ChoiceSet: "Choix", Quiz: "Question", CharacteristicGate: "Trait", FreeText: "Expression libre", Document: "Document", Completed: "Fin" })[kind]; }
 async function responseError(response: Response) { const problem = await response.json().catch(() => undefined) as ProblemDetailsContract | undefined; return new Error(problem?.detail ?? problem?.title ?? `Le service a répondu ${response.status}.`); }
 function message(reason: unknown) { return reason instanceof Error ? reason.message : "Une erreur inattendue est survenue."; }

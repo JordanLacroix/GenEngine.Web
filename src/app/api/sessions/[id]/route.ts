@@ -4,7 +4,7 @@ import { genEngineRequest } from "@/shared/api/genengine-server";
 import { apiError } from "@/shared/api/route-errors";
 
 interface RouteContext { params: Promise<{ id: string }> }
-type CommandBody = { kind: "choice" | "continue" | "answer" | "text" | "confirm" | "pause" | "resume"; commandId?: string; expectedRevision: number; value?: string | boolean };
+type CommandBody = { kind: "choice" | "continue" | "consult" | "answer" | "text" | "confirm" | "pause" | "resume"; commandId?: string; expectedRevision: number; value?: string | boolean };
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
@@ -32,7 +32,15 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json(session);
     }
     if (!body.commandId) return NextResponse.json({ title: "command_id_required" }, { status: 400 });
-    const endpoint = body.kind === "choice" ? "inputs" : body.kind === "answer" ? "answers" : body.kind === "text" ? "text-inputs" : body.kind === "confirm" ? "text-inputs/confirm" : "continue";
+    // `consult` porte les mêmes `commandId` et `expectedRevision` que les
+    // autres commandes : côté moteur c'est une commande joueur idempotente qui
+    // consomme un tour, pas une lecture.
+    const endpoint = body.kind === "choice" ? "inputs"
+      : body.kind === "answer" ? "answers"
+        : body.kind === "text" ? "text-inputs"
+          : body.kind === "confirm" ? "text-inputs/confirm"
+            : body.kind === "consult" ? "document-consultations"
+              : "continue";
     const payload: Record<string, unknown> = { commandId: body.commandId, expectedRevision: body.expectedRevision };
     if (body.kind === "choice") payload.choiceId = body.value;
     if (body.kind === "answer") payload.answerId = body.value;

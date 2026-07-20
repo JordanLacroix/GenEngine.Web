@@ -3,13 +3,21 @@
 :root {
   /* Palette de référence (specs ART_DIRECTION « Le Diapason »). Ces cinq teintes
      sont la source de vérité ; les alias historiques ci-dessous les dérivent pour
-     que les feuilles existantes suivent sans être réécrites ligne à ligne. */
-  --encre: #17344a;
-  --ivoire: #fffaf0;
-  --sauge: #7a9a55;
-  --or: #d7a746;
-  --azur: #2f7fa0;
-  --contour: #c8b98d;
+     que les feuilles existantes suivent sans être réécrites ligne à ligne.
+
+     Chacune lit d'abord le jeton `branding.theme.colors` publié par l'instance
+     et posé sur `:root` au rendu serveur (`brandingStyleSheet`). Le littéral
+     reste le repli : une instance sans bloc `branding` — ou dont la
+     configuration est illisible — rend exactement ces valeurs, et le client
+     n'invente jamais de palette absente. */
+  --encre: var(--brand-ink, #17344a);
+  --ivoire: var(--brand-surface, #fffaf0);
+  --sauge: var(--brand-success, #7a9a55);
+  --or: var(--brand-accent, #d7a746);
+  --azur: var(--brand-accent-alt, #2f7fa0);
+  --contour: var(--brand-muted, #c8b98d);
+  --alerte: var(--brand-warning, #c98a2e);
+  --peril: var(--brand-danger, #a33b2a);
 
   /* Alias historiques : ink / ivory / ember / verdigris (voir AGENTS.md). */
   --ink-950: #060f17;
@@ -25,9 +33,13 @@
   --line: rgb(200 185 141 / 18%);
 
   --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-story: Iowan Old Style, Baskerville, "Times New Roman", serif;
+  /* `branding.theme.fontFamily` et `cornerRadius` s'appliquent là où ils ont un
+     sens : la typographie narrative et le rayon des cartes. La police
+     d'interface reste la nôtre — une instance choisit son caractère de récit,
+     pas la lisibilité de ses formulaires. */
+  --font-story: var(--brand-font-story, Iowan Old Style, Baskerville, "Times New Roman", serif);
   --radius-sm: 0.55rem;
-  --radius-md: 1rem;
+  --radius-md: var(--brand-radius, 1rem);
   --radius-lg: 1.5rem;
 
   /* Échelle z documentée : décor -1 · contenu 1 · HUD 30 · rail 32 · panneau 40
@@ -155,6 +167,71 @@ body:has(.player-shell) > .site-header, body:has(.player-shell) > .ambient { dis
 .player-header { min-height: 72px; padding: .8rem clamp(1rem, 4vw, 4rem); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }.player-title { display: grid; text-align: center; }.player-title span { color: var(--ivory-muted); font-size: .55rem; letter-spacing: .16em; text-transform: uppercase; }.player-title strong { font: 1rem var(--font-story); }.player-tools { justify-self: end; display: flex; gap: .4rem; }.icon-button { width: 2.6rem; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: rgb(243 237 223 / 3%); color: var(--ivory-muted); cursor: pointer; }.icon-button svg { width: 17px; }.player-progress { background: rgb(243 237 223 / 7%); }.player-progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--verdigris), var(--ember)); transition: width .6s ease; }
 .scene { width: min(760px, calc(100% - 2rem)); margin: auto; padding: 5rem 0 4rem; text-align: center; animation: scene-in .55s ease both; }.scene-ornament { position: relative; width: 6rem; height: 4rem; margin: 0 auto 1.8rem; }.scene-ornament span { position: absolute; width: 2.8rem; aspect-ratio: 1; left: 50%; translate: -50%; border: 1px solid rgb(233 120 60 / 40%); border-radius: 50%; box-shadow: 0 0 30px rgb(233 120 60 / 12%); }.scene-ornament i { position: absolute; left: 50%; bottom: 0; width: 1px; height: 1.5rem; background: linear-gradient(var(--ember), transparent); }.scene h1 { max-width: 670px; margin: 1rem auto 2.2rem; font: 400 clamp(2.5rem, 6vw, 5rem)/1 var(--font-story); letter-spacing: -.045em; text-wrap: balance; }.scene-copy { max-width: 630px; margin-inline: auto; color: #d2cbbb; font: clamp(1.05rem, 2vw, 1.25rem)/1.85 var(--font-story); text-align: left; }.scene-copy p:first-child::first-letter { float: left; margin: .12em .12em 0 0; color: var(--ember-light); font-size: 3.5em; line-height: .75; }.scene-atmosphere { margin: 2rem 0 3rem; color: var(--ivory-muted); font-size: .6rem; letter-spacing: .15em; text-transform: uppercase; }
 .choices { display: grid; gap: .65rem; text-align: left; }.choices > p { text-align: center; color: var(--ivory-muted); font-size: .6rem; letter-spacing: .15em; text-transform: uppercase; }.choices button { min-height: 76px; padding: .9rem 1.2rem; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: rgb(243 237 223 / 3%); color: var(--ivory); text-align: left; cursor: pointer; transition: background .2s, border .2s, transform .2s; }.choices button:hover { border-color: rgb(233 120 60 / 50%); background: rgb(233 120 60 / 7%); transform: translateX(4px); }.choice-index { color: var(--ember-light); font: italic 1rem var(--font-story); }.choices small { display: block; color: var(--ivory-muted); font-size: .55rem; letter-spacing: .12em; text-transform: uppercase; }.choice-arrow { color: var(--ember-light); }
+/* Choix de sortie : présentés *à côté* de l'interaction, jamais à sa place.
+   Le liseré discret les distingue des choix principaux sans les reléguer —
+   partir sans jouer l'interaction reste une option de plein droit. */
+.choices--exit { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+.choices--exit button { min-height: 62px; background: transparent; }
+.exit-hint { display: block; margin-bottom: .3rem; color: var(--ivory-muted); font-size: .72rem; font-style: italic; text-align: center; text-transform: none; letter-spacing: 0; }
+
+/* Documents consultables (schéma de scénario v6).
+   Le document sort de la colonne étroite de la scène : une table de données ne
+   se lit pas dans 760 px. Il reprend l'alignement à gauche et une typographie
+   de document, pour qu'il se distingue de la narration qui l'entoure. */
+/* La largeur du document est fixée avec les autres largeurs de scène, dans
+   `shell.css` : c'est là que vit la règle `.player-shell > .scene > *` qui
+   ramène chaque enfant à la colonne de lecture. */
+.document-stage { margin-top: 2.5rem; display: grid; gap: 1.5rem; text-align: left; }
+.document-sheet { padding: clamp(1.2rem, 3vw, 2rem); display: grid; gap: 1.2rem; border: 1px solid rgb(200 185 141 / 30%); border-radius: var(--radius-md); background: linear-gradient(160deg, rgb(20 30 36 / 92%), rgb(9 15 19 / 96%)); box-shadow: 0 24px 60px rgb(2 8 13 / 45%); }
+.document-head { display: grid; gap: .5rem; }
+.document-head .eyebrow { display: inline-flex; align-items: center; gap: .4rem; margin: 0; color: var(--ember-light); }
+.document-head h2 { margin: 0; font: 400 clamp(1.5rem, 3vw, 2.1rem)/1.15 var(--font-story); letter-spacing: -.02em; text-wrap: balance; }
+.document-headers { margin: .4rem 0 0; padding: .8rem 0 0; display: grid; gap: .35rem; border-top: 1px solid var(--line); }
+.document-headers > div { display: grid; grid-template-columns: minmax(6rem, auto) 1fr; gap: .8rem; }
+.document-headers dt { color: var(--ivory-muted); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; }
+.document-headers dd { margin: 0; color: var(--ivory); font-size: .85rem; }
+.document-body { display: grid; gap: 1rem; }
+.document-paragraph { margin: 0; color: #d2cbbb; font: 1rem/1.75 var(--font-story); }
+
+/* Une table se rend en table. Le défilement horizontal appartient à ce
+   conteneur : le corps de la page ne défile jamais latéralement. */
+.document-table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.document-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.document-table th, .document-table td { padding: .6rem .85rem; text-align: left; border-bottom: 1px solid var(--line); }
+.document-table th { position: sticky; top: 0; background: rgb(23 52 74 / 92%); color: var(--ivory); font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.document-table tbody tr:last-child td { border-bottom: 0; }
+.document-table tbody tr:nth-child(even) { background: rgb(243 237 223 / 3%); }
+.document-table td { color: #d2cbbb; }
+.document-table td:first-child { color: var(--ivory); font-variant-numeric: tabular-nums; }
+
+/* Lignes marquées : un diff se rend en diff, un journal en journal. Le
+   marqueur est aussi énoncé en texte par le composant — la couleur et la
+   gouttière ne portent jamais seules l'information. */
+.document-lines { margin: 0; padding: .5rem 0; display: grid; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #091113; }
+.document-line { display: grid; grid-template-columns: 1.6rem auto 1fr; align-items: baseline; gap: .5rem; padding: .18rem .8rem; }
+.document-line code { color: #d9d3c5; font: .78rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.document-line-gutter { color: var(--ivory-muted); font: .78rem ui-monospace, monospace; text-align: center; user-select: none; }
+.document-line-label { color: var(--ivory-muted); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.document-line--added { background: rgb(122 154 85 / 14%); }
+.document-line--added .document-line-gutter { color: var(--sauge); }
+.document-line--removed { background: rgb(163 59 42 / 16%); }
+.document-line--removed .document-line-gutter { color: #d4795f; }
+.document-line--warning { background: rgb(201 138 46 / 14%); }
+.document-line--warning .document-line-gutter { color: var(--or); }
+.document-line--error { background: rgb(163 59 42 / 20%); }
+.document-line--error .document-line-gutter { color: #d4795f; }
+.document-line--info .document-line-gutter { color: var(--azur); }
+
+/* L'aveu d'échantillonnage. Il vit dans le cadre du document, sous ce qu'il
+   qualifie : un échantillon présenté comme un tout serait un mensonge
+   d'interface, et le jeu porte précisément sur la lucidité face à
+   l'information. La jauge n'est qu'un renfort — la phrase suffit seule. */
+.document-excerpt { margin: 0; padding: .7rem .9rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; border: 1px dashed rgb(215 167 70 / 45%); border-radius: var(--radius-sm); background: rgb(215 167 70 / 7%); color: var(--ember-light); font-size: .78rem; }
+.document-excerpt svg { flex: none; }
+.document-excerpt-gauge { flex: 1; min-width: 6rem; height: 4px; overflow: hidden; border-radius: 999px; background: rgb(243 237 223 / 12%); }
+.document-excerpt-gauge > span { display: block; height: 100%; min-width: 2px; border-radius: 999px; background: var(--ember); }
+.document-consult { justify-self: start; }
+
 .player-footer { min-height: 55px; padding: .6rem clamp(1rem, 4vw, 4rem); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); color: var(--ivory-muted); font-size: .58rem; }.player-footer .text-button { color: var(--ivory-muted); }
 .connected-player { position: relative; }.player-error { position: fixed; z-index: 30; top: 5.5rem; left: 50%; translate: -50%; width: min(560px, calc(100% - 2rem)); margin: 0; padding: .8rem 1rem; border: 1px solid rgb(233 120 60 / 45%); border-radius: .6rem; background: #321b18; color: var(--ivory); text-align: center; }
 .player-entry, .auth-panel { display: grid; justify-items: center; gap: 1rem; }.player-entry > svg, .auth-panel > svg { color: var(--ember-light); }.player-entry label, .auth-fields label { display: grid; gap: .45rem; color: var(--ivory-muted); font-size: .7rem; text-align: left; }.player-entry input, .auth-fields input, .free-text textarea { min-height: 46px; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: .55rem; outline: none; background: rgb(243 237 223 / 5%); color: var(--ivory); }.player-entry input:focus, .auth-fields input:focus, .free-text textarea:focus { border-color: var(--ember); box-shadow: 0 0 0 3px rgb(233 120 60 / 12%); }

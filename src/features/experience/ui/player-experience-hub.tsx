@@ -27,6 +27,7 @@ import type { FamiliarSelection } from "@/features/experience/model/familiar-pre
 import { FamiliarConfigurator, FamiliarPreviewPane } from "@/features/experience/ui/familiar-configurator";
 import { PlaceOverlay } from "@/features/experience/ui/place-overlay";
 import { useInstanceMedia } from "@/shared/assets/instance-media";
+import { accentValue, brandInitial, fallbackApplicationName } from "@/shared/ui/branding-theme";
 import { useAmbience, useAudio } from "@/shared/audio/audio-provider";
 import { randomId } from "@/shared/lib/random-id";
 import { useFeedback } from "@/shared/ui/feedback-provider";
@@ -242,8 +243,12 @@ export function PlayerExperienceHub() {
     { id: "account", label: copy("nav.account", "Compte"), icon: UserRound },
   ];
 
+  // La pastille de marque nomme l'instance : le bloc `branding` publié prime
+  // sur le nom du jeu, et l'initiale en dérive au lieu d'être un « G » figé.
+  const brandName = document.branding?.applicationName?.trim() || document.game.name || fallbackApplicationName;
+
   return <div className="player-universe">
-    <div className="game-brand-hud"><Link href={"/plateforme" as Route} aria-label="Quitter l’univers et revenir à la présentation de la plateforme"><span>G</span><strong>{document.game.name}</strong></Link><small>Monde vivant · progression synchronisée</small></div>
+    <div className="game-brand-hud"><Link href={"/plateforme" as Route} aria-label="Quitter l’univers et revenir à la présentation de la plateforme"><span>{brandInitial(brandName)}</span><strong>{brandName}</strong></Link><small>Monde vivant · progression synchronisée</small></div>
     {message && <p className="experience-message" role="status">{message}</p>}
     {showsKeyReward && <KeyReward onClose={() => setShowsKeyReward(false)} />}
     <div className="universe-status"><span><KeyRound /> {hasKey ? "Clé des passages" : "Clé à gagner"}</span><strong>{context.player.balance} {context.player.currencyIcon}</strong></div>
@@ -258,7 +263,13 @@ export function PlayerExperienceHub() {
           return <button
             key={place.id}
             className={openPlaceId === place.id ? "world-door is-selected" : "world-door"}
-            style={{ left: `${position.x}px`, top: `${position.y}px` }}
+            // `place.accent` était calculé depuis `categories[].accent` puis
+            // jeté au rendu : le jeton est un *nom* (`or`, `azur`, `sauge`…),
+            // et il n'était rendable qu'une fois `branding.accentPalette`
+            // projetée en variables CSS. Elle l'est désormais, donc chaque
+            // porte porte enfin la teinte que l'opérateur lui a donnée. Un
+            // jeton absent de la palette retombe sur le contour neutre.
+            style={{ left: `${position.x}px`, top: `${position.y}px`, ["--door-accent" as string]: accentValue(place.accent, "var(--or)") }}
             aria-haspopup="dialog"
             aria-expanded={openPlaceId === place.id}
             onClick={() => setOpenPlaceId(place.id)}
@@ -330,7 +341,7 @@ function AssetPackImport({ assetPack, onImport }: { assetPack: FamiliarAssetPack
 
 function TutorialStory({ step, current, total, familiarName, busy, allowSkip, onComplete, onSkip }: { step: Context["bootstrap"]["tutorial"]["steps"][number]; current: number; total: number; familiarName: string; busy: boolean; allowSkip: boolean; onComplete(): void; onSkip(): void }) {
   const interaction = interactionFor(step.action, step.target);
-  return <section className="tutorial-story" style={{ backgroundImage: "linear-gradient(90deg, rgb(5 9 11 / 95%), rgb(5 9 11 / 38%)), url(/illustrations/intro-gateway.jpg)" }}><div className="tutorial-copy"><p className="eyebrow">Prologue · {current}/{total}</p><h1>{step.title}</h1><p>{step.body}</p><div className={`tutorial-interaction tutorial-interaction--${interaction.kind}`}><span>{interaction.icon}</span><div><strong>{interaction.title}</strong><small>{interaction.body}</small></div><button className="button button--primary" disabled={busy} onClick={onComplete}>{interaction.action}</button></div><p className="familiar-line"><Sparkles /> {familiarName} : « Chaque geste que vous faites ici peut être configuré par le scénario. »</p>{allowSkip && <button className="text-button" disabled={busy} onClick={onSkip}>Passer le prologue</button>}</div></section>;
+  return <section className="tutorial-story" style={{ backgroundImage: "linear-gradient(90deg, rgb(5 9 11 / 95%), rgb(5 9 11 / 38%)), url(/illustrations/diapason-resonance.svg)" }}><div className="tutorial-copy"><p className="eyebrow">Prologue · {current}/{total}</p><h1>{step.title}</h1><p>{step.body}</p><div className={`tutorial-interaction tutorial-interaction--${interaction.kind}`}><span>{interaction.icon}</span><div><strong>{interaction.title}</strong><small>{interaction.body}</small></div><button className="button button--primary" disabled={busy} onClick={onComplete}>{interaction.action}</button></div><p className="familiar-line"><Sparkles /> {familiarName} : « Chaque geste que vous faites ici peut être configuré par le scénario. »</p>{allowSkip && <button className="text-button" disabled={busy} onClick={onSkip}>Passer le prologue</button>}</div></section>;
 }
 
 function interactionFor(action: string, target: string) {

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { AudioToggle } from "@/shared/ui/audio-toggle";
 import { buildNavigationLinks, isActiveLink } from "@/shared/ui/navigation-model";
 import { useNavigationContext } from "@/shared/ui/use-navigation-context";
+import { brandInitial } from "@/shared/ui/branding-theme";
 
 /**
  * Navigation globale repliée dans une barre latérale de section.
@@ -24,7 +25,7 @@ export function SectionNav({ label }: { label: string }) {
   return <div className="section-nav">
     <div className="section-nav-brand">
       <Link href={"/plateforme" as Route} aria-label={`${gameName}, présentation de la plateforme`}>
-        <span aria-hidden="true">G</span>
+        <span aria-hidden="true">{brandInitial(gameName)}</span>
         <span className="section-nav-name">{gameName}</span>
       </Link>
       <AudioToggle />

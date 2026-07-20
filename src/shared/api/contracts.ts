@@ -13,6 +13,7 @@ export type InteractionKind =
   | "Quiz"
   | "CharacteristicGate"
   | "FreeText"
+  | "Document"
   | "Completed";
 
 export interface SessionContract {
@@ -26,7 +27,54 @@ export interface SessionContract {
   turn: number;
 }
 
-export interface VisibleChoiceContract { id: string; text: string }
+export interface ChoiceMediaContract { soundUrl?: string; animationCue?: string }
+export interface VisibleChoiceContract { id: string; text: string; media?: ChoiceMediaContract | null }
+export interface NodeMediaContract { visualUrl?: string; visualDescription?: string; soundUrl?: string }
+
+/**
+ * Documents consultables du schéma de scénario v6.
+ *
+ * Le contenu est porté par le scénario publié — donc versionné, hashé et
+ * rejoué comme le reste. Le client ne va rien chercher et n'invente rien : il
+ * rend ce que le moteur envoie, y compris l'aveu d'échantillonnage.
+ */
+export const documentNatures = ["Memo", "Email", "Code", "Diff", "Log", "Table", "Conversation", "Report", "Other"] as const;
+export type DocumentNatureContract = (typeof documentNatures)[number];
+
+/** Marqueur d'une ligne : couvre le diff (`Added`…) et le journal (`Warning`…). */
+export const documentLineMarkers = ["Added", "Removed", "Context", "Warning", "Error", "Info"] as const;
+export type DocumentLineMarkerContract = (typeof documentLineMarkers)[number];
+
+export const documentExcerptUnits = ["Lines", "Rows", "Messages", "Entries", "Paragraphs"] as const;
+export type DocumentExcerptUnitContract = (typeof documentExcerptUnits)[number];
+
+export interface DocumentParagraphBlockContract { $type: "paragraph"; text: string }
+export interface DocumentLineContract { text: string; marker?: DocumentLineMarkerContract | string | null; label?: string | null }
+export interface DocumentLinesBlockContract { $type: "lines"; lines: DocumentLineContract[] }
+export interface DocumentTableRowContract { cells: string[] }
+export interface DocumentTableBlockContract { $type: "table"; columns: string[]; rows: DocumentTableRowContract[] }
+export type DocumentBlockContract =
+  | DocumentParagraphBlockContract
+  | DocumentLinesBlockContract
+  | DocumentTableBlockContract;
+
+export interface DocumentHeaderContract { name: string; value: string }
+
+/**
+ * Aveu d'échantillonnage. `shownUnits` est **strictement** inférieur à
+ * `totalUnits` — le moteur refuse l'égalité, parce qu'une mention qui ne
+ * retranche rien ne dirait rien. Un document montré intégralement n'en porte
+ * pas, et l'absence du bloc est donc l'information « c'est tout ».
+ */
+export interface DocumentExcerptContract { shownUnits: number; totalUnits: number; unit: DocumentExcerptUnitContract | string }
+
+export interface DocumentContract {
+  title: string;
+  nature: DocumentNatureContract | string;
+  headers?: DocumentHeaderContract[] | null;
+  excerpt?: DocumentExcerptContract | null;
+  blocks: DocumentBlockContract[];
+}
 
 export interface TextAnalysisContract {
   interactionId: string;
@@ -44,7 +92,19 @@ export interface CurrentStepContract {
   turn: number;
   interactionId?: string;
   kind: InteractionKind;
-  pendingTextAnalysis?: TextAnalysisContract;
+  pendingTextAnalysis?: TextAnalysisContract | null;
+  media?: NodeMediaContract | null;
+  /** L'interaction courante peut être ignorée (schéma de scénario v4). */
+  isOptional?: boolean;
+  /**
+   * Choix de sortie du nœud, à présenter **à côté** de l'interaction et jamais
+   * après elle : le moteur garantit que cette liste est vide lorsque
+   * l'interaction est obligatoire, donc sa présence *est* l'autorisation de
+   * partir sans jouer l'interaction.
+   */
+  exitChoices?: VisibleChoiceContract[] | null;
+  /** Renseigné uniquement lorsque `kind` vaut `Document`. */
+  document?: DocumentContract | null;
 }
 
 export interface ConditionEvaluationContract {
@@ -155,6 +215,12 @@ export interface ExperienceDocumentContract {
    * (invariant 14).
    */
   media?: MediaConfigurationContract;
+  /**
+   * Bloc de marque, **facultatif et purement additif** : une configuration
+   * antérieure sans ce bloc reste lisible à l'identique et `branding` vaut
+   * alors `null`. Le client ne le fabrique jamais.
+   */
+  branding?: BrandingContract | null;
 }
 
 export const mediaLocations = ["home", "map", "player", "journal", "familiar", "shop"] as const;
@@ -174,6 +240,63 @@ export interface MediaConfigurationContract {
   defaultMuted: boolean;
   locations: MediaLocationConfigurationContract[];
   gameOver?: Omit<MediaLocationConfigurationContract, "location">;
+}
+
+/**
+ * Jetons de couleur obligatoires dès que `branding.theme` est présent. Le
+ * moteur les impose tous les huit, donc le client peut les projeter en
+ * variables CSS sans valeur de repli par jeton.
+ */
+export const brandingColorTokens = ["ink", "surface", "accent", "accentAlt", "success", "warning", "danger", "muted"] as const;
+export type BrandingColorTokenContract = (typeof brandingColorTokens)[number];
+
+export interface BrandingThemeContract {
+  colors: Record<BrandingColorTokenContract, string> & Record<string, string>;
+  colorScheme: "Dark" | "Light" | "Auto";
+  cornerRadius: number;
+  fontFamily: string;
+}
+
+export interface BrandingContract {
+  applicationName?: string | null;
+  shortName?: string | null;
+  tagline?: string | null;
+  brandIconUrl?: string | null;
+  clientIconUrl?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+  theme?: BrandingThemeContract | null;
+  /**
+   * Associe les jetons nommés portés par `categories[].accent`,
+   * `journeys[].accent` et `familiars[].accent` à de vraies couleurs. Sans
+   * elle ces accents ne sont **pas rendables**, et le client les ignore
+   * plutôt que d'en inventer.
+   */
+  accentPalette?: Record<string, string> | null;
+}
+
+/**
+ * `GET /client-bootstrap/{frontId}` sur Configuration — **anonyme**.
+ *
+ * Charge utile minimale d'un client qui démarre avant toute authentification :
+ * de quoi peindre le premier écran et proposer une entrée, rien de plus. Aucun
+ * catalogue, aucune organisation, aucun provider IA. Une configuration
+ * illisible fait retomber le client sur « GenEngine ».
+ */
+export interface ClientBootstrapContract {
+  frontId: string;
+  version: number;
+  publishedAt: string;
+  applicationName: string;
+  shortName?: string | null;
+  tagline?: string | null;
+  branding?: BrandingContract | null;
+  locale: string;
+  timeZone: string;
+  labels: Record<string, string>;
+  authenticationMode: ExperienceDocumentContract["authentication"]["mode"];
+  demoEnabled: boolean;
+  intro?: ExperienceDocumentContract["intro"] | null;
 }
 
 export interface PublishedExperienceContract { version: number; publishedAt: string; document: ExperienceDocumentContract }
