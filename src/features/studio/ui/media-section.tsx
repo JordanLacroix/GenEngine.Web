@@ -93,19 +93,19 @@ export function MediaSection({
           <p className="studio-note">{mediaLocationLabels[focus].description}</p>
           <AssetField
             id={`media-${focus}-background`} kind="image" manifest={manifest} packAbsentReason={packAbsentReason}
-            label="Fond du lieu" hint="Visible derrière l’interface de ce lieu."
+            label="Fond du lieu" path="media.locations[].backgroundUrl" hint="Visible derrière l’interface de ce lieu."
             value={entry.backgroundUrl ?? ""}
             onChange={(next) => onChange(updateMediaLocation(media, focus, { backgroundUrl: next }))}
           />
           <AssetField
             id={`media-${focus}-ambience`} kind="audio" manifest={manifest} packAbsentReason={packAbsentReason}
-            label="Ambiance" hint="Nappe continue et discrète, jouée tant que le lieu est ouvert."
+            label="Ambiance" path="media.locations[].ambienceUrl" hint="Nappe continue et discrète, jouée tant que le lieu est ouvert."
             value={entry.ambienceUrl ?? ""}
             onChange={(next) => onChange(updateMediaLocation(media, focus, { ambienceUrl: next }))}
           />
           <AssetField
             id={`media-${focus}-music`} kind="audio" manifest={manifest} packAbsentReason={packAbsentReason}
-            label="Musique" hint="Piste identifiable, réservée aux moments forts du lieu."
+            label="Musique" path="media.locations[].musicUrl" hint="Piste identifiable, réservée aux moments forts du lieu."
             value={entry.musicUrl ?? ""}
             onChange={(next) => onChange(updateMediaLocation(media, focus, { musicUrl: next }))}
           />
@@ -136,12 +136,12 @@ export function MediaSection({
         <div className="studio-inline-fields">
           <AssetField
             id="media-gameover-background" kind="image" manifest={manifest} packAbsentReason={packAbsentReason}
-            label="Visuel de fin" value={media.gameOver?.backgroundUrl ?? ""}
+            label="Visuel de fin" path="media.gameOver.visualUrl" value={media.gameOver?.backgroundUrl ?? ""}
             onChange={(next) => onChange(updateGameOverMedia(media, { backgroundUrl: next }))}
           />
           <AssetField
             id="media-gameover-music" kind="audio" manifest={manifest} packAbsentReason={packAbsentReason}
-            label="Musique de fin" value={media.gameOver?.musicUrl ?? ""}
+            label="Musique de fin" path="media.gameOver.musicUrl" value={media.gameOver?.musicUrl ?? ""}
             onChange={(next) => onChange(updateGameOverMedia(media, { musicUrl: next }))}
           />
         </div>

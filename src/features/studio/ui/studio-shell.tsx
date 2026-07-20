@@ -8,6 +8,7 @@ import type {
   AdminConfigurationContract, ExperienceDocumentContract, ProblemDetailsContract,
   PublishedExperienceContract,
 } from "@/shared/api/contracts";
+import { FieldHelpProvider } from "@/shared/ui/field-help";
 import { SectionNav } from "@/shared/ui/section-nav";
 import { mediaSupport } from "../model/media-configuration";
 import { useAssetPack } from "./asset-field";
@@ -85,8 +86,10 @@ export function StudioShell() {
   const packAbsentReason = pack.error
     ?? (pack.loading ? undefined : "Aucun pack d’assets n’est publié sur cette instance : seules les URLs HTTPS sont assignables.");
 
+  // Une seule lecture des descripteurs pour tout l'atelier : ils sont communs
+  // à toutes les sections, et ne doivent pas repartir à chaque frappe.
   return (
-    <section className="studio-console app-fullscreen">
+    <FieldHelpProvider><section className="studio-console app-fullscreen">
       <aside className="studio-sidebar">
         <SectionNav label="Studio" />
         <div className="admin-status">
@@ -141,7 +144,7 @@ export function StudioShell() {
             </>
             : !busy && !configurationError && <p className="studio-note">Configuration indisponible.</p>}
       </div>
-    </section>
+    </section></FieldHelpProvider>
   );
 }
 

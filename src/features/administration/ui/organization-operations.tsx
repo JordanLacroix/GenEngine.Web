@@ -82,7 +82,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
 
     <section className="role-builder assignment-builder">
       <h3><CalendarClock /> Périodes métier</h3>
-      <p className="scene-copy">Années scolaires, semestres, campagnes ou exercices bornent explicitement les appartenances.</p>
+      <p className="admin-note">Années scolaires, semestres, campagnes ou exercices bornent explicitement les appartenances.</p>
       <div className="assignment-board">{data.periods.map((period) => <article key={period.id}><div><span className="assignment-type">{period.code}</span><strong>{period.name}</strong><small>{formatDate(period.startsAt)} → {formatDate(period.endsAt)}</small></div><span className={period.isActive ? "user-state is-active" : "user-state"}>{period.isActive ? "Active" : "Archivée"}</span></article>)}</div>
       <div className="admin-grid">
         <Field label="Nom"><input value={periodName} onChange={(event) => setPeriodName(event.target.value)} placeholder="Année 2026-2027" /></Field>
@@ -96,7 +96,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
     <div className="operations-grid">
       <section className="role-builder">
         <h3><Network /> Unités et groupes</h3>
-        <p className="scene-copy">Classes, équipes, départements ou cohortes utilisent la même hiérarchie. Les libellés visibles restent configurables.</p>
+        <p className="admin-note">Classes, équipes, départements ou cohortes utilisent la même hiérarchie. Les libellés visibles restent configurables.</p>
         <div className="organization-tree">{data.units.map((unit) => <article key={unit.id}><span className="category-gem" data-accent="verdigris" /><div><strong>{unit.name}</strong><small>{unit.type} · {unit.code}{unit.parentId ? ` · sous ${unitById.get(unit.parentId) ?? "unité"}` : " · racine"}</small></div><span className={unit.isActive ? "user-state is-active" : "user-state"}>{unit.isActive ? "Active" : "Inactive"}</span></article>)}</div>
         <div className="admin-grid">
           <Field label="Nom"><input value={unitName} onChange={(event) => setUnitName(event.target.value)} placeholder="Classe Horizon" /></Field>
@@ -109,7 +109,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
 
       <section className="role-builder">
         <h3><UserRoundCog /> Membres et encadrants</h3>
-        <p className="scene-copy">Une appartenance active détermine le front, le groupe et les contenus accessibles. Le statut d’encadrant n’accorde aucune permission à lui seul.</p>
+        <p className="admin-note">Une appartenance active détermine le front, le groupe et les contenus accessibles. Le statut d’encadrant n’accorde aucune permission à lui seul.</p>
         <div className="membership-list">{data.memberships.items.map((membership) => <article key={membership.id}><div className="user-avatar">{(userById.get(membership.userId) ?? "??").slice(0, 2).toUpperCase()}</div><div><strong>{userById.get(membership.userId) ?? membership.userId}</strong><small>{membership.kind === "Supervisor" ? "Encadrant" : "Participant"} · {unitById.get(membership.unitId) ?? membership.unitId}{membership.periodId ? ` · ${data.periods.find((period) => period.id === membership.periodId)?.name ?? "période"}` : ""}</small></div><button className="icon-danger" aria-label="Supprimer le membership" onClick={() => void confirmThen({ title: "Retirer cette appartenance ?", body: `${userById.get(membership.userId) ?? membership.userId} ne sera plus rattaché à ${unitById.get(membership.unitId) ?? membership.unitId}.`, confirmLabel: "Retirer" }, () => fetch(`/api/admin/organization/memberships/${membership.id}`, { method: "DELETE" }), "Appartenance supprimée.")}><Trash2 /></button></article>)}</div>
         <div className="admin-grid">
           <Field label="Utilisateur"><select value={memberUserId} onChange={(event) => setMemberUserId(event.target.value)}><option value="">Sélectionner…</option>{users.filter((user) => user.isActive).map((user) => <option key={user.id} value={user.id}>{user.userName}</option>)}</select></Field>
@@ -120,7 +120,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
         <button className="button button--primary" disabled={busy || !memberUserId || !memberUnitId} onClick={() => { const period = data.periods.find((item) => item.id === memberPeriodId); return mutate(() => fetch(`/api/admin/organization/memberships/${crypto.randomUUID()}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ unitId: memberUnitId, userId: memberUserId, periodId: period?.id, kind: memberKind, startsAt: period?.startsAt ?? new Date().toISOString(), endsAt: period?.endsAt, isActive: true }) }), "Membership créé.").then(() => setMemberUserId("")); }}><Plus /> Ajouter le membership</button>
         <div className="admin-grid">
           <Field label="Import CSV"><input type="file" accept=".csv,text/csv" onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.text().then((text) => { setImportRows(parseMembershipCsv(text)); setImportReport(undefined); setMessage(undefined); }).catch((error: unknown) => { setImportRows([]); setImportReport(undefined); setMessage(asMessage(error)); }); }} /></Field>
-          <p className="scene-copy">Colonnes : userId, unitId, periodId, kind, startsAt, endsAt. {importRows.length ? `${importRows.length} ligne(s) prête(s).` : ""}</p>
+          <p className="admin-note">Colonnes : userId, unitId, periodId, kind, startsAt, endsAt. {importRows.length ? `${importRows.length} ligne(s) prête(s).` : ""}</p>
         </div>
         <div className="button-row">
           <button className="button button--quiet" disabled={busy || importRows.length === 0} onClick={() => importMemberships(importRows, true, setBusy, setMessage, setImportReport)}><FileUp /> Prévisualiser</button>
@@ -132,7 +132,7 @@ export function OrganizationOperations({ users, experience }: { users: AdminUser
 
     <section className="role-builder assignment-builder">
       <h3><CalendarClock /> Contenus affectés</h3>
-      <p className="scene-copy">Les fenêtres et échéances sont évaluées côté moteur. Une suppression retire l’accès futur sans modifier les sessions déjà figées.</p>
+      <p className="admin-note">Les fenêtres et échéances sont évaluées côté moteur. Une suppression retire l’accès futur sans modifier les sessions déjà figées.</p>
       <div className="assignment-board">{data.assignments.items.map((assignment) => <article key={assignment.id}><div><span className="assignment-type">{assignment.contentType}</span><strong>{assignment.name}</strong><small>{unitById.get(assignment.unitId)}{assignment.dueAt ? ` · échéance ${new Intl.DateTimeFormat("fr-FR").format(new Date(assignment.dueAt))}` : ""}</small></div>{assignment.required && <span className="user-state is-active">Obligatoire</span>}<button className="icon-danger" aria-label="Supprimer l’affectation" onClick={() => void confirmThen({ title: "Supprimer cette affectation ?", body: `« ${assignment.name} » ne sera plus attendu de ${unitById.get(assignment.unitId) ?? "cette unité"}.`, confirmLabel: "Supprimer l’affectation" }, () => fetch(`/api/admin/organization/assignments/${assignment.id}`, { method: "DELETE" }), "Affectation supprimée.")}><Trash2 /></button></article>)}</div>
       <div className="admin-grid">
         <Field label="Unité"><select value={assignmentUnitId} onChange={(event) => setAssignmentUnitId(event.target.value)}><option value="">Sélectionner…</option>{data.units.filter((unit) => unit.isActive).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></Field>

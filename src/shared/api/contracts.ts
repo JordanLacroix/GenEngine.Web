@@ -299,6 +299,31 @@ export interface ClientBootstrapContract {
   intro?: ExperienceDocumentContract["intro"] | null;
 }
 
+/**
+ * `GET /admin/configuration/field-descriptors` sur Configuration — `config.read`.
+ *
+ * Le moteur documente **chaque** champ du document d'expérience et garde cette
+ * documentation exhaustive par un test de complétude bidirectionnel : un champ
+ * sans descripteur échoue, un descripteur orphelin aussi. Le client
+ * **consomme** ces textes ; il n'en recopie aucun, sans quoi ils divergeraient
+ * en silence dès la première évolution du schéma.
+ *
+ * `path` suit la notation du document, `[]` marquant une collection :
+ * `game.name`, `branding.theme.colors`, `aiProviders[].deployment`.
+ */
+export interface FieldDescriptorContract {
+  /** Chemin du champ dans le document, `[]` pour une collection. */
+  path: string;
+  /** Libellé court. */
+  label: string;
+  /** Ce dont il s'agit. */
+  description: string;
+  /** Une valeur d'exemple, quand elle éclaire plus qu'un paraphrase. */
+  example?: string | null;
+  /** La contrainte réelle appliquée par le moteur, ou `null` s'il n'y en a pas. */
+  constraint?: string | null;
+}
+
 export interface PublishedExperienceContract { version: number; publishedAt: string; document: ExperienceDocumentContract }
 export interface AdminConfigurationContract { id: string; revision: number; publishedVersion: number; updatedAt: string; publishedAt?: string; document: ExperienceDocumentContract }
 export interface PlayerExperienceContract {

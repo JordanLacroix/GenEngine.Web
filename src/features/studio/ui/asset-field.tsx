@@ -6,6 +6,7 @@ import {
   type AssetKind, type AssetPackManifest, type AssetPackState, loadAssetPack, parseAssetReference,
   resolveAssetReference,
 } from "@/shared/assets/asset-pack";
+import { useFieldDescriptor } from "@/shared/ui/field-help";
 
 /**
  * Champ d'assignation d'un média.
@@ -37,10 +38,13 @@ export function stopAssetPreview() {
 }
 
 export function AssetField({
-  label, hint, value, onChange, kind, manifest, packAbsentReason, id,
+  label, hint, path, value, onChange, kind, manifest, packAbsentReason, id,
 }: {
   label: string;
+  /** Aide de repli, utilisée seulement si le moteur n'en publie pas. */
   hint?: string;
+  /** Chemin du champ dans le document, pour l'aide servie par le moteur. */
+  path?: string;
   value: string;
   onChange: (next: string) => void;
   kind: AssetKind;
@@ -48,6 +52,10 @@ export function AssetField({
   packAbsentReason?: string;
   id: string;
 }) {
+  const descriptor = useFieldDescriptor(path);
+  // L'aide du moteur prime sur celle écrite ici : elle est tenue à jour avec le
+  // schéma, un texte local ne l'est pas.
+  const help = descriptor?.description ?? hint;
   const reference = parseAssetReference(value);
   const resolved = resolveAssetReference(value, manifest);
   const candidates = manifest?.assets.filter((asset) => asset.kind === kind) ?? [];
@@ -59,7 +67,8 @@ export function AssetField({
         <label htmlFor={`${id}-url`}>{kind === "audio" ? <Music aria-hidden="true" /> : <ImageIcon aria-hidden="true" />}{label}</label>
         {value && <button type="button" className="asset-clear" onClick={() => onChange("")}>Retirer</button>}
       </div>
-      {hint && <p className="asset-hint">{hint}</p>}
+      {help && <p className="asset-hint">{help}</p>}
+      {descriptor?.constraint && <p className="asset-hint asset-hint--constraint">{descriptor.constraint}</p>}
       {candidates.length > 0 && (
         <label className="asset-pack-picker" htmlFor={`${id}-pack`}>
           <span className="sr-only">Choisir dans le pack {manifest?.name}</span>

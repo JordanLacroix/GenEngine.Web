@@ -6,7 +6,15 @@ export interface StorySummary {
   title: string;
   eyebrow: string;
   synopsis: string;
-  author: string;
+  /**
+   * Signature du contenu, **seulement si une source la publie**.
+   *
+   * Le catalogue Authoring n'expose aucun auteur : un scénario publié par le
+   * moteur n'en porte donc pas, et le client n'en fabrique pas. La
+   * démonstration hors ligne, elle, est un contenu de référence assumé et se
+   * signe.
+   */
+  author?: string;
   durationMinutes: number;
   progress?: number;
   mood: StoryMood;

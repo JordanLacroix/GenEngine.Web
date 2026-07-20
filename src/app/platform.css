@@ -146,3 +146,29 @@ body:has(.player-universe),body:has(.first-familiar),body:has(.tutorial-story){o
 .companion-save{margin-top:1.5rem;background:linear-gradient(180deg,transparent,rgb(6 15 23 / 96%) 35%);border:0;padding-block:1rem}
 .companion-save.button--primary{background:var(--or)}
 .story-unavailable{margin:.8rem 0 0;color:var(--ivory-muted);font-size:.68rem}
+
+/* --- Aide par champ -------------------------------------------------------
+   Le libellé reste visible, la description l'est aussi — on ne clique pas pour
+   savoir de quoi un champ parle. La contrainte et l'exemple se déplient : sur
+   un formulaire de quarante champs, trois lignes chacun ne se lisent plus.
+   La présentation reprend `.field-effect`, déjà utilisée par le configurateur
+   de familier, plutôt que d'inventer une troisième forme d'explication. */
+.configured-field{display:grid;gap:.4rem;min-width:0}
+.configured-field-label{display:flex;align-items:center;gap:.35rem}
+.field-help-toggle{width:1.05rem;height:1.05rem;padding:0;display:inline-grid;place-items:center;flex:none;border:0;border-radius:50%;background:transparent;color:var(--ivory-muted);cursor:pointer;opacity:.6}
+.field-help-toggle svg{width:.95rem;height:.95rem}
+.field-help-toggle:hover,.field-help-toggle:focus-visible{color:var(--amber,#d7a746);opacity:1}
+.field-help-toggle[aria-expanded="true"]{color:var(--amber,#d7a746);opacity:1}
+.configured-field .field-effect{display:block;margin:0;color:var(--ivory-muted);font-size:.66rem;line-height:1.5;opacity:.85;text-transform:none;letter-spacing:normal}
+.field-detail{display:grid;gap:.25rem;padding:.5rem .6rem;border-left:2px solid var(--amber,#d7a746);border-radius:.3rem;background:rgb(215 167 70/7%);font-size:.66rem;line-height:1.5;text-transform:none;letter-spacing:normal}
+.field-detail[hidden]{display:none}
+.field-detail b{font-weight:600;color:var(--ivory)}
+.field-detail em{color:var(--ivory-muted);font-style:normal}
+
+/* --- Notes d'écran de configuration ---------------------------------------
+   `.scene-copy` est une classe *narrative* : serif, interlignage 1.85, largeur
+   de colonne de lecture et lettrine flottante sur le premier paragraphe. Sur
+   un formulaire, elle produisait un paragraphe serif indenté au milieu de
+   champs sans-serif. Les explications d'administration ont désormais leur
+   propre forme, alignée sur `.studio-note`. */
+.admin-note{margin:0 0 1rem;max-width:70ch;color:var(--ivory-muted);font-size:.72rem;line-height:1.65}
