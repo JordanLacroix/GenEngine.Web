@@ -253,12 +253,12 @@ export function PlayerExperienceHub() {
     {message && <p className="experience-message" role="status">{message}</p>}
     {showsKeyReward && <KeyReward onClose={() => setShowsKeyReward(false)} />}
     <div className="universe-status"><span><KeyRound /> {hasKey ? "Clé des passages" : "Clé à gagner"}</span><strong>{context.player.balance} {context.player.currencyIcon}</strong></div>
-    {familiar && <button className="companion-hud" type="button" onClick={() => setTab("companion")}><img src={(usesPack ? assetPack.portraitUrl : familiar.avatarUrl ?? familiar.portraitUrl) ?? "/illustrations/familiar-aster.jpg"} alt="" /><span><small>Compagnon</small><strong>{selection.customName || familiar.name}</strong></span><Sparkles aria-hidden="true" /></button>}
+    {familiar && <button className="companion-hud" type="button" onClick={() => setTab("companion")}><img src={(usesPack ? assetPack.portraitUrl : familiar.avatarUrl ?? familiar.portraitUrl) ?? "/illustrations/familiar-tierce.svg"} alt="" /><span><small>Compagnon</small><strong>{selection.customName || familiar.name}</strong></span><Sparkles aria-hidden="true" /></button>}
     <nav className="universe-tabs" aria-label="Votre univers">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={tab === id ? "is-active" : ""} onClick={() => setTab(id)}><Icon />{label}</button>)}</nav>
 
     {tab === "map" && <section className="universe-panel world-map world-map--illustrated">
       <header><div><p className="eyebrow">La carte des passages</p><h2>Choisissez une porte</h2><p>{hasKey ? "Votre clé ouvre toutes les catégories." : "Le prologue a été passé : terminez-le depuis votre compte pour gagner la clé."} Chaque histoire reste libre de raconter ses propres règles.</p></div></header>
-      <div className="door-map" ref={setMapElement} style={{ backgroundImage: `url(${mapMedia.backgroundUrl ?? "/illustrations/world-map.jpg"})` }}>
+      <div className="door-map" ref={setMapElement} style={{ backgroundImage: `url(${mapMedia.backgroundUrl ?? "/illustrations/diapason-domains.svg"})` }}>
         {places.map((place, index) => {
           const position = projectMapPoint(doorAnchorForIndex(index, mapSize), mapSize);
           return <button

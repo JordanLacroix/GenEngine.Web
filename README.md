@@ -444,7 +444,7 @@ L’espace Compagnon accepte un manifeste JSON de schéma `1`. Il déclare un po
 
 Le configurateur conserve les valeurs contractuelles lors de l’enregistrement, mais présente leurs libellés en français. Son action d’enregistrement reste accessible pendant le défilement et confirme la projection relue depuis le serveur.
 
-Un exemple est disponible dans [`public/familiar-packs/aster.json`](public/familiar-packs/aster.json).
+Un exemple est disponible dans [`public/familiar-packs/tierce.json`](public/familiar-packs/tierce.json).
 
 ## Architecture
 

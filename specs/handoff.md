@@ -196,7 +196,7 @@ n'est un oubli.
 | Aucune source MP3 | Le pack Kenney publie de l'Ogg, et transcoder romprait la provenance vérifiable par empreinte. | Sur un navigateur qui refuse l'Ogg — Safari —, aucun signal ne se résout : le réglage sonore est alors **désactivé** et annonce « ce navigateur ne sait lire aucun des formats publiés », au lieu de se laisser activer en vain. |
 | Aucune musique longue | Idem : seulement des stingers courts. Les pistes de 48 s par acte restent à produire. | `music.ending` et `music.gameOver` jouent un jingle, pas une piste. |
 | Aucune illustration peinte dans le pack | Kenney ne publie pas de 2D compatible avec la direction artistique Diapason. | Le pack ne contient que de l'UI, des icônes, des sfx et des stingers. Aucun décor de scène. |
-| Aucun portrait de personnage dans le pack | Idem. | Le seul portrait livré est `public/illustrations/familiar-aster.jpg`, un asset projet, pas un asset du pack. |
+| Aucun portrait de personnage dans le pack | Idem. | Le seul portrait livré est `public/illustrations/familiar-tierce.svg`, un asset projet, pas un asset du pack. |
 | Rotation quotidienne | **Documentée dans la bible d'univers du dépôt `GenEngine`, jamais implémentée ici.** Le mot n'apparaît nulle part dans ce dépôt, ni en code ni en configuration. | Aucune. La capacité n'existe pas et n'est annoncée nulle part dans l'interface. |
 | Game over de première classe | Le moteur ne publie que `isEnding` sur un nœud ; aucun drapeau d'échec dans `ScenarioStructureContract` ni `NarrativeTreeContract`. | L'échec est **narratif seulement**. Le champ `outcome` (`accord` / `partielle` / `rupture`) est un type **local à la démonstration** (`src/entities/story/model/story.ts`), jamais présenté comme un contrat serveur. Sur une rupture, l'interface désactive le retour arrière et promeut « Reprendre depuis le début » ; elle ne le supprime pas. |
 | Médias de scène et de choix | Le schéma narratif du moteur les refuse : `PUT /scenarios/{id}/draft` répond `200` sur un document intact et `422 invalid_json` sur le même document augmenté d'un `visualUrl` de nœud et d'un `animationCue` de choix. | Le Studio édite et prévisualise, puis nomme cette cause probable quand l'enregistrement échoue. Dépendance `GenEngine`. |
@@ -204,11 +204,16 @@ n'est un oubli.
 ### Les illustrations restent partiellement hors sujet
 
 `public/illustrations/` contenait quatre visuels d'**heroic fantasy** hérités
-d'une itération antérieure. Trois demeurent : `world-map.jpg` (îles flottantes
-isométriques avec phare, forêt enchantée, ruine gothique, forteresse de lave),
-`familiar-aster.jpg` (renard céleste à oreilles de cristal) et
-`tutorial-key.jpg`. Ils contredisent la configuration de référence — 2026, notre
-monde, IA partout, un apprenti d'école d'ingénieur.
+d'une itération antérieure. Un seul demeure : `tutorial-key.jpg`. Il contredit la
+configuration de référence — 2026, notre monde, IA partout, un apprenti d'école
+d'ingénieur.
+
+`world-map.jpg` (îles flottantes isométriques) est remplacé par
+`diapason-domains.svg` — un plan de systèmes abstrait dont les six champs
+dessinés portent les ancres de portes — et `familiar-aster.jpg` (renard céleste)
+par `familiar-tierce.svg`, un portrait vectoriel : deux branches, un intervalle.
+Le familier s'appelle désormais « Tierce » dans la configuration. Les deux
+fichiers sont locaux et vectoriels, sans hotlink externe.
 
 `intro-gateway.jpg` — figure encapuchonnée devant un portail doré, cité elfique —
 **a été retiré**. C'était le seul visuel de l'accueil, et il jurait avec un texte
@@ -220,7 +225,7 @@ plutôt qu'un décor : une information qui paraît ordonnée. Le fichier est loc
 vectoriel ; **aucun hotlink externe**, un lien Unsplash ayant déjà été retiré
 deux fois de ce produit.
 
-La copie qui entoure les trois visuels restants suit encore la veine héritée
+La copie qui entoure le visuel restant suit encore la veine héritée
 (« Chaque monde commence par une porte », « une clé », « un familier »). C'est
 une production d'assets et une passe de copie, pas du code client.
 
