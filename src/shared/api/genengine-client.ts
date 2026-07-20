@@ -131,7 +131,6 @@ function toStorySummary(story: PublishedScenarioContract, rank: number): StorySu
     title: story.title,
     eyebrow: `Version ${story.versionNumber}`,
     synopsis: story.description,
-    author: "Communauté GenEngine",
     durationMinutes: story.estimatedMinutes,
     mood: rank % 2 === 0 ? "mystery" : "wonder",
     accent: rank % 2 === 0 ? "ember" : "verdigris",

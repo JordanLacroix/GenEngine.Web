@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { PublishedExperienceContract, UserContextContract } from "@/shared/api/contracts";
 import { fallbackApplicationName } from "@/shared/ui/branding-theme";
+import { usePublishedBrand } from "@/shared/ui/published-brand";
 
 export interface NavigationContext {
   document?: UserContextContract["experience"]["document"];
@@ -22,6 +23,10 @@ export interface NavigationContext {
  */
 export function useNavigationContext(): NavigationContext {
   const path = usePathname();
+  // Semé par le layout depuis `client-bootstrap`, donc disponible **avant**
+  // l'hydratation : sans lui, chaque porteur de marque rendait « GenEngine »
+  // le temps que `/api/me` réponde.
+  const published = usePublishedBrand();
   const [context, setContext] = useState<UserContextContract>();
   const [experience, setExperience] = useState<PublishedExperienceContract>();
 
@@ -50,9 +55,10 @@ export function useNavigationContext(): NavigationContext {
       // configuration illisible, et il nomme alors le moteur, pas un jeu.
       gameName: document?.branding?.applicationName?.trim()
         || document?.game.name
+        || published?.trim()
         || fallbackApplicationName,
     };
-  }, [context, experience]);
+  }, [context, experience, published]);
 }
 
 export function initialsOf(userName: string | undefined): string {

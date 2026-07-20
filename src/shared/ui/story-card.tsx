@@ -18,7 +18,12 @@ export function StoryCard({ story, priority = false }: { story: StorySummary; pr
         <p className="story-synopsis">{story.synopsis}</p>
         {story.progress !== undefined && <div className="progress-block"><div className="progress-meta"><span>Progression</span><span>{story.progress} %</span></div><div className="progress-track"><span style={{ width: `${story.progress}%` }} /></div></div>}
         <footer className="story-meta">
-          <span>par {story.author}</span>
+          {/*
+            Aucune signature inventée : le catalogue Authoring ne publie pas
+            d'auteur, et un « par Communauté GenEngine » fabriqué affichait le
+            nom du moteur là où l'utilisateur lit celui de sa configuration.
+          */}
+          {story.author && <span>par {story.author}</span>}
           <span><Clock3 size={14} aria-hidden="true" />{formatDuration(story.durationMinutes)}</span>
         </footer>
         {story.scenarioVersionId && <Link className="text-button" href={`/library/${story.scenarioVersionId}` as Route}><Route2 size={14} aria-hidden="true" /> Mémoire de mes parcours</Link>}

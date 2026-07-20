@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AudioProvider } from "@/shared/audio/audio-provider";
 import { FeedbackProvider } from "@/shared/ui/feedback-provider";
 import { Navigation } from "@/shared/ui/navigation";
+import { PublishedBrandProvider } from "@/shared/ui/published-brand";
 import { applicationNameOf, fetchClientBootstrap } from "@/shared/api/client-bootstrap";
 import { brandingStyleSheet } from "@/shared/ui/branding-theme";
 import "./globals.css";
@@ -52,15 +53,23 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <div className="ambient ambient-two" aria-hidden="true" />
         <AudioProvider>
           <FeedbackProvider>
-            <Navigation applicationName={applicationName} />
-            <main id="main-content">
-              {children}
-              <footer className="site-footer">
-                <span>{applicationName}</span>
-                <p>Propulsé par GenEngine, moteur narratif configurable</p>
-                <span>2026</span>
-              </footer>
-            </main>
+            <PublishedBrandProvider applicationName={bootstrap ? applicationName : undefined}>
+              <Navigation applicationName={applicationName} />
+              <main id="main-content">
+                {children}
+                {/*
+                  « Propulsé par GenEngine » nomme le **moteur**, délibérément :
+                  c'est la mention technique d'attribution, posée à côté du nom
+                  de l'instance qui la précède. Elle ne remplace jamais la
+                  marque publiée, elle la crédite.
+                */}
+                <footer className="site-footer">
+                  <span>{applicationName}</span>
+                  <p>Propulsé par GenEngine, moteur narratif configurable</p>
+                  <span>2026</span>
+                </footer>
+              </main>
+            </PublishedBrandProvider>
           </FeedbackProvider>
         </AudioProvider>
       </body>
