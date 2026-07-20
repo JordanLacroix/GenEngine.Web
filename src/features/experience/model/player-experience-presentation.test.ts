@@ -5,9 +5,9 @@ import { doorAnchorForIndex, doorAnchorsForViewport, familiarOptionLabel, journa
 describe("player experience presentation", () => {
   it("keeps map anchors attached to the cover image", () => {
     expect(projectMapPoint({ x: 768, y: 512 }, { width: 2048, height: 930 })).toEqual({ x: 1024, y: 465 });
-    const lighthouse = projectMapPoint({ x: 390, y: 330 }, { width: 2048, height: 930 });
-    expect(lighthouse.x).toBeCloseTo(520); expect(lighthouse.y).toBeCloseTo(222.333);
-    expect(doorAnchorsForViewport({ width: 768, height: 1024 })[1]).toEqual({ x: 770, y: 570 });
+    const domain = projectMapPoint({ x: 392, y: 430 }, { width: 2048, height: 930 });
+    expect(domain.x).toBeCloseTo(522.667); expect(domain.y).toBeCloseTo(355.667);
+    expect(doorAnchorsForViewport({ width: 768, height: 1024 })[1]).toEqual({ x: 879, y: 416 });
   });
   // La configuration de référence publie six postures. Tant qu'il n'y avait que
   // cinq ancres, la sixième porte retombait au pixel près sur la première et la
@@ -23,6 +23,21 @@ describe("player experience presentation", () => {
         seen.add(key);
       }
       expect(doorAnchorsForViewport(viewport).length).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  // En portrait, le plan est recadré en `cover` sur la largeur : une ancre trop
+  // excentrée sort du champ et sa porte devient invisible. C'était le cas des
+  // anciennes ancres compactes en `x: 390` et `x: 1070` sur un téléphone. Les
+  // bornes verticales tiennent compte des deux surcouches fixes du HUD mobile :
+  // le titre de la carte en haut, la barre d'onglets en bas.
+  it("keeps every compact door inside a portrait viewport", () => {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 375, height: 812 }]) {
+      for (const anchor of doorAnchorsForViewport(viewport)) {
+        const { x, y } = projectMapPoint(anchor, viewport);
+        expect(x).toBeGreaterThan(55); expect(x).toBeLessThan(viewport.width - 55);
+        expect(y).toBeGreaterThan(250); expect(y).toBeLessThan(viewport.height - 120);
+      }
     }
   });
 

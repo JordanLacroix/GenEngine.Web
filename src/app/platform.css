@@ -46,7 +46,16 @@
    avec l'or de l'instance en repli quand le jeton n'est pas dans la palette. */
 .world-door .door-arch{border-color:color-mix(in srgb,var(--door-accent,var(--or)) 82%,transparent);background:linear-gradient(145deg,rgb(6 12 15/92%),color-mix(in srgb,var(--door-accent,var(--or)) 30%,transparent))}
 .world-door .door-arch svg{color:var(--door-accent,var(--or))}
-.world-door:hover .door-arch,.world-door.is-selected .door-arch{border-color:color-mix(in srgb,var(--door-accent,var(--or)) 92%,white);box-shadow:0 0 0 6px color-mix(in srgb,var(--door-accent,var(--or)) 12%,transparent),0 0 35px color-mix(in srgb,var(--door-accent,var(--or)) 52%,transparent)}.world-door strong{font:clamp(.8rem,1.4vw,1.15rem) var(--font-story)}.world-door small{font-size:.55rem}.world-door:hover .door-arch,.world-door.is-selected .door-arch{translate:0 -7px;border-color:#ffe2a1;background:linear-gradient(145deg,rgb(31 58 58/94%),rgb(233 120 60/45%));box-shadow:0 0 0 6px rgb(219 181 91/10%),0 0 35px rgb(219 181 91/52%)}
+/* Le survol éclaircit franchement l'accent au lieu de l'effleurer. À 92 % la
+   teinte restait celle du repos, ce qui suffit pour l'or mais laisse `encre`
+   (`#17344a`) illisible sur un fond sombre : la porte n'avait aucun état de
+   survol visible. À 68 % la teinte reste reconnaissable et remonte au-dessus du
+   plan, quelle que soit la couleur choisie par l'exploitant. */
+.world-door:hover .door-arch,.world-door.is-selected .door-arch{border-color:color-mix(in srgb,var(--door-accent,var(--or)) 68%,white);box-shadow:0 0 0 6px color-mix(in srgb,var(--door-accent,var(--or)) 14%,transparent),0 0 35px color-mix(in srgb,color-mix(in srgb,var(--door-accent,var(--or)) 72%,white) 58%,transparent)}.world-door strong{font:clamp(.8rem,1.4vw,1.15rem) var(--font-story)}.world-door small{font-size:.55rem}
+/* Ce sélecteur dupliqué reposait l'or en dur et écrasait la règle accentuée
+   ci-dessus : au survol, les six portes redevenaient identiques quelle que soit
+   la teinte donnée par l'exploitant. Il ne garde plus que le soulèvement. */
+.world-door:hover .door-arch,.world-door.is-selected .door-arch{translate:0 -7px}
 
 .key-reward{position:fixed;z-index:180;inset:0;padding:clamp(1rem,5vw,5rem);display:grid;grid-template-columns:1.25fr .75fr;align-items:center;background:#090f12}.key-reward-art{min-height:72svh;border-radius:1.5rem;background:url(/illustrations/tutorial-key.jpg) center/cover;box-shadow:0 30px 90px rgb(0 0 0/45%)}.key-reward>div:last-child{padding:clamp(1.5rem,5vw,4rem)}.key-reward h2{margin:.5rem 0;font:clamp(3rem,6vw,6rem)/.92 var(--font-story);letter-spacing:-.05em}.key-reward p{color:var(--ivory-muted);line-height:1.7}.key-reward ul{padding:0;display:grid;gap:.6rem;list-style:none}.key-reward li{display:flex;gap:.6rem;align-items:center;color:var(--ivory)}.key-reward li svg{width:1rem;color:var(--amber)}
 

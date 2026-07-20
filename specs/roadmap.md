@@ -124,12 +124,12 @@ Aucune tranche n'est engagée au-delà du jalon 5. Trois chantiers sont identifi
 et documentés dans [`handoff.md`](handoff.md) :
 
 1. Les médias de scène et de choix — dépendance du dépôt `GenEngine`.
-2. Une direction artistique servant réellement Diapason — production d'assets, pas de code. L'accueil est traité ; `world-map.jpg`, `familiar-aster.jpg` et `tutorial-key.jpg` restent des visuels d'heroic fantasy.
+2. Une direction artistique servant réellement Diapason — production d'assets, pas de code. L'accueil, la carte des passages et le portrait du familier sont traités, en SVG local ; **`tutorial-key.jpg` reste** le dernier visuel d'heroic fantasy.
 3. Les quatre capacités moteur non consommées, listées dans [`handoff.md`](handoff.md). La plus attendue est l'aide intégrée par champ : le composant `Field` n'a structurellement pas de prop de description.
 
 Le placement des portes de la carte est corrigé et fusionné (#20). Il reste une
 réserve mineure : au-delà de six catégories, une porte est décalée en spirale et
-tombe hors clairière dessinée.
+tombe hors du champ dessiné pour elle.
 
 La **rotation quotidienne** est décrite dans la bible d'univers du dépôt
 `GenEngine`. Elle n'est ni implémentée ni planifiée ici, et l'interface ne

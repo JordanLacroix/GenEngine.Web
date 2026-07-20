@@ -174,19 +174,43 @@ n'est un oubli.
 | Aucune boucle d'ambiance | Le catalogue CC0 de Kenney n'en publie pas. Aucune source non CC0 n'a été substituée. | Les 5 signaux `ambience.*` restent non liés. 6 signaux sur 11 sont liés au pack. |
 | Aucune musique longue | Idem : seulement des stingers courts. Les pistes de 48 s par acte restent à produire. | `music.ending` et `music.gameOver` jouent un jingle, pas une piste. |
 | Aucune illustration peinte dans le pack | Kenney ne publie pas de 2D compatible avec la direction artistique Diapason. | Le pack ne contient que de l'UI, des icônes, des sfx et des stingers. Aucun décor de scène. |
-| Aucun portrait de personnage dans le pack | Idem. | Le seul portrait livré est `public/illustrations/familiar-aster.jpg`, un asset projet, pas un asset du pack. |
+| Aucun portrait de personnage dans le pack | Idem. | Le seul portrait livré est `public/illustrations/familiar-tierce.svg`, un asset projet, pas un asset du pack. |
 | Rotation quotidienne | **Documentée dans la bible d'univers du dépôt `GenEngine`, jamais implémentée ici.** Le mot n'apparaît nulle part dans ce dépôt, ni en code ni en configuration. | Aucune. La capacité n'existe pas et n'est annoncée nulle part dans l'interface. |
 | Game over de première classe | Le moteur ne publie que `isEnding` sur un nœud ; aucun drapeau d'échec dans `ScenarioStructureContract` ni `NarrativeTreeContract`. | L'échec est **narratif seulement**. Le champ `outcome` (`accord` / `partielle` / `rupture`) est un type **local à la démonstration** (`src/entities/story/model/story.ts`), jamais présenté comme un contrat serveur. Sur une rupture, l'interface désactive le retour arrière et promeut « Reprendre depuis le début » ; elle ne le supprime pas. |
 | Médias de scène et de choix | Le schéma narratif du moteur les refuse : `PUT /scenarios/{id}/draft` répond `200` sur un document intact et `422 invalid_json` sur le même document augmenté d'un `visualUrl` de nœud et d'un `animationCue` de choix. | Le Studio édite et prévisualise, puis nomme cette cause probable quand l'enregistrement échoue. Dépendance `GenEngine`. |
 
-### Les illustrations restent partiellement hors sujet
+### Les illustrations : un seul visuel hors sujet demeure
 
 `public/illustrations/` contenait quatre visuels d'**heroic fantasy** hérités
-d'une itération antérieure. Trois demeurent : `world-map.jpg` (îles flottantes
-isométriques avec phare, forêt enchantée, ruine gothique, forteresse de lave),
-`familiar-aster.jpg` (renard céleste à oreilles de cristal) et
-`tutorial-key.jpg`. Ils contredisent la configuration de référence — 2026, notre
-monde, IA partout, un apprenti d'école d'ingénieur.
+d'une itération antérieure. **Un seul demeure** : `tutorial-key.jpg`. Il
+contredit la configuration de référence — 2026, notre monde, IA partout, un
+apprenti d'école d'ingénieur.
+
+`world-map.jpg` (îles flottantes isométriques avec phare, forêt enchantée, ruine
+gothique, forteresse de lave) et `familiar-aster.jpg` (renard céleste à oreilles
+de cristal) **ont été retirés** à leur tour, et remplacés selon la même méthode
+que l'accueil.
+
+`diapason-domains.svg` remplace la carte. Le « monde » du Diapason n'est pas un
+territoire mais un environnement de travail : la composition est un **plan de
+systèmes**, avec une trame technique, six champs d'intensité reliés par un
+réseau de liaisons, et le diapason en filigrane au centre. Elle est
+volontairement désaturée, parce que les seules couleurs franches de cet écran
+doivent être les accents que l'exploitant donne à ses six portes. Ses six champs
+sont dessinés **aux coordonnées de `worldDoorAnchors`** : l'image et le placement
+sont écrits ensemble.
+
+`familiar-tierce.svg` remplace le portrait du familier, dont le nom traînait
+encore l'ancien `aster` alors que le familier s'appelle **Tierce** depuis un
+renommage moteur. La composition encode ce que la configuration déclare — forme
+`tuning-fork`, ton `Warm` — plutôt qu'elle ne l'illustre : deux branches, deux
+ondes séparées d'un intervalle, aucun visage ni animal. Elle reste lisible à
+45 px, taille de la vignette du bandeau compagnon.
+
+C'est la recommandation du plan d'approvisionnement du dépôt `GenEngine`
+(`specs/domain/diapason/asset-sourcing-plan.md`, §6.2 et §6.3) appliquée telle
+quelle : pour ces besoins-là, **aucune source CC0 n'existe**, et une composition
+SVG produite pour le produit vaut mieux qu'une photo approximative.
 
 `intro-gateway.jpg` — figure encapuchonnée devant un portail doré, cité elfique —
 **a été retiré**. C'était le seul visuel de l'accueil, et il jurait avec un texte

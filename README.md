@@ -432,7 +432,7 @@ L’espace Compagnon accepte un manifeste JSON de schéma `1`. Il déclare un po
 
 Le configurateur conserve les valeurs contractuelles lors de l’enregistrement, mais présente leurs libellés en français. Son action d’enregistrement reste accessible pendant le défilement et confirme la projection relue depuis le serveur.
 
-Un exemple est disponible dans [`public/familiar-packs/aster.json`](public/familiar-packs/aster.json).
+Un exemple est disponible dans [`public/familiar-packs/tierce.json`](public/familiar-packs/tierce.json).
 
 ## Architecture
 
@@ -476,17 +476,23 @@ Aucune source non CC0 n’a été substituée pour les combler.
 
 ### Direction artistique
 
-Trois visuels de `public/illustrations/` relèvent encore de l’**heroic
-fantasy** — îles flottantes avec phare, renard céleste, clé de tutoriel — et **ne
-correspondent pas** à l’univers Diapason (2026, notre monde, IA partout). Ils
-sont hérités d’une itération antérieure et appartiennent aux features
-`experience` et `player`.
+Un seul visuel de `public/illustrations/` relève encore de l’**heroic
+fantasy** — `tutorial-key.jpg`, la clé de tutoriel — et **ne correspond pas** à
+l’univers Diapason (2026, notre monde, IA partout). Il est hérité d’une
+itération antérieure et appartient à la feature `experience`.
 
-L’accueil, lui, ne les utilise plus. Son fond est `diapason-resonance.svg`, une
-composition **abstraite** locale — un diapason stylisé, ses ondes concentriques
-et une trame de points régulière au centre, dispersée en périphérie. Elle figure
-l’objet du jeu, une information qui paraît ordonnée, plutôt qu’un décor. Aucun
-hotlink externe : l’image est vectorielle et servie par le client.
+Les trois autres écrans sont traités, chacun par une composition **abstraite,
+locale et vectorielle**. `diapason-resonance.svg` porte l’accueil : un diapason
+stylisé, ses ondes concentriques et une trame de points régulière au centre,
+dispersée en périphérie. `diapason-domains.svg` porte la carte des passages :
+un **plan de systèmes** plutôt qu’un territoire, six champs reliés par un réseau
+de liaisons, dessinés aux coordonnées mêmes de `worldDoorAnchors` et
+volontairement désaturés pour laisser ressortir l’accent de chaque porte.
+`familiar-tierce.svg` porte le portrait du familier : deux branches et deux ondes
+séparées d’un intervalle, encodant la forme `tuning-fork` et le ton `Warm` que
+la configuration déclare.
+
+Aucun hotlink externe : les images sont vectorielles et servies par le client.
 
 ### Dépendances moteur
 
